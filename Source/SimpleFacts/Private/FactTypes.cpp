@@ -17,7 +17,9 @@ bool FSimpleFactCondition::IsValid() const
 
 FString FSimpleFactCondition::ToString() const
 {
-	return FString::Format( TEXT("{0} {1} {2}\n"), {  Tag.ToString(), UEnum::GetDisplayValueAsText( Operator ).ToString(), FString::FromInt( WantedValue ) } );
+	return FString::Format( TEXT( "{0} {1} {2}\n" ), {Tag.ToString()
+			, UEnum::GetDisplayValueAsText( Operator ).ToString()
+			, FString::FromInt( WantedValue ) } );
 }
 
 bool FFactCondition::CheckCondition( const UFactSubsystem& Subsystem ) const

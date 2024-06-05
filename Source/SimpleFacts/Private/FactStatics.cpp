@@ -15,7 +15,7 @@ void UFactStatics::ChangeFactValue(const UObject* WorldContextObject, const FFac
 		return;
 	}
 
-	UE_LOG(LogFact, Error, TEXT("UFactStatics::ChangeFactValue: WorldContextObject is null"));
+	UE_LOG( LogFact, Error, TEXT( "UFactStatics::ChangeFactValue: WorldContextObject is null" ) );
 }
 
 void UFactStatics::ResetFactValue(const UObject* WorldContextObject, const FFactTag Tag)
@@ -27,7 +27,7 @@ void UFactStatics::ResetFactValue(const UObject* WorldContextObject, const FFact
 		return;
 	}
 
-	UE_LOG(LogFact, Error, TEXT("UFactStatics::ResetFactValue: WorldContextObject is null"));
+	UE_LOG( LogFact, Error, TEXT( "UFactStatics::ResetFactValue: WorldContextObject is null" ) );
 }
 
 bool UFactStatics::TryGetFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32& OutValue)
@@ -38,7 +38,7 @@ bool UFactStatics::TryGetFactValue(const UObject* WorldContextObject, const FFac
 		return FactSubsystem.TryGetFactValue( Tag, OutValue );
 	}
 
-	UE_LOG(LogFact, Error, TEXT("UFactStatics::ResetFactValue: WorldContextObject is null"));
+	UE_LOG( LogFact, Error, TEXT( "UFactStatics::ResetFactValue: WorldContextObject is null" ) );
 	return false;
 }
 
@@ -50,7 +50,7 @@ bool UFactStatics::IsFactDefined(const UObject* WorldContextObject, const FFactT
 		return FactSubsystem.IsFactDefined( Tag );
 	}
 
-	UE_LOG(LogFact, Error, TEXT("UFactStatics::IsFactDefined: WorldContextObject is null"));
+	UE_LOG( LogFact, Error, TEXT( "UFactStatics::IsFactDefined: WorldContextObject is null" ) );
 	return false;
 }
 
@@ -63,7 +63,7 @@ bool UFactStatics::CheckFactValue(const UObject* WorldContextObject, const FFact
 		return FactSubsystem.CheckFactSimpleCondition( FSimpleFactCondition( Tag, WantedValue, Operator ) );
 	}
 
-	UE_LOG(LogFact, Error, TEXT("UFactStatics::CheckFactValue: WorldContextObject is null"));
+	UE_LOG( LogFact, Error, TEXT( "UFactStatics::CheckFactValue: WorldContextObject is null" ) );
 	return false;
 }
 
@@ -75,6 +75,6 @@ bool UFactStatics::CheckFactSimpleCondition(const UObject* WorldContextObject, F
 		return FactSubsystem.CheckFactSimpleCondition( Condition );
 	}
 
-	UE_LOG(LogFact, Error, TEXT("UFactStatics::CheckFactValue: WorldContextObject is null"));
+	UE_LOG( LogFact, Error, TEXT( "UFactStatics::CheckFactValue: WorldContextObject is null" ) );
 	return false;
 }

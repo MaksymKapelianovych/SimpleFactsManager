@@ -6,10 +6,10 @@
 
 UFactSubsystem& UFactSubsystem::Get(const UObject* WorldContextObject)
 {
-	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::Assert);
-	check(World);
-	UFactSubsystem* FactSubsystem = UGameInstance::GetSubsystem<UFactSubsystem>(World->GetGameInstance());
-	check(FactSubsystem);
+	UWorld* World = GEngine->GetWorldFromContextObject( WorldContextObject, EGetWorldErrorMode::Assert );
+	check( World );
+	UFactSubsystem* FactSubsystem = UGameInstance::GetSubsystem<UFactSubsystem>( World->GetGameInstance() );
+	check( FactSubsystem );
 	return *FactSubsystem;
 }
 
@@ -23,7 +23,7 @@ void UFactSubsystem::ChangeFactValue(const FFactTag Tag, int32 NewValue, EFactVa
 	
 	auto ChangeValue = [ChangeType, NewValue] (int32& Value)
 	{
-		switch (ChangeType) {
+		switch ( ChangeType ) {
 		case EFactValueChangeType::Set:
 			Value = NewValue;
 			break;
@@ -31,7 +31,7 @@ void UFactSubsystem::ChangeFactValue(const FFactTag Tag, int32 NewValue, EFactVa
 			Value += NewValue;
 			break;
 		default:
-			checkf(false, TEXT("Execution flow should not reach this line. There are some missing cases in switch statement"));
+			checkf( false, TEXT( "Execution flow should not reach this line. There are some missing cases in switch statement" ) );
 		}
 	};
 	
@@ -122,7 +122,7 @@ bool UFactSubsystem::CheckFactSimpleCondition(const FSimpleFactCondition& Condit
 	case EFactCompareOperator::IsDefined:
 		return FactValue != nullptr;
 	default:
-		checkf(false, TEXT("Execution flow should not reach this line. There are some missing cases in switch statement"));
+		checkf( false, TEXT( "Execution flow should not reach this line. There are some missing cases in switch statement" ) );
 	}
 
 	return false;
@@ -220,10 +220,10 @@ FAutoConsoleCommandWithWorldAndArgs UFactSubsystem::ChangeFactValueCommand
 			}
 
 			int32 ValueFromString = 0;
-			LexFromString(ValueFromString, *Value);
+			LexFromString( ValueFromString, *Value );
 	
-			FactSubsystem.ChangeFactValue(Tag, ValueFromString, ValueChangeType);
-			UE_LOG(LogFact, Log, TEXT("ChangeFactValue succeded"));
+			FactSubsystem.ChangeFactValue( Tag, ValueFromString, ValueChangeType );
+			UE_LOG( LogFact, Log, TEXT("ChangeFactValue succeded" ) );
 		}
 	})
 );
