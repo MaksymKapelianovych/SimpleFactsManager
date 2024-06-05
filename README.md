@@ -25,3 +25,9 @@ Fact is just a FFactTag, stored inside TMap in UFactSubsystem. If TMap does not 
 Value of Fact is int32. This should be enough for covering basic needs. For example, it can be used as boolean (0 is false, 1 is true), integer (obviously), float (range [0,1] with 2 digits precision can be represented as int range [0,100]).
 
 Plugin also have simple SaveGame support (only facts in TMap are stored).
+
+
+Console commands:
+ - Facts.ChangeValue. Usage: Facts.ChangeValue Fact.Tag IntValue ChangeType [Default = Set]. Changes value of provided fact.
+ - Facts.GetValue. Usage: Facts.GetValue Fact.Tag. Prints value of a fact to log.
+ - Facts.Dump. Prints values of all defined facts
