@@ -4,7 +4,7 @@
 
 class UFactSubsystem;
 // Filtered tag that can only accept child tags of "Fact" category
-USTRUCT(BlueprintType, Blueprintable, meta = (GameplayTagFilter = "Fact"))
+USTRUCT(BlueprintType, Blueprintable, meta = (GameplayTagFilter = "Fact", PresentAsType = "GameplayTag"))
 struct SIMPLEFACTS_API FFactTag : public FGameplayTag
 {
 	GENERATED_BODY()
