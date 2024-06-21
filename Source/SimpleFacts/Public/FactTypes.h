@@ -33,7 +33,7 @@ enum class EFactValueChangeType : uint8
 
 // Helper struct for checking single fact condition
 USTRUCT(BlueprintType)
-struct FSimpleFactCondition
+struct SIMPLEFACTS_API FSimpleFactCondition
 {
 	GENERATED_BODY()
 
@@ -54,12 +54,13 @@ struct FSimpleFactCondition
 		, WantedValue( InValue )
 	{	}
 
+	bool IsValid() const;
+	FString ToString() const;
+	
 private:
 	friend struct FFactCondition;
 	
 	bool CheckValue(const UFactSubsystem& FactSubsystem) const;
-	bool IsValid() const;
-	FString ToString() const;
 };
 
 /** Represents condition for facts, such as:

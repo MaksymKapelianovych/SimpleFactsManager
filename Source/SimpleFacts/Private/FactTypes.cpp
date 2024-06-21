@@ -17,7 +17,7 @@ bool FSimpleFactCondition::IsValid() const
 
 FString FSimpleFactCondition::ToString() const
 {
-	return FString::Format( TEXT( "{0} {1} {2}\n" ), {Tag.ToString()
+	return FString::Format( TEXT( "{0} {1} {2}" ), {Tag.ToString()
 			, UEnum::GetDisplayValueAsText( Operator ).ToString()
 			, FString::FromInt( WantedValue ) } );
 }
@@ -55,33 +55,53 @@ bool FFactCondition::IsValid() const
 
 FString FFactCondition::ToString() const
 {
-	FStringBuilderBase Builder;
+	FTextBuilder Builder;
 	if ( AndDependencies.Num() > 0 )
 	{
-		Builder.Append( "And Dependencies:\n" );
+		Builder.AppendLine( FString( "And Dependencies:" ) );
+		Builder.Indent();
 	}
 
 	for ( const FSimpleFactCondition& SingleCondition : AndDependencies )
 	{
 		if ( SingleCondition.IsValid() )
 		{
-			Builder.Append( "   " + SingleCondition.ToString() );
+			Builder.AppendLine( SingleCondition.ToString() );
 		}
+		else
+		{
+			Builder.AppendLine( FString( "Fact is not set" ) );
+		}
+	}
+	
+	if ( AndDependencies.Num() > 0 )
+	{
+		Builder.Unindent();
 	}
 
 	if ( OrDependencies.Num() > 0 )
 	{
-		Builder.Append( "Or Dependencies:\n" );
+		Builder.AppendLine( FString( "Or Dependencies:" ) );
+		Builder.Indent();
 	}
 	for ( const FSimpleFactCondition& SingleCondition : OrDependencies )
 	{
 		if ( SingleCondition.IsValid() )
 		{
-			Builder.Append( "   " + SingleCondition.ToString() );
+			Builder.AppendLine( SingleCondition.ToString() );
+		}
+		else
+		{
+			Builder.AppendLine( FString( "Fact is not set" ) );
 		}
 	}
 
-	return Builder.ToString();
+	if ( OrDependencies.Num() > 0 )
+	{
+		Builder.Unindent();
+	}
+
+	return Builder.ToText().ToString();
 }
 
 bool FFactCondition::CheckAndDependencies(const UFactSubsystem& Subsystem) const
