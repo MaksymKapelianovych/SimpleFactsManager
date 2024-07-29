@@ -37,8 +37,11 @@ void UFactSubsystem::ChangeFactValue(const FFactTag Tag, int32 NewValue, EFactVa
 	
 	if ( int32* CurrentValue = DefinedFacts.Find( Tag ) )
 	{
-		ChangeValue( *CurrentValue );
-		BroadcastValueDelegate( Tag, NewValue );
+		if (*CurrentValue != NewValue)
+		{
+			ChangeValue( *CurrentValue );
+			BroadcastValueDelegate( Tag, NewValue );
+		}
 	}
 	else
 	{
