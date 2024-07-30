@@ -21,36 +21,36 @@ void UFactSubsystem::ChangeFactValue(const FFactTag Tag, int32 NewValue, EFactVa
 		return;
 	}
 	
-	auto ChangeValue = [ChangeType, NewValue] (int32& Value)
+	auto GetUpdatedValue = [ChangeType, NewValue] (const int32 Value)
 	{
 		switch ( ChangeType ) {
 		case EFactValueChangeType::Set:
-			Value = NewValue;
-			break;
+			return NewValue;
 		case EFactValueChangeType::Add:
-			Value += NewValue;
-			break;
+			return Value + NewValue;
 		default:
 			checkf( false, TEXT( "Execution flow should not reach this line. There are some missing cases in switch statement" ) );
+			return 0;
 		}
 	};
 	
 	if ( int32* CurrentValue = DefinedFacts.Find( Tag ) )
 	{
-		if (*CurrentValue != NewValue)
+		int32 UpdatedValue = GetUpdatedValue( *CurrentValue );
+		if (UpdatedValue != NewValue)
 		{
-			ChangeValue( *CurrentValue );
-			BroadcastValueDelegate( Tag, NewValue );
+			*CurrentValue = UpdatedValue;
+			BroadcastValueDelegate( Tag, *CurrentValue );
 		}
 	}
 	else
 	{
 		int32& Value = DefinedFacts.Add( Tag );
-		ChangeValue( Value );
+		Value = GetUpdatedValue( Value );
 
 		// first broadcast event, that fact became defined
-		BroadcastDefinitionDelegate( Tag, NewValue );
-		BroadcastValueDelegate( Tag, NewValue );
+		BroadcastDefinitionDelegate( Tag, Value );
+		BroadcastValueDelegate( Tag, Value );
 	}
 }
 
