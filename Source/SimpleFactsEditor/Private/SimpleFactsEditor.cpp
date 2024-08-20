@@ -33,17 +33,18 @@ void FSimpleFactsEditorModule::ShutdownModule()
 TSharedRef<SDockTab> FSimpleFactsEditorModule::SpawnFactsEditorTab( const FSpawnTabArgs& SpawnTabArgs )
 {
 	return SAssignNew(FactsEditorTab, SDockTab)
-	.TabRole(ETabRole::NomadTab)
-	[
-		SummonFactsEditorUI().ToSharedRef()
-	];
+		.TabRole(ETabRole::NomadTab)
+		[
+			SummonFactsEditorUI().ToSharedRef()
+		];
 }
 
 TSharedPtr<SWidget> FSimpleFactsEditorModule::SummonFactsEditorUI()
 {
 	if( IsInGameThread() )
 	{
-		return SAssignNew(FactsEditor, SFactsEditor, nullptr);
+		// return SAssignNew(FactsEditor, SFactsEditor, nullptr);
+		return SNullWidget::NullWidget;
 	}
 	
 	return {};

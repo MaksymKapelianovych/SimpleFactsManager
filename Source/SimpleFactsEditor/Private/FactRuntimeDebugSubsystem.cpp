@@ -34,6 +34,12 @@ TSharedRef<SDockTab> UFactRuntimeDebugSubsystem::SpawnFactsEditorTab( const FSpa
 {
 	return SAssignNew(FactsEditorTab, SDockTab)
 		.TabRole(ETabRole::NomadTab)
+		.OnTabClosed_Lambda( [ this ]( TSharedRef< SDockTab > )
+		{
+			SearchToggles = FactsEditor->GetSearchToggleStates();
+			SaveConfig(  );
+			
+		} )
 		[
 			SummonFactsEditorUI().ToSharedRef()
 		];
@@ -43,7 +49,7 @@ TSharedPtr<SWidget> UFactRuntimeDebugSubsystem::SummonFactsEditorUI()
 {
 	if( IsInGameThread() )
 	{
-		return SAssignNew(FactsEditor, SFactsEditor, TWeakObjectPtr<UGameInstance>(GetGameInstance()));
+		return SAssignNew(FactsEditor, SFactsEditor, TWeakObjectPtr<UGameInstance>(GetGameInstance()), SearchToggles);
 	}
 	
 	return {};

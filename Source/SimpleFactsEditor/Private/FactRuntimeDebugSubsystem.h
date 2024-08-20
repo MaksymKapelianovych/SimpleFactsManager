@@ -8,10 +8,21 @@
 
 class SFactsEditor;
 
+USTRUCT()
+struct FSearchToggleState
+{
+	GENERATED_BODY()
+	
+	UPROPERTY()
+	bool bIsToggleChecked = true;
+	UPROPERTY()
+	FText SearchText;
+};
+
 /**
  * 
  */
-UCLASS()
+UCLASS(Config = EditorPerProjectUserSettings)
 class SIMPLEFACTSEDITOR_API UFactRuntimeDebugSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
@@ -25,4 +36,7 @@ private:
     
 	TWeakPtr<SDockTab> FactsEditorTab;
 	TSharedPtr<SFactsEditor> FactsEditor;
+
+	UPROPERTY(Config)
+	TArray< FSearchToggleState > SearchToggles;
 };
