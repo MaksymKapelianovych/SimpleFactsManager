@@ -4,6 +4,7 @@
 #include "SFactsEditorSearchToggle.h"
 
 #include "SlateOptMacros.h"
+#include "Styling/StarshipCoreStyle.h"
 
 #define LOCTEXT_NAMESPACE "FactsEditor"
 
@@ -23,10 +24,10 @@ void SFactsEditorSearchToggle::Construct( const FArguments& InArgs, const FText&
 	[
 		SNew( SBorder )
 		.Padding( 1.0f )
-		.BorderImage( FAppStyle::Get().GetBrush( "ContentBrowser.FilterBackground" ) )
+			.BorderImage( FAppStyle::Get().GetBrush( "FilterBar.FilterBackground" ) )
 		[
 			SAssignNew( ToggleButtonPtr, SCheckBox )
-			.Style( FAppStyle::Get(), "ContentBrowser.FilterButton" )
+			.Style( FAppStyle::Get(), "FilterBar.FilterButton" )
 			.ToolTipText( LOCTEXT( "SearchToggleTooltip", "Toggle this search" ) )
 			.IsChecked( this, &SFactsEditorSearchToggle::GetCheckedState )
 			.OnCheckStateChanged_Lambda( [ this ]( ECheckBoxState NewCheckBoxState )
@@ -54,7 +55,7 @@ void SFactsEditorSearchToggle::Construct( const FArguments& InArgs, const FText&
 				.AutoWidth()
 				[
 					SNew( SImage )
-					.Image( FAppStyle::Get().GetBrush( "ContentBrowser.FilterImage" ) )
+					.Image( FAppStyle::Get().GetBrush( "FilterBar.FilterImage" ) )
 					.ColorAndOpacity_Lambda( [ this ]()
 					{
 						return GetIsToggleChecked() ? CheckedColor : UncheckedColor;

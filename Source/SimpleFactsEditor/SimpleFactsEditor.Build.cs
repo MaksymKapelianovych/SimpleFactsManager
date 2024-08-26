@@ -24,7 +24,8 @@ public class SimpleFactsEditor : ModuleRules
                 "InputCore",
                 "WorkspaceMenuStructure",
                 "GameplayTags",
-                "UnrealEd"
+                "UnrealEd",
+                "EditorStyle"
             }
         );
     }

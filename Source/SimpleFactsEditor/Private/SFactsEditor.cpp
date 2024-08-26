@@ -8,7 +8,6 @@
 #include "SlateOptMacros.h"
 #include "Algo/AllOf.h"
 #include "Algo/AnyOf.h"
-#include "Kismet/GameplayStatics.h"
 #include "Widgets/Input/SNumericEntryBox.h"
 #include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Layout/SWrapBox.h"
@@ -19,7 +18,7 @@ BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 FFactTreeItem::~FFactTreeItem()
 {
-	if (GameInstance.Get())
+	if (GameInstance.IsValid() && GameInstance->GetWorld())
 	{
 		UFactSubsystem& FactSubsystem = UFactSubsystem::Get( GameInstance->GetWorld() );
 		FactSubsystem.GetOnFactValueChangedDelegate( Tag ).Remove( Handle );
@@ -99,7 +98,7 @@ void SFactsEditor::Construct( const FArguments& InArgs, TWeakObjectPtr< UGameIns
 			[
 				SNew( SButton )
 				.ToolTipText( LOCTEXT( "ClearSearchesButtonTooltip", "Clear all selected searches") )
-				.ButtonStyle( &FAppStyle::Get().GetWidgetStyle< FButtonStyle>( "Button" ) )
+				.ButtonStyle( &FAppStyle::Get(), "Button" )
 				.ForegroundColor( FSlateColor::UseForeground() )
 				.Visibility_Lambda( [ this ]()
 				{
@@ -130,7 +129,7 @@ void SFactsEditor::Construct( const FArguments& InArgs, TWeakObjectPtr< UGameIns
 			[
 				SNew( SButton )
 				.ToolTipText( LOCTEXT( "RemoveSearchesButtonTooltip", "Remove all searches from the facts editor") )
-				.ButtonStyle( &FAppStyle::Get().GetWidgetStyle< FButtonStyle>( "Button" ) )
+				.ButtonStyle( &FAppStyle::Get(), "Button" )
 				.ForegroundColor( FSlateColor::UseForeground() )
 				.OnClicked_Lambda( [ this ]()
 				{
@@ -158,7 +157,7 @@ void SFactsEditor::Construct( const FArguments& InArgs, TWeakObjectPtr< UGameIns
 		.FillHeight( 1.f )
 		[
 			SNew( SBorder )
-			.BorderImage( FAppStyle::GetBrush( "ToolPanel.GroupBorder" ) )
+			.BorderImage( FAppStyle::Get().GetBrush( "ToolPanel.GroupBorder" ) )
 			[
 				SAssignNew( FactsTreeView, SFactsTreeView )
 				.ItemHeight( 24.f )

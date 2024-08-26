@@ -4,6 +4,17 @@
 #include "WorkspaceMenuStructure.h"
 #include "WorkspaceMenuStructureModule.h"
 
+static FAutoConsoleCommandWithWorld GShowFactsEditor
+(
+	TEXT("FactsEditor"),
+	TEXT("Displays the Facts editor"),
+	FConsoleCommandWithWorldDelegate::CreateLambda( []( UWorld* World )
+	{
+		FGlobalTabmanager::Get()->TryInvokeTab( FTabId("FactsEditorAppNew") );
+	} )
+);
+
+
 #define LOCTEXT_NAMESPACE "FSimpleFactsEditorModule"
 void FSimpleFactsEditorModule::StartupModule()
 {
