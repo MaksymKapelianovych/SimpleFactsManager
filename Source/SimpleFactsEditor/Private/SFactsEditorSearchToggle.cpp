@@ -4,7 +4,6 @@
 #include "SFactsEditorSearchToggle.h"
 
 #include "SlateOptMacros.h"
-#include "Styling/StarshipCoreStyle.h"
 
 #define LOCTEXT_NAMESPACE "FactsEditor"
 
