@@ -30,6 +30,7 @@ public class SimpleFactsEditor : ModuleRules
                 "ContentBrowser",
                 "AssetDefinition",
                 "Projects",
+                "DetailCustomizations"
             }
         );
     }
