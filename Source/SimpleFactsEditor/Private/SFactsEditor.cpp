@@ -3,11 +3,16 @@
 
 #include "SFactsEditor.h"
 
+#include "ContentBrowserModule.h"
+#include "FactsPreset.h"
 #include "FactSubsystem.h"
+#include "IContentBrowserSingleton.h"
 #include "SFactsEditorSearchToggle.h"
 #include "SlateOptMacros.h"
 #include "Algo/AllOf.h"
 #include "Algo/AnyOf.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "Engine/AssetManager.h"
 #include "Widgets/Input/SNumericEntryBox.h"
 #include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Layout/SWrapBox.h"
@@ -41,12 +46,54 @@ void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Ty
 
 void SFactsEditor::Construct( const FArguments& InArgs, TWeakObjectPtr< UGameInstance > InGameInstance, TArray< FSearchToggleState > SearchToggleStates )
 {
-	GameInstance = InGameInstance;
+	// GameInstance = InGameInstance;
+	GameInstance = InArgs._GameInstance;
 	
 	ChildSlot
 	[
 		SNew(SVerticalBox)
 
+		// -------------------------------------------------------------------------------------------------------------
+		// Presets menu
+
+		+ SVerticalBox::Slot()
+		.Padding( 2.f )
+		.HAlign( HAlign_Right )
+		.AutoHeight()
+		[
+			SNew(SComboButton)
+			.ToolTipText( LOCTEXT( "PresetsButton_Toolpit", "Open presets menu" ) )
+			// .HAlign( HAlign_Right )
+			.ComboButtonStyle(&FAppStyle::Get().GetWidgetStyle<FComboButtonStyle>("ComboButton"))
+			.OnGetMenuContent( this, &SFactsEditor::HandleGeneratePresetsMenu )
+			.ForegroundColor( FStyleColors::Foreground )
+			.ButtonContent()
+			[
+				SNew(SHorizontalBox)
+
+				// -------------------------------------------------------------------------------------------------------------
+				// Preset icon
+				+ SHorizontalBox::Slot()
+				.Padding(0, 1, 4, 0)
+				.AutoWidth()
+				[
+					SNew(SImage)
+					.Image(FAppStyle::Get().GetBrush("AssetEditor.SaveAsset"))
+					.ColorAndOpacity(FSlateColor::UseForeground())
+				]
+
+				// -------------------------------------------------------------------------------------------------------------
+				// Preset text
+				+ SHorizontalBox::Slot()
+				.Padding(0, 1, 0, 0)
+				.AutoWidth()
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("PresetsButton", "Presets"))
+				]
+			]
+		]
+		
 		// -------------------------------------------------------------------------------------------------------------
 		// SearchBar
 		
@@ -195,6 +242,18 @@ TArray<FSearchToggleState> SFactsEditor::GetSearchToggleStates()
 	return SearchToggleStates;
 }
 
+void SFactsEditor::LoadFactsPreset( UFactsPreset* InPreset )
+{
+	for ( FFactTreeItemPtr& FactTreeItem : AllFactTreeItems )
+	{
+		if ( int32* PresetValue = InPreset->PresetValues.Find( FactTreeItem->Tag ) )
+		{
+			FactTreeItem->HandleNewValueCommited( *PresetValue, ETextCommit::Type::Default );
+			FactTreeItem->HandleValueChanged( *PresetValue ); // todo handle if load is in editor, but not PIE
+		}
+	}
+}
+
 TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeItemPtr InItem,
                                                                       const TSharedRef<STableViewBase>& TableViewBase )
 {
@@ -270,6 +329,87 @@ void SFactsEditor::OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray<FFactTre
 	{
 		Children.Append( FactTreeItem->Children );
 	}
+}
+
+TSharedRef<SWidget> SFactsEditor::HandleGeneratePresetsMenu() const
+{
+	FMenuBuilder MenuBuilder{true, nullptr};
+
+	IContentBrowserSingleton& ContentBrowser = FModuleManager::LoadModuleChecked<FContentBrowserModule>( "ContentBrowser" ).Get();
+
+	FUIAction PresetNameAction = FUIAction();
+	PresetNameAction.CanExecuteAction = FCanExecuteAction::CreateLambda( []() { return false; } );
+
+	MenuBuilder.AddMenuEntry(
+		LOCTEXT( "CurrentPreset_Text", "Current preset:"),
+		LOCTEXT( "CurrentPreset_Tooltip", "Current"),
+		FSlateIcon(),
+		PresetNameAction,
+		NAME_None,
+		EUserInterfaceActionType::None
+	);
+
+	MenuBuilder.AddSeparator(  );
+
+	MenuBuilder.AddMenuEntry(
+		LOCTEXT( "SavePreset_Text", "Save preset" ),
+		LOCTEXT( "SavePreset_Tooltip", "Save the current preset" ),
+		FSlateIcon(FAppStyle::Get().GetStyleSetName(), "AssetEditor.SaveAsset" ),
+		FUIAction(FExecuteAction::CreateLambda( [ this ]() { } ) )
+	);
+
+	FAssetPickerConfig AssetPickerConfig;
+	{
+		AssetPickerConfig.SelectionMode = ESelectionMode::Single;
+		AssetPickerConfig.InitialAssetViewType = EAssetViewType::List;
+		AssetPickerConfig.bFocusSearchBoxWhenOpened = true;
+		AssetPickerConfig.bAllowNullSelection = false;
+		AssetPickerConfig.bShowPathInColumnView = true;
+
+		AssetPickerConfig.AssetShowWarningText = LOCTEXT("NoPresets_Warning", "No Presets Found");
+		AssetPickerConfig.Filter.ClassPaths.Add(UFactsPreset::StaticClass()->GetClassPathName());
+		AssetPickerConfig.Filter.bRecursiveClasses = true;
+		AssetPickerConfig.OnAssetSelected =
+			FOnAssetSelected::CreateLambda( [ this ] (const FAssetData& InPresetData) {} );
+	}
+
+	MenuBuilder.BeginSection( NAME_None, LOCTEXT( "LoadPreset_MenuSection", "Load preset" ));
+	{
+		// if we are in editor and not playing - show this widget
+		// else show custom combo box
+		// TSharedRef<SWidget> PresetPicker = SNew(SBox)
+		// 			.MinDesiredWidth(400.f)
+		// 			.MinDesiredHeight(400.f)
+		// 			[
+		// 				ContentBrowser.CreateAssetPicker(AssetPickerConfig)
+		// 			];
+		
+		// TArray<UConsoleVariablesAsset*> Presets;
+		// FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
+		// IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+		// AssetRegistry.ScanSynchronous( { "/Game/Presets" }, TArray<FString>{} );
+		// AssetRegistry.SearchAllAssets( true );
+		
+		TArray<FAssetData> AssetData;
+		UAssetManager::Get().GetPrimaryAssetDataList( FPrimaryAssetType(UFactsPreset::StaticClass()->GetFName()), AssetData );
+
+		FTextBuilder Builder;
+		// AssetRegistry.GetAssetsByClass(UFactsPreset::StaticClass()->GetClassPathName(), AssetData);
+		for (int i = 0; i < AssetData.Num(); i++) {
+			// UStaticMesh* Object = Cast<UStaticMesh>(AssetData[i].GetAsset());
+			Builder.AppendLine(AssetData[i].GetAsset()->GetName());
+		}
+				
+		// TSharedRef<SWidget> PresetPicker = SNew( SComboBox< TSharedPtr < FAssetData > > );
+		TSharedRef<SWidget> PresetPicker = SNew( STextBlock )
+			.Text( Builder.ToText() );
+
+		MenuBuilder.AddWidget( PresetPicker, FText(), true, false );
+	}
+	MenuBuilder.EndSection();
+	
+	return MenuBuilder.MakeWidget(  );
 }
 
 void SFactsEditor::HandleSearchTextChanged( const FText& SearchText )
@@ -481,16 +621,16 @@ void SFactsEditor::UpdateFactTreeItems()
 	// 	World = GEditor->PlayWorld;
 	// }
 	
-	// if (World)
-	// {
-		FactSubsystem = &UFactSubsystem::Get( GameInstance->GetWorld() );
-	// }
+	if (GameInstance.Get())
+	{
+		FactSubsystem = &UFactSubsystem::Get( GameInstance.Get()->GetWorld() );
+	}
 
 	for (const FGameplayTag& FactTag : AllFactTags )
 	{
 		FFactTreeItemPtr NewItem = MakeShared< FFactTreeItem >(  );
 		NewItem->Tag = FFactTag::ConvertChecked( FactTag );
-		NewItem->GameInstance = GameInstance;
+		NewItem->GameInstance = GameInstance.Get();
 		if (FactSubsystem)
 		{
 			int32 Value;

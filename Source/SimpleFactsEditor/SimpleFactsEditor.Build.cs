@@ -4,7 +4,6 @@ public class SimpleFactsEditor : ModuleRules
 {
     public SimpleFactsEditor(ReadOnlyTargetRules Target) : base(Target)
     {
-        OptimizeCode = CodeOptimization.Never;
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicDependencyModuleNames.AddRange(
@@ -25,7 +24,12 @@ public class SimpleFactsEditor : ModuleRules
                 "WorkspaceMenuStructure",
                 "GameplayTags",
                 "UnrealEd",
-                "EditorStyle"
+                "EditorStyle", 
+                "AssetTools",
+                "ToolMenus",
+                "ContentBrowser",
+                "AssetDefinition",
+                "Projects",
             }
         );
     }

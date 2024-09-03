@@ -22,7 +22,7 @@ struct FSearchToggleState
 /**
  * 
  */
-UCLASS(Config = EditorPerProjectUserSettings)
+UCLASS(Config = EditorPerProjectUserSettings, NotBlueprintType)
 class SIMPLEFACTSEDITOR_API UFactRuntimeDebugSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()

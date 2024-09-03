@@ -4,6 +4,7 @@
 #include "FactRuntimeDebugSubsystem.h"
 
 #include "SFactsEditor.h"
+#include "SimpleFactsEditor.h"
 #include "WorkspaceMenuStructure.h"
 #include "WorkspaceMenuStructureModule.h"
 
@@ -11,23 +12,27 @@
 
 void UFactRuntimeDebugSubsystem::Initialize( FSubsystemCollectionBase& Collection )
 {
-	FGlobalTabmanager::Get()->RegisterNomadTabSpawner( FName(TEXT("FactsEditorAppNew")), FOnSpawnTab::CreateUObject(this, &UFactRuntimeDebugSubsystem::SpawnFactsEditorTab))
-		.SetDisplayName( LOCTEXT( "FactsEditorTabTitle", "Facts Editor New"))
-		.SetTooltipText( LOCTEXT( "FactsEditorTooltipText", "Open Facts Editor tab."))
-		.SetGroup(WorkspaceMenu::GetMenuStructure().GetToolsCategory());
+	// FGlobalTabmanager::Get()->RegisterNomadTabSpawner( FName(TEXT("FactsEditorAppNew")), FOnSpawnTab::CreateUObject(this, &UFactRuntimeDebugSubsystem::SpawnFactsEditorTab))
+	// 	.SetDisplayName( LOCTEXT( "FactsEditorTabTitle", "Facts Editor New"))
+	// 	.SetTooltipText( LOCTEXT( "FactsEditorTooltipText", "Open Facts Editor tab."))
+	// 	.SetGroup(WorkspaceMenu::GetMenuStructure().GetToolsCategory());
+
+	FSimpleFactsEditorModule::Get().HandleGameInstanceStarted( GetGameInstance() );
 }
 
 void UFactRuntimeDebugSubsystem::Deinitialize()
 {
-	if (FSlateApplication::IsInitialized())
-	{
-		FGlobalTabmanager::Get()->UnregisterNomadTabSpawner( FName(TEXT("FactsEditorAppNew")) );
+	FSimpleFactsEditorModule::Get().HandleGameInstanceEnded( );
 
-		if (FactsEditorTab.IsValid())
-		{
-			FactsEditorTab.Pin()->RequestCloseTab();
-		}
-	}
+	// if (FSlateApplication::IsInitialized())
+	// {
+	// 	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner( FName(TEXT("FactsEditorAppNew")) );
+	//
+	// 	if (FactsEditorTab.IsValid())
+	// 	{
+	// 		FactsEditorTab.Pin()->RequestCloseTab();
+	// 	}
+	// }
 }
 
 TSharedRef<SDockTab> UFactRuntimeDebugSubsystem::SpawnFactsEditorTab( const FSpawnTabArgs& SpawnTabArgs )

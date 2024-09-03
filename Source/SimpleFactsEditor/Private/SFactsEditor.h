@@ -7,6 +7,7 @@
 #include "FactTypes.h"
 #include "Widgets/SCompoundWidget.h"
 
+class UFactsPreset;
 class SFactsEditorSearchToggle;
 class SWrapBox;
 
@@ -38,16 +39,22 @@ class SIMPLEFACTSEDITOR_API SFactsEditor : public SCompoundWidget
 	
 public:
 	SLATE_BEGIN_ARGS( SFactsEditor ) {}
-		
+
+		SLATE_ATTRIBUTE( UGameInstance*, GameInstance )
 	SLATE_END_ARGS()
-	
+
+
 	virtual void Construct(const FArguments& InArgs, TWeakObjectPtr<UGameInstance> InGameInstance, TArray< FSearchToggleState > SearchToggleStates );
 	TArray< FSearchToggleState > GetSearchToggleStates();
+
+	void LoadFactsPreset( UFactsPreset* InPreset );
 
 private:
 	TSharedRef<ITableRow> OnGenerateWidgetForFactsTreeView( FFactTreeItemPtr String, const TSharedRef<STableViewBase>& TableViewBase );
 	void OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray< FFactTreeItemPtr >& Children );
 
+	TSharedRef<SWidget> HandleGeneratePresetsMenu() const;
+	
 	void HandleSearchTextChanged( const FText& SearchText );
 	void HandleSearchTextCommitted( const FText& SearchText, ETextCommit::Type Type );
 	void ExecuteSearch( const FText& SearchText );
@@ -74,5 +81,6 @@ private:
 	TArray< TSharedRef< SFactsEditorSearchToggle > > CurrentSearchToggles;
 	FText CurrentSearchText;
 
-	TWeakObjectPtr<UGameInstance> GameInstance;
+	// TWeakObjectPtr<UGameInstance> GameInstance;
+	TAttribute< UGameInstance* > GameInstance;
 };
