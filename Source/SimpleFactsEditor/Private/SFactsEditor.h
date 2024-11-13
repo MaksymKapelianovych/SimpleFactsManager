@@ -19,13 +19,14 @@ struct FFactTreeItem : public TSharedFromThis<FFactTreeItem>
 	FFactTag Tag;
 	TOptional< int32 > Value;
 
+	TSharedPtr< FGameplayTagNode > TagNode;
 	TArray< FFactTreeItemPtr > Children;
 
 	FDelegateHandle Handle;
-	TWeakObjectPtr<UGameInstance> GameInstance;
 
 	~FFactTreeItem();
 
+	void InitPIE();
 	void HandleValueChanged(int32 NewValue);
 	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type ) const;
 };
@@ -40,16 +41,18 @@ class SIMPLEFACTSEDITOR_API SFactsEditor : public SCompoundWidget
 public:
 	SLATE_BEGIN_ARGS( SFactsEditor ) {}
 
-		SLATE_ATTRIBUTE( UGameInstance*, GameInstance )
 	SLATE_END_ARGS()
 
 
-	virtual void Construct(const FArguments& InArgs, TWeakObjectPtr<UGameInstance> InGameInstance, TArray< FSearchToggleState > SearchToggleStates );
+	virtual void Construct(const FArguments& InArgs );
 	TArray< FSearchToggleState > GetSearchToggleStates();
 
 	void LoadFactsPreset( UFactsPreset* InPreset );
 
 private:
+	void HandleGameInstanceStarted();
+	void InitItem( FFactTreeItemRef Item );
+	
 	TSharedRef<ITableRow> OnGenerateWidgetForFactsTreeView( FFactTreeItemPtr String, const TSharedRef<STableViewBase>& TableViewBase );
 	void OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray< FFactTreeItemPtr >& Children );
 
@@ -67,7 +70,8 @@ private:
 	FReply HandleClearTogglesClicked();
 	FReply HandleSearchToggleClicked();	
 
-	void UpdateFactTreeItems();
+	void BuildFactTreeItems();
+	FFactTreeItemPtr BuildFactItem( TSharedPtr< FGameplayTagNode > ThisNode );
 	
 	FString OnItemToStringDebug( FFactTreeItemPtr FactTreeItem ) const;
 	
@@ -80,7 +84,4 @@ private:
 	TSharedPtr<SWrapBox> SearchesContainer;
 	TArray< TSharedRef< SFactsEditorSearchToggle > > CurrentSearchToggles;
 	FText CurrentSearchText;
-
-	// TWeakObjectPtr<UGameInstance> GameInstance;
-	TAttribute< UGameInstance* > GameInstance;
 };

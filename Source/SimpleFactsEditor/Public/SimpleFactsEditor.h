@@ -5,6 +5,7 @@
 
 class SFactsEditor;
 class UFactsPreset;
+class UFactSubsystem;
 
 class FSimpleFactsEditorModule : public IModuleInterface
 {
@@ -22,6 +23,11 @@ public:
 
     void HandleGameInstanceStarted( UGameInstance* GameInstance );
     void HandleGameInstanceEnded();
+    
+    DECLARE_DELEGATE(FGameInstanceStarted)
+    FGameInstanceStarted OnGameInstanceStarted;
+
+    UFactSubsystem* TryGetFactSubsystem() const;
 
 private:
     void HandlePIEStarted( const bool bIsSimulating );

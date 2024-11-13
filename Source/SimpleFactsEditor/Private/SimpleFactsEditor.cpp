@@ -1,6 +1,7 @@
 #include "SimpleFactsEditor.h"
 
 #include "FactsEditorStyle.h"
+#include "FactSubsystem.h"
 #include "SFactsEditor.h"
 #include "WorkspaceMenuStructure.h"
 #include "WorkspaceMenuStructureModule.h"
@@ -64,11 +65,23 @@ void FSimpleFactsEditorModule::LoadPresetIntoEditor( UFactsPreset* InPresetToLoa
 void FSimpleFactsEditorModule::HandleGameInstanceStarted( UGameInstance* GameInstance )
 {
 	WeakGameInstance = GameInstance;
+	(void)OnGameInstanceStarted.ExecuteIfBound();
 }
 
 void FSimpleFactsEditorModule::HandleGameInstanceEnded()
 {
 	WeakGameInstance = nullptr;
+}
+
+UFactSubsystem* FSimpleFactsEditorModule::TryGetFactSubsystem() const
+{
+	if ( WeakGameInstance.IsValid() )
+	{
+		UFactSubsystem& FactSubsystem = UFactSubsystem::Get( WeakGameInstance->GetWorld() );
+		return &FactSubsystem;
+	}
+
+	return nullptr;
 }
 
 void FSimpleFactsEditorModule::HandlePIEStarted( const bool bIsSimulating )
@@ -94,8 +107,7 @@ TSharedPtr<SWidget> FSimpleFactsEditorModule::SummonFactsEditorUI()
 {
 	if( IsInGameThread() )
 	{
-		return SAssignNew(FactsEditor, SFactsEditor, nullptr, TArray< FSearchToggleState >{})
-			.GameInstance_Lambda( [ this ](){ return WeakGameInstance.Get(); } );
+		return SAssignNew(FactsEditor, SFactsEditor);
 	}
 	
 	return {};

@@ -23,7 +23,7 @@ void SFactsEditorSearchToggle::Construct( const FArguments& InArgs, const FText&
 	[
 		SNew( SBorder )
 		.Padding( 1.0f )
-			.BorderImage( FAppStyle::Get().GetBrush( "FilterBar.FilterBackground" ) )
+		.BorderImage( FAppStyle::Get().GetBrush( "FilterBar.FilterBackground" ) )
 		[
 			SAssignNew( ToggleButtonPtr, SCheckBox )
 			.Style( FAppStyle::Get(), "FilterBar.FilterButton" )

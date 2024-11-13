@@ -8,6 +8,7 @@
 #include "FactSubsystem.h"
 #include "IContentBrowserSingleton.h"
 #include "SFactsEditorSearchToggle.h"
+#include "SimpleFactsEditor.h"
 #include "SlateOptMacros.h"
 #include "Algo/AllOf.h"
 #include "Algo/AnyOf.h"
@@ -23,10 +24,17 @@ BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 FFactTreeItem::~FFactTreeItem()
 {
-	if (GameInstance.IsValid() && GameInstance->GetWorld())
+	if ( UFactSubsystem* FactSubsystem = FSimpleFactsEditorModule::Get().TryGetFactSubsystem() )
 	{
-		UFactSubsystem& FactSubsystem = UFactSubsystem::Get( GameInstance->GetWorld() );
-		FactSubsystem.GetOnFactValueChangedDelegate( Tag ).Remove( Handle );
+		FactSubsystem->GetOnFactValueChangedDelegate( Tag ).Remove( Handle );
+	}
+}
+
+void FFactTreeItem::InitPIE()
+{
+	if ( UFactSubsystem* FactSubsystem = FSimpleFactsEditorModule::Get().TryGetFactSubsystem() )
+	{
+		Handle = FactSubsystem->GetOnFactValueChangedDelegate( Tag ).AddSP( AsShared(), &FFactTreeItem::HandleValueChanged );
 	}
 }
 
@@ -37,17 +45,15 @@ void FFactTreeItem::HandleValueChanged( int32 NewValue )
 
 void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type ) const
 {
-	if (GameInstance.Get())
+	if ( UFactSubsystem* FactSubsystem = FSimpleFactsEditorModule::Get().TryGetFactSubsystem() )
 	{
-		UFactSubsystem& FactSubsystem = UFactSubsystem::Get( GameInstance->GetWorld() );
-		FactSubsystem.ChangeFactValue( Tag, NewValue, EFactValueChangeType::Set );
+		FactSubsystem->ChangeFactValue( Tag, NewValue, EFactValueChangeType::Set );
 	}
 }
 
-void SFactsEditor::Construct( const FArguments& InArgs, TWeakObjectPtr< UGameInstance > InGameInstance, TArray< FSearchToggleState > SearchToggleStates )
+void SFactsEditor::Construct( const FArguments& InArgs )
 {
-	// GameInstance = InGameInstance;
-	GameInstance = InArgs._GameInstance;
+	FSimpleFactsEditorModule::Get().OnGameInstanceStarted.BindRaw( this, &SFactsEditor::HandleGameInstanceStarted );
 	
 	ChildSlot
 	[
@@ -207,8 +213,7 @@ void SFactsEditor::Construct( const FArguments& InArgs, TWeakObjectPtr< UGameIns
 			.BorderImage( FAppStyle::Get().GetBrush( "ToolPanel.GroupBorder" ) )
 			[
 				SAssignNew( FactsTreeView, SFactsTreeView )
-				.ItemHeight( 24.f )
-				.TreeItemsSource( &VisibleFactTreeItems )
+				.TreeItemsSource( &AllFactTreeItems )
 				.OnItemToString_Debug( this, &SFactsEditor::OnItemToStringDebug )
 				.OnGenerateRow( this, &SFactsEditor::OnGenerateWidgetForFactsTreeView )
 				.OnGetChildren( this, &SFactsEditor::OnGetChildren)
@@ -218,17 +223,17 @@ void SFactsEditor::Construct( const FArguments& InArgs, TWeakObjectPtr< UGameIns
 					
 					+ SHeaderRow::Column( "FactTag" )
 					.DefaultLabel( LOCTEXT( "FactTag", "Tag" ) )
-					.FillWidth( .5f )
 
 					+ SHeaderRow::Column( "FactValue" )
 					.DefaultLabel( LOCTEXT( "FactValue", "Value" ) )
+					.ManualWidth( 100.f )
 				)
 			]
 		]
 	];
 
-	CreateDefaultSearchToggles( SearchToggleStates );
-	UpdateFactTreeItems();
+	CreateDefaultSearchToggles( {} ); // todo: change
+	BuildFactTreeItems();
 }
 
 TArray<FSearchToggleState> SFactsEditor::GetSearchToggleStates()
@@ -254,6 +259,24 @@ void SFactsEditor::LoadFactsPreset( UFactsPreset* InPreset )
 	}
 }
 
+void SFactsEditor::HandleGameInstanceStarted()
+{
+	for ( FFactTreeItemPtr& FactTreeItem : AllFactTreeItems )
+	{
+		InitItem( FactTreeItem.ToSharedRef() );
+	}
+}
+
+void SFactsEditor::InitItem( FFactTreeItemRef Item )
+{
+	Item->InitPIE();
+
+	for ( FFactTreeItemPtr& ChildItem : Item->Children )
+	{
+		InitItem( ChildItem->AsShared() );
+	}
+}
+
 TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeItemPtr InItem,
                                                                       const TSharedRef<STableViewBase>& TableViewBase )
 {
@@ -266,10 +289,10 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 		void Construct( const FArguments& InArgs, const TSharedRef< SFactsTreeView > InOwnerTable, FFactTreeItemPtr InItem )
 		{
 			Item = InItem;
-			// FactsEditor = InFactsEditor;
-			SMultiColumnTableRow::Construct( FSuperRowType::FArguments(), InOwnerTable );
+			SMultiColumnTableRow::Construct( FSuperRowType::FArguments()
+				.Style( &FAppStyle::Get().GetWidgetStyle<FTableRowStyle>("TableView.AlternatingRow") ), InOwnerTable );
 			
-			SetBorderBackgroundColor( FSlateColor{FLinearColor::Green} );
+			// SetBorderBackgroundColor( FSlateColor{FLinearColor::Green} );
 		}
 		
 		virtual TSharedRef<SWidget> GenerateWidgetForColumn( const FName& InColumnName ) override
@@ -288,7 +311,7 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 					[
 						SNew( STextBlock )
 						.ColorAndOpacity( Item->Tag.IsValid() ? FSlateColor::UseForeground() : FSlateColor::UseSubduedForeground() )
-						.Text( FText::FromString( Item->Tag.ToString() ) )
+						.Text( FText::FromString( Item->TagNode->GetSimpleTagName().ToString() ) )
 					];
 			}
 			else if ( InColumnName == "FactValue" )
@@ -392,7 +415,8 @@ TSharedRef<SWidget> SFactsEditor::HandleGeneratePresetsMenu() const
 		// AssetRegistry.SearchAllAssets( true );
 		
 		TArray<FAssetData> AssetData;
-		UAssetManager::Get().GetPrimaryAssetDataList( FPrimaryAssetType(UFactsPreset::StaticClass()->GetFName()), AssetData );
+		// UAssetManager::Get().GetPrimaryAssetDataList( FPrimaryAssetType(UFactsPreset::StaticClass()->GetFName()), AssetData );
+		IAssetRegistry::Get()->GetAssetsByClass( UFactsPreset::StaticClass()->GetClassPathName(), AssetData );
 
 		FTextBuilder Builder;
 		// AssetRegistry.GetAssetsByClass(UFactsPreset::StaticClass()->GetClassPathName(), AssetData);
@@ -485,7 +509,7 @@ void SFactsEditor::ExecuteSearch( const FText& SearchText )
 				continue;
 			}
 
-			const bool bAllMatched = Algo::AnyOf( ActiveTogglesText, [Tag = FactTreeItem->Tag.GetTagName().ToString()]( const FString& SearchText )
+			const bool bAllMatched = Algo::AnyOf( ActiveTogglesText, [Tag = FactTreeItem->TagNode->GetCompleteTagName().ToString()]( const FString& SearchText )
 			{
 				TArray<FString> Tokens;
 				SearchText.ParseIntoArray( Tokens, TEXT("&") );
@@ -526,7 +550,7 @@ void SFactsEditor::ExecuteSearch( const FText& SearchText )
 			continue;
 		}
 
-		bool bAllMatched = Algo::AllOf( Tokens, [Tag = FactTreeItem->Tag.GetTagName().ToString()]( const FString& Token )
+		bool bAllMatched = Algo::AllOf( Tokens, [Tag = FactTreeItem->TagNode->GetCompleteTagName().ToString()]( const FString& Token )
 		{
 			return Tag.Contains( Token );
 		} );
@@ -605,47 +629,31 @@ FReply SFactsEditor::HandleSearchToggleClicked()
 	return FReply::Handled();
 }
 
-void SFactsEditor::UpdateFactTreeItems()
+void SFactsEditor::BuildFactTreeItems()
 {
 	AllFactTreeItems.Reset();
 
 	UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
-	FGameplayTagContainer AllFactTags = Manager.RequestGameplayTagChildren( FFactTag::GetRootTag() );
-
+	TSharedPtr< FGameplayTagNode > Node = Manager.FindTagNode( FFactTag::GetRootTag() );
+	AllFactTreeItems.Add( BuildFactItem( Node ) );
 	
-	UFactSubsystem* FactSubsystem = nullptr;
-	// UWorld* World = nullptr;
-
-	// if(GEditor && GEditor->PlayWorld)
-	// {
-	// 	World = GEditor->PlayWorld;
-	// }
-	
-	if (GameInstance.Get())
-	{
-		FactSubsystem = &UFactSubsystem::Get( GameInstance.Get()->GetWorld() );
-	}
-
-	for (const FGameplayTag& FactTag : AllFactTags )
-	{
-		FFactTreeItemPtr NewItem = MakeShared< FFactTreeItem >(  );
-		NewItem->Tag = FFactTag::ConvertChecked( FactTag );
-		NewItem->GameInstance = GameInstance.Get();
-		if (FactSubsystem)
-		{
-			int32 Value;
-			if (FactSubsystem->TryGetFactValue( NewItem->Tag, Value ))
-			{
-				NewItem->Value = Value;
-			}
-			
-			NewItem->Handle = FactSubsystem->GetOnFactValueChangedDelegate( NewItem->Tag ).AddSP( NewItem.ToSharedRef(), &FFactTreeItem::HandleValueChanged );
-		}
-		
-		AllFactTreeItems.Add( NewItem );
-	}
-
 	ExecuteSearch( FText::GetEmpty() );
+}
+
+FFactTreeItemPtr SFactsEditor::BuildFactItem( TSharedPtr< FGameplayTagNode > ThisNode )
+{
+	FFactTreeItemPtr NewItem = MakeShared< FFactTreeItem >(  );
+	NewItem->Tag = FFactTag::ConvertChecked( ThisNode->GetCompleteTag() );
+	NewItem->TagNode = ThisNode;
+	NewItem->Children.Reserve( ThisNode->GetChildTagNodes().Num() );
+	FactsTreeView->SetItemExpansion( NewItem, true );
+	
+	for ( TSharedPtr< FGameplayTagNode > Node : ThisNode->GetChildTagNodes() )
+	{
+		NewItem->Children.Add( BuildFactItem( Node ) );
+	}
+
+	return NewItem;
 }
 
 FString SFactsEditor::OnItemToStringDebug( FFactTreeItemPtr FactTreeItem ) const

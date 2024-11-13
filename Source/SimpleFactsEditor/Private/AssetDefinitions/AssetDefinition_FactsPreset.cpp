@@ -74,3 +74,5 @@ TSoftClassPtr<UObject> UAssetDefinition_FactsPreset::GetAssetClass() const
 {
 	return UFactsPreset::StaticClass();
 }
+
+#undef LOCTEXT_NAMESPACE

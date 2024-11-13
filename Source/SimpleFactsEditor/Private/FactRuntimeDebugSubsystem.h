@@ -29,14 +29,4 @@ class SIMPLEFACTSEDITOR_API UFactRuntimeDebugSubsystem : public UGameInstanceSub
 
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
-
-private:
-	TSharedRef<SDockTab> SpawnFactsEditorTab( const FSpawnTabArgs& SpawnTabArgs );
-	TSharedPtr<SWidget> SummonFactsEditorUI();
-    
-	TWeakPtr<SDockTab> FactsEditorTab;
-	TSharedPtr<SFactsEditor> FactsEditor;
-
-	UPROPERTY(Config)
-	TArray< FSearchToggleState > SearchToggles;
 };
