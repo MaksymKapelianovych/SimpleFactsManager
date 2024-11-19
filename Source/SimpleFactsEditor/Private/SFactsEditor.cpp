@@ -20,7 +20,7 @@
 
 #define LOCTEXT_NAMESPACE "FactsEditor"
 
-BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
+TArray< FFactTag > SFactsEditor::CollapsedStates;
 
 FFactTreeItem::~FFactTreeItem()
 {
@@ -51,10 +51,12 @@ void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Ty
 	}
 }
 
+BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
+
 void SFactsEditor::Construct( const FArguments& InArgs )
 {
-	FSimpleFactsEditorModule::Get().OnGameInstanceStarted.BindRaw( this, &SFactsEditor::HandleGameInstanceStarted );
-	
+	BuildFactTreeItems();
+
 	ChildSlot
 	[
 		SNew(SVerticalBox)
@@ -69,7 +71,6 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 		[
 			SNew(SComboButton)
 			.ToolTipText( LOCTEXT( "PresetsButton_Toolpit", "Open presets menu" ) )
-			// .HAlign( HAlign_Right )
 			.ComboButtonStyle(&FAppStyle::Get().GetWidgetStyle<FComboButtonStyle>("ComboButton"))
 			.OnGetMenuContent( this, &SFactsEditor::HandleGeneratePresetsMenu )
 			.ForegroundColor( FStyleColors::Foreground )
@@ -188,8 +189,7 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 				{
 					SearchesContainer->ClearChildren();
 					CurrentSearchToggles.Empty();
-					// HandleSearchTextChanged( FText::GetEmpty() );
-					ExecuteSearch( CurrentSearchText );
+					FilterItems();
 
 					return FReply::Handled();
 				} )
@@ -213,10 +213,13 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 			.BorderImage( FAppStyle::Get().GetBrush( "ToolPanel.GroupBorder" ) )
 			[
 				SAssignNew( FactsTreeView, SFactsTreeView )
-				.TreeItemsSource( &AllFactTreeItems )
+				.TreeItemsSource( &FilteredRootItem->Children )
 				.OnItemToString_Debug( this, &SFactsEditor::OnItemToStringDebug )
 				.OnGenerateRow( this, &SFactsEditor::OnGenerateWidgetForFactsTreeView )
 				.OnGetChildren( this, &SFactsEditor::OnGetChildren)
+				.OnExpansionChanged( this, &SFactsEditor::HandleItemExpansionChanged )
+				.OnGeneratePinnedRow( this, &SFactsEditor::HandleGeneratePinnedTreeRow )
+				.ShouldStackHierarchyHeaders( true )
 				.HeaderRow
 				(
 					SNew( SHeaderRow )
@@ -231,9 +234,11 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 			]
 		]
 	];
+	FSimpleFactsEditorModule::Get().OnGameInstanceStarted.BindRaw( this, &SFactsEditor::HandleGameInstanceStarted );
+
 
 	CreateDefaultSearchToggles( {} ); // todo: change
-	BuildFactTreeItems();
+	RestoreExpansionState();
 }
 
 TArray<FSearchToggleState> SFactsEditor::GetSearchToggleStates()
@@ -249,22 +254,20 @@ TArray<FSearchToggleState> SFactsEditor::GetSearchToggleStates()
 
 void SFactsEditor::LoadFactsPreset( UFactsPreset* InPreset )
 {
-	for ( FFactTreeItemPtr& FactTreeItem : AllFactTreeItems )
-	{
-		if ( int32* PresetValue = InPreset->PresetValues.Find( FactTreeItem->Tag ) )
-		{
-			FactTreeItem->HandleNewValueCommited( *PresetValue, ETextCommit::Type::Default );
-			FactTreeItem->HandleValueChanged( *PresetValue ); // todo handle if load is in editor, but not PIE
-		}
-	}
+	// todo: temporary commented out, fix
+	// for ( FFactTreeItemPtr& FactTreeItem : AllFactTreeItems )
+	// {
+	// 	if ( int32* PresetValue = InPreset->PresetValues.Find( FactTreeItem->Tag ) )
+	// 	{
+	// 		FactTreeItem->HandleNewValueCommited( *PresetValue, ETextCommit::Type::Default );
+	// 		FactTreeItem->HandleValueChanged( *PresetValue ); // todo handle if load is in editor, but not PIE
+	// 	}
+	// }
 }
 
 void SFactsEditor::HandleGameInstanceStarted()
 {
-	for ( FFactTreeItemPtr& FactTreeItem : AllFactTreeItems )
-	{
-		InitItem( FactTreeItem.ToSharedRef() );
-	}
+	InitItem( RootItem.ToSharedRef() );
 }
 
 void SFactsEditor::InitItem( FFactTreeItemRef Item )
@@ -346,11 +349,43 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 	}
 }
 
+TSharedRef< ITableRow > SFactsEditor::HandleGeneratePinnedTreeRow( FFactTreeItemPtr FactTreeItem,
+	const TSharedRef<STableViewBase>& TableViewBase )
+{
+	return SNew( STableRow< TSharedPtr< FString > >, TableViewBase )
+		[
+			SNew( SBox )
+			.HeightOverride( 22.f )
+			.VAlign( VAlign_Center )
+			[
+				SNew( STextBlock )
+				.Text( FText::FromString( FactTreeItem->TagNode->GetSimpleTagName().ToString() ) )
+			]
+		];
+}
+
 void SFactsEditor::OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray<FFactTreeItemPtr>& Children )
 {
 	if ( FactTreeItem.IsValid() )
 	{
 		Children.Append( FactTreeItem->Children );
+	}
+}
+
+void SFactsEditor::HandleItemExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded )
+{
+	if ( bIsRestoringExpansion || RootItem != FilteredRootItem )
+	{
+		return;
+	}
+	
+	if ( bInExpanded )
+	{
+		CollapsedStates.Remove( FactTreeItem->Tag );
+	}
+	else
+	{
+		CollapsedStates.Add( FactTreeItem->Tag );
 	}
 }
 
@@ -439,7 +474,7 @@ TSharedRef<SWidget> SFactsEditor::HandleGeneratePresetsMenu() const
 void SFactsEditor::HandleSearchTextChanged( const FText& SearchText )
 {
 	CurrentSearchText = SearchText;
-	ExecuteSearch( SearchText );
+	FilterItems();
 }
 
 void SFactsEditor::HandleSearchTextCommitted( const FText& SearchText, ETextCommit::Type Type )
@@ -484,10 +519,11 @@ void SFactsEditor::HandleSearchTextCommitted( const FText& SearchText, ETextComm
 	RefreshSearchToggles();
 }
 
-void SFactsEditor::ExecuteSearch( const FText& SearchText )
+void SFactsEditor::FilterItems()
 {
-	VisibleFactTreeItems.Empty(  );
-	TArray<FFactTreeItemPtr> TempVisibleFacts;
+	FilteredRootItem.Reset();
+	FFactTreeItemPtr TempVisibleItems;
+	bool bExpandItems = false;
 
 	// first pass - find all items, that should be visible by search toggles
 	TArray< FString > ActiveTogglesText;
@@ -502,72 +538,152 @@ void SFactsEditor::ExecuteSearch( const FText& SearchText )
 		
 	if ( ActiveTogglesText.Num() > 0 )
 	{
-		for ( FFactTreeItemPtr FactTreeItem : AllFactTreeItems )
-		{
-			if (ensure( FactTreeItem.IsValid() ) == false)
-			{
-				continue;
-			}
-
-			const bool bAllMatched = Algo::AnyOf( ActiveTogglesText, [Tag = FactTreeItem->TagNode->GetCompleteTagName().ToString()]( const FString& SearchText )
-			{
-				TArray<FString> Tokens;
-				SearchText.ParseIntoArray( Tokens, TEXT("&") );
-
-				
-				return Algo::AllOf( Tokens, [Tag]( const FString& Token )
-				{
-					return Tag.Contains( Token );
-				} );
-			} );
-		
-			if ( bAllMatched )
-			{
-				TempVisibleFacts.Add( FactTreeItem );
-			}
-		}
+		TempVisibleItems = MakeShared< FFactTreeItem >();
+		FilterFactItemChildren( ActiveTogglesText, EFactFilterMode::SearchToggles, RootItem->Children, TempVisibleItems->Children);
+		bExpandItems = true;
 	}
 	else
 	{
-		TempVisibleFacts = AllFactTreeItems;
+		TempVisibleItems = RootItem;
 	}
 
 	// second pass - find all visible item among previously filtered by search text
-	if ( SearchText.IsEmpty() )
+	if ( CurrentSearchText.IsEmpty() )
 	{
-		VisibleFactTreeItems = TempVisibleFacts;
+		FilteredRootItem = TempVisibleItems;
+		if ( bExpandItems )
+		{
+			ExpandAll( FilteredRootItem->Children );
+		}
+		else
+		{
+			RestoreExpansionState();
+		}
+		FactsTreeView->SetTreeItemsSource( &FilteredRootItem->Children );
 		FactsTreeView->RequestTreeRefresh();
 		return;
 	}
 
-	TArray<FString> Tokens;
-	SearchText.ToString().ParseIntoArray( Tokens, TEXT("&") );
-	
-	for ( FFactTreeItemPtr FactTreeItem : TempVisibleFacts )
-	{
-		if (ensure( FactTreeItem.IsValid() ) == false)
-		{
-			continue;
-		}
+	TArray< FString > Tokens;
+	CurrentSearchText.ToString().ParseIntoArray( Tokens, TEXT( "&" ) );
+	FilteredRootItem = MakeShared< FFactTreeItem >();
+	FilterFactItemChildren( Tokens, EFactFilterMode::SearchBox, TempVisibleItems->Children, FilteredRootItem->Children );
+	FactsTreeView->SetTreeItemsSource( &FilteredRootItem->Children );
+	ExpandAll( FilteredRootItem->Children );
 
-		bool bAllMatched = Algo::AllOf( Tokens, [Tag = FactTreeItem->TagNode->GetCompleteTagName().ToString()]( const FString& Token )
+	FactsTreeView->RequestTreeRefresh();
+}
+
+void SFactsEditor::FilterFactItemChildren( TArray<FString> FilterStrings, EFactFilterMode FilterMode,
+	TArray<FFactTreeItemPtr>& SourceArray, TArray<FFactTreeItemPtr>& OutDestArray )
+{
+	for (const FFactTreeItemPtr& SourceItem : SourceArray)
+	{
+		// lambda for filtering by search toggles
+		auto MatchSearchToggles = [Tag = SourceItem->Tag.ToString()]( const FString& SearchText )
+		{
+			TArray<FString> Tokens;
+			SearchText.ParseIntoArray( Tokens, TEXT("&") );
+
+			
+			return Algo::AllOf( Tokens, [Tag]( const FString& Token )
+			{
+				return Tag.Contains( Token );
+			} );
+		};
+		// lambda for filtering by search box
+		auto MatchSearchBox = [Tag = SourceItem->Tag.ToString()]( const FString& Token )
 		{
 			return Tag.Contains( Token );
-		} );
-		
-		if ( bAllMatched )
+		};
+
+		bool bMatched = false;
+
+		switch ( FilterMode ) {
+		case SearchBox:
+			bMatched = Algo::AllOf( FilterStrings, MatchSearchBox );
+			break;
+		case SearchToggles:
+			bMatched = Algo::AnyOf( FilterStrings, MatchSearchToggles );
+			break;
+		}
+
+		if ( bMatched )
 		{
-			VisibleFactTreeItems.Add( FactTreeItem );
+			FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+			*NewItem = *SourceItem;
+		}
+		else
+		{
+			TArray< FFactTreeItemPtr > FilteredChildren;
+			FilterFactItemChildren( FilterStrings, FilterMode, SourceItem->Children, FilteredChildren );
+			if ( FilteredChildren.Num() )
+			{
+				FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+				*NewItem = *SourceItem;
+				NewItem->Children = FilteredChildren;
+			}
+		}
+	}
+}
+
+void SFactsEditor::ExpandAll(TArray<FFactTreeItemPtr> FactItems)
+{
+	for ( const FFactTreeItemPtr& Item : FactItems )
+	{
+		FactsTreeView->SetItemExpansion( Item, true );
+		ExpandAll( Item->Children );
+	}
+}
+
+void SFactsEditor::RestoreExpansionState()
+{
+	TGuardValue< bool > RestoringExpansion( bIsRestoringExpansion, true );
+	
+	// Default state is expanded.
+	ExpandAll( FilteredRootItem->Children );
+
+	for ( const FFactTag& FactTag : CollapsedStates )
+	{
+		// for ( const FFactTreeItemPtr& Item : FilteredFactTreeItems )
+		// {
+			TArray< FFactTreeItemPtr > Path;
+			if ( FindItemByTagRecursive( FilteredRootItem, FactTag, Path))
+			{
+				FactsTreeView->SetItemExpansion(Path.Last(), false);
+			}
+		// }
+	}
+}
+
+bool SFactsEditor::FindItemByTagRecursive( const FFactTreeItemPtr& Item, const FFactTag Tag,
+	TArray<FFactTreeItemPtr>& OutPath )
+{
+	OutPath.Push( Item );
+
+	if ( Item->Tag == Tag )
+	{
+		return true;
+	}
+
+	for ( const FFactTreeItemPtr& ChildItem : Item->Children )
+	{
+		if ( FindItemByTagRecursive( ChildItem, Tag, OutPath ) )
+		{
+			return true;
 		}
 	}
 
-	FactsTreeView->RequestTreeRefresh();
+	OutPath.Pop();
+
+	return false;
 }
 
 FReply SFactsEditor::HandleRemoveSearchToggle()
 {
 	CleanupSearchesMarkedForDelete();
 	RefreshSearchToggles();
+	FilterItems();
 
 	return FReply::Handled();
 }
@@ -618,39 +734,43 @@ FReply SFactsEditor::HandleClearTogglesClicked()
 		SearchToggle->SetIsButtonChecked( false );
 	}
 
-	ExecuteSearch( CurrentSearchText );
+	FilterItems();
 
 	return FReply::Handled();
 }
 
 FReply SFactsEditor::HandleSearchToggleClicked()
 {
-	ExecuteSearch( CurrentSearchText );
+	FilterItems();
 	return FReply::Handled();
 }
 
 void SFactsEditor::BuildFactTreeItems()
 {
-	AllFactTreeItems.Reset();
+	RootItem = MakeShared< FFactTreeItem >();
 
 	UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
 	TSharedPtr< FGameplayTagNode > Node = Manager.FindTagNode( FFactTag::GetRootTag() );
-	AllFactTreeItems.Add( BuildFactItem( Node ) );
-	
-	ExecuteSearch( FText::GetEmpty() );
+	BuildFactItem( RootItem, Node );
+	FilteredRootItem = RootItem;
+	// Default state is expanded
+	// ExpandAll( FilteredRootItem->Children );
+
+	// CurrentSearchText = FText::GetEmpty();
+	// FilterItems();
 }
 
-FFactTreeItemPtr SFactsEditor::BuildFactItem( TSharedPtr< FGameplayTagNode > ThisNode )
+FFactTreeItemPtr SFactsEditor::BuildFactItem( FFactTreeItemPtr ParentNode, TSharedPtr< FGameplayTagNode > ThisNode )
 {
 	FFactTreeItemPtr NewItem = MakeShared< FFactTreeItem >(  );
 	NewItem->Tag = FFactTag::ConvertChecked( ThisNode->GetCompleteTag() );
 	NewItem->TagNode = ThisNode;
 	NewItem->Children.Reserve( ThisNode->GetChildTagNodes().Num() );
-	FactsTreeView->SetItemExpansion( NewItem, true );
+	ParentNode->Children.Add( NewItem );
 	
 	for ( TSharedPtr< FGameplayTagNode > Node : ThisNode->GetChildTagNodes() )
 	{
-		NewItem->Children.Add( BuildFactItem( Node ) );
+		BuildFactItem( NewItem, Node );
 	}
 
 	return NewItem;
