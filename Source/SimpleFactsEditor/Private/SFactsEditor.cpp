@@ -307,6 +307,7 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 					.AutoWidth()
 					[
 						SNew( SExpanderArrow, SharedThis( this ) )
+						.ShouldDrawWires( true )
 					]
 					+SHorizontalBox::Slot()
 					.FillWidth( 1.f )
