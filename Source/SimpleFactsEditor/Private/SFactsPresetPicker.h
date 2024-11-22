@@ -18,14 +18,16 @@ public:
 
 
 	/** Constructs this widget with InArgs */
-	void Construct( const FArguments& InArgs );
+	void Construct( const FArguments& InArgs, const TArray< FAssetData >& PresetsData );
 
 private:
-	TSharedRef<SWidget> HandleGeneratePresetWidget( TSharedPtr<FAssetData> AssetData );
+	TSharedRef< ITableRow > HandleGeneratePresetWidget( TSharedPtr< FAssetData > AssetData, const TSharedRef< STableViewBase >& OwnerTable );
 	void HandleSelectionChanged( TSharedPtr<FAssetData> AssetData, ESelectInfo::Type Arg );
 
 	
 private:
-	TSharedPtr<SComboBox<TSharedPtr<FAssetData>>> PresetPicker;
+	TSharedPtr< SListView< TSharedPtr< FAssetData > > > PresetPicker;
 	TArray< TSharedPtr< FAssetData > > PresetAssets;
+	
+	TSharedPtr<SSearchBox> SearchBox;
 };

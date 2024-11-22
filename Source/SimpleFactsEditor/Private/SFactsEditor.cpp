@@ -6,8 +6,8 @@
 #include "ContentBrowserModule.h"
 #include "FactsPreset.h"
 #include "FactSubsystem.h"
-#include "IContentBrowserSingleton.h"
 #include "SFactsEditorSearchToggle.h"
+#include "SFactsPresetPicker.h"
 #include "SimpleFactsEditor.h"
 #include "SlateOptMacros.h"
 #include "Algo/AllOf.h"
@@ -393,8 +393,6 @@ TSharedRef<SWidget> SFactsEditor::HandleGeneratePresetsMenu() const
 {
 	FMenuBuilder MenuBuilder{true, nullptr};
 
-	IContentBrowserSingleton& ContentBrowser = FModuleManager::LoadModuleChecked<FContentBrowserModule>( "ContentBrowser" ).Get();
-
 	FUIAction PresetNameAction = FUIAction();
 	PresetNameAction.CanExecuteAction = FCanExecuteAction::CreateLambda( []() { return false; } );
 
@@ -416,53 +414,19 @@ TSharedRef<SWidget> SFactsEditor::HandleGeneratePresetsMenu() const
 		FUIAction(FExecuteAction::CreateLambda( [ this ]() { } ) )
 	);
 
-	FAssetPickerConfig AssetPickerConfig;
-	{
-		AssetPickerConfig.SelectionMode = ESelectionMode::Single;
-		AssetPickerConfig.InitialAssetViewType = EAssetViewType::List;
-		AssetPickerConfig.bFocusSearchBoxWhenOpened = true;
-		AssetPickerConfig.bAllowNullSelection = false;
-		AssetPickerConfig.bShowPathInColumnView = true;
-
-		AssetPickerConfig.AssetShowWarningText = LOCTEXT("NoPresets_Warning", "No Presets Found");
-		AssetPickerConfig.Filter.ClassPaths.Add(UFactsPreset::StaticClass()->GetClassPathName());
-		AssetPickerConfig.Filter.bRecursiveClasses = true;
-		AssetPickerConfig.OnAssetSelected =
-			FOnAssetSelected::CreateLambda( [ this ] (const FAssetData& InPresetData) {} );
-	}
-
 	MenuBuilder.BeginSection( NAME_None, LOCTEXT( "LoadPreset_MenuSection", "Load preset" ));
 	{
-		// if we are in editor and not playing - show this widget
-		// else show custom combo box
-		// TSharedRef<SWidget> PresetPicker = SNew(SBox)
-		// 			.MinDesiredWidth(400.f)
-		// 			.MinDesiredHeight(400.f)
-		// 			[
-		// 				ContentBrowser.CreateAssetPicker(AssetPickerConfig)
-		// 			];
-		
-		// TArray<UConsoleVariablesAsset*> Presets;
-		// FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-
-		// IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
-		// AssetRegistry.ScanSynchronous( { "/Game/Presets" }, TArray<FString>{} );
-		// AssetRegistry.SearchAllAssets( true );
-		
 		TArray<FAssetData> AssetData;
 		// UAssetManager::Get().GetPrimaryAssetDataList( FPrimaryAssetType(UFactsPreset::StaticClass()->GetFName()), AssetData );
 		IAssetRegistry::Get()->GetAssetsByClass( UFactsPreset::StaticClass()->GetClassPathName(), AssetData );
 
-		FTextBuilder Builder;
-		// AssetRegistry.GetAssetsByClass(UFactsPreset::StaticClass()->GetClassPathName(), AssetData);
-		for (int i = 0; i < AssetData.Num(); i++) {
-			// UStaticMesh* Object = Cast<UStaticMesh>(AssetData[i].GetAsset());
-			Builder.AppendLine(AssetData[i].GetAsset()->GetName());
-		}
-				
-		// TSharedRef<SWidget> PresetPicker = SNew( SComboBox< TSharedPtr < FAssetData > > );
-		TSharedRef<SWidget> PresetPicker = SNew( STextBlock )
-			.Text( Builder.ToText() );
+
+		TSharedRef< SWidget > PresetPicker = SNew( SBox )
+			.WidthOverride( 300.f )
+			.HeightOverride( 300.f )
+			[
+				SNew( SFactsPresetPicker, AssetData )
+			];
 
 		MenuBuilder.AddWidget( PresetPicker, FText(), true, false );
 	}
