@@ -69,7 +69,7 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 		.HAlign( HAlign_Right )
 		.AutoHeight()
 		[
-			SNew(SComboButton)
+			SAssignNew( ComboButton, SComboButton )
 			.ToolTipText( LOCTEXT( "PresetsButton_Toolpit", "Open presets menu" ) )
 			.ComboButtonStyle(&FAppStyle::Get().GetWidgetStyle<FComboButtonStyle>("ComboButton"))
 			.OnGetMenuContent( this, &SFactsEditor::HandleGeneratePresetsMenu )
@@ -293,9 +293,7 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 		{
 			Item = InItem;
 			SMultiColumnTableRow::Construct( FSuperRowType::FArguments()
-				.Style( &FAppStyle::Get().GetWidgetStyle<FTableRowStyle>("TableView.AlternatingRow") ), InOwnerTable );
-			
-			// SetBorderBackgroundColor( FSlateColor{FLinearColor::Green} );
+				.Style( &FAppStyle::Get().GetWidgetStyle<FTableRowStyle>( "ContentBrowser.AssetListView.ColumnListTableRow" ) ), InOwnerTable );
 		}
 		
 		virtual TSharedRef<SWidget> GenerateWidgetForColumn( const FName& InColumnName ) override
@@ -421,15 +419,18 @@ TSharedRef<SWidget> SFactsEditor::HandleGeneratePresetsMenu() const
 		// UAssetManager::Get().GetPrimaryAssetDataList( FPrimaryAssetType(UFactsPreset::StaticClass()->GetFName()), AssetData );
 		IAssetRegistry::Get()->GetAssetsByClass( UFactsPreset::StaticClass()->GetClassPathName(), AssetData );
 
-
-		TSharedRef< SWidget > PresetPicker = SNew( SBox )
+		TSharedPtr< SFactsPresetPicker > PresetPicker;
+		TSharedRef< SWidget > MenuWidget = SNew( SBox )
 			.WidthOverride( 300.f )
 			.HeightOverride( 300.f )
+			.Padding( 2.f )
 			[
-				SNew( SFactsPresetPicker, AssetData )
+				SAssignNew( PresetPicker, SFactsPresetPicker, AssetData )
 			];
 
-		MenuBuilder.AddWidget( PresetPicker, FText(), true, false );
+		ComboButton->SetMenuContentWidgetToFocus( PresetPicker->GetWidgetToFocusOnOpen() );
+
+		MenuBuilder.AddWidget( MenuWidget, FText(), true, false );
 	}
 	MenuBuilder.EndSection();
 	

@@ -93,6 +93,8 @@ private:
 	TSharedPtr<SFactsTreeView> FactsTreeView;
 	FFactTreeItemPtr RootItem;
 	FFactTreeItemPtr FilteredRootItem;
+	
+	TSharedPtr<SComboButton> ComboButton;
 
 	TSharedPtr<SHorizontalBox> SearchesHBox;
 	TSharedPtr<SWrapBox> SearchesContainer;

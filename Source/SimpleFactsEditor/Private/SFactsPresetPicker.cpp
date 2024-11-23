@@ -11,10 +11,10 @@ BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAssetData >& PresetsData  )
 {
-	PresetAssets.Reserve( PresetsData.Num() );
+	AllPresetAssets.Reserve( PresetsData.Num() );
 	for ( const FAssetData& AssetData : PresetsData )
 	{
-		PresetAssets.Add( MakeShared< FAssetData >( AssetData ) );
+		AllPresetAssets.Add( MakeShared< FAssetData >( AssetData ) );
 	}
 	
 	ChildSlot
@@ -27,17 +27,27 @@ void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAss
 		.Padding( 4.f, 2.f )
 		.AutoHeight()
 		[
-			SNew ( SSearchBox )
+			SAssignNew ( SearchBox, SSearchBox )
+			.OnTextChanged( this, &SFactsPresetPicker::HandleSearchTextChanged )
 		]
 
 		+ SVerticalBox::Slot()
+		.Padding( 4.f )
 		[
 			SAssignNew( PresetPicker, SListView< TSharedPtr< FAssetData > > )
-			.ListItemsSource( &PresetAssets )
+			.ListItemsSource( &FilteredPresetAssets )
 			.OnGenerateRow( this, &SFactsPresetPicker::HandleGeneratePresetWidget )
 			.OnSelectionChanged( this, &SFactsPresetPicker::HandleSelectionChanged )
+			.IsFocusable( true )
 		]
 	];
+
+	HandleSearchTextChanged( FText::GetEmpty() );
+}
+
+TSharedPtr<SWidget> SFactsPresetPicker::GetWidgetToFocusOnOpen()
+{
+	return SearchBox;
 }
 
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
@@ -51,22 +61,27 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 	}
 
 	return SNew( STableRow< TSharedPtr< FAssetData > >, OwnerTable )
-		.Style( &FAppStyle::Get().GetWidgetStyle<FTableRowStyle>("TableView.AlternatingRow") )
+		.Style( &FAppStyle::Get().GetWidgetStyle<FTableRowStyle>( "ContentBrowser.AssetListView.ColumnListTableRow" ) )
 		[
 			SNew( SHorizontalBox )
 
 			+ SHorizontalBox::Slot()
 			.AutoWidth()
+			.Padding( 2.f, 0.f, 0.f, 0.f )
 			[
 				SNew( SOverlay )
 
 				+ SOverlay::Slot()
-				.VAlign( VAlign_Bottom )
-				.HAlign( HAlign_Right )
+				.VAlign( VAlign_Top )
+				.HAlign( HAlign_Center )
 				[
-					SNew( SImage )
-					.Image( FFactsEditorStyleStyle::Get().GetBrush( "ClassThumbnail.FactsPreset" ) )
-					.DesiredSizeOverride( FVector2d{ 36.f } )
+					SNew( SBorder )
+					.BorderImage( FAppStyle::GetBrush( "AssetThumbnail.AssetBackground" ) )
+					[
+						SNew( SImage )
+						.Image( FFactsEditorStyleStyle::Get().GetBrush( "ClassThumbnail.FactsPreset" ) )
+						.DesiredSizeOverride( FVector2d{ 36.f } )
+					]
 				]
 				
 				+ SOverlay::Slot()
@@ -84,9 +99,12 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 			+ SHorizontalBox::Slot()
 			.FillWidth( 1.f )
 			.VAlign( VAlign_Center )
+			.Padding( 2.f, 0.f, 0.f, 0.f )
 			[
 				SNew( STextBlock )
 				.Text( FText::FromName( AssetData->AssetName ) )
+				.HighlightText_Lambda([ this ]() { return SearchBox.IsValid() ? SearchBox->GetText() : FText::GetEmpty(); } )
+				.ColorAndOpacity( FSlateColor::UseForeground() )
 			]
 		];
 }
@@ -94,4 +112,27 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 void SFactsPresetPicker::HandleSelectionChanged( TSharedPtr<FAssetData> AssetData, ESelectInfo::Type Arg )
 {
 	
+}
+
+void SFactsPresetPicker::HandleSearchTextChanged(const FText& Text)
+{
+	ON_SCOPE_EXIT{ PresetPicker->RequestListRefresh(); };
+
+	FilteredPresetAssets.Empty();
+	if ( Text.IsEmpty() )
+	{
+		FilteredPresetAssets = AllPresetAssets;
+		return;
+	}
+
+	
+	const FString& FilterString = Text.ToString();
+
+	for ( const TSharedPtr< FAssetData >& AssetData : AllPresetAssets )
+	{
+		if ( AssetData->AssetName.ToString().Contains( FilterString ) )
+		{
+			FilteredPresetAssets.Add( AssetData );
+		}
+	}
 }
