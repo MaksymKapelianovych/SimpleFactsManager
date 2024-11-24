@@ -51,8 +51,14 @@ void FFactTreeItem::HandleValueChanged( int32 NewValue )
 	Value = NewValue;
 }
 
-void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type ) const
+void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type )
 {
+	if ( Type == ETextCommit::Default || Type == ETextCommit::OnCleared )
+	{
+		return;
+	}
+	
+	Value = NewValue;
 	if ( UFactSubsystem* FactSubsystem = FSimpleFactsEditorModule::Get().TryGetFactSubsystem() )
 	{
 		FactSubsystem->ChangeFactValue( Tag, NewValue, EFactValueChangeType::Set );

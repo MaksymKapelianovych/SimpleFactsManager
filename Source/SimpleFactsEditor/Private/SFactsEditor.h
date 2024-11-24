@@ -28,7 +28,7 @@ struct FFactTreeItem : public TSharedFromThis<FFactTreeItem>
 
 	void InitPIE();
 	void HandleValueChanged(int32 NewValue);
-	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type ) const;
+	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type );
 };
 
 enum EFactFilterMode
