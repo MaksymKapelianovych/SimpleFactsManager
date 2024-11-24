@@ -96,8 +96,8 @@ void FSimpleFactsEditorModule::HandlePIEEnded( const bool bIsSimulating )
 
 TSharedRef<SDockTab> FSimpleFactsEditorModule::SpawnFactsEditorTab( const FSpawnTabArgs& SpawnTabArgs )
 {
-	return SAssignNew(FactsEditorTab, SDockTab)
-		.TabRole(ETabRole::NomadTab)
+	return SAssignNew( FactsEditorTab, SDockTab )
+		.TabRole( ETabRole::NomadTab )
 		[
 			SummonFactsEditorUI().ToSharedRef()
 		];
@@ -107,7 +107,8 @@ TSharedPtr<SWidget> FSimpleFactsEditorModule::SummonFactsEditorUI()
 {
 	if( IsInGameThread() )
 	{
-		return SAssignNew(FactsEditor, SFactsEditor);
+		return SAssignNew( FactsEditor, SFactsEditor )
+			.bIsGameStarted( WeakGameInstance.IsValid() );
 	}
 	
 	return {};

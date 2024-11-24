@@ -3,6 +3,7 @@
 
 #include "SFactsPresetPicker.h"
 #include "FactsEditorStyle.h"
+#include "FactsPreset.h"
 #include "SlateOptMacros.h"
 #include "Widgets/Input/SSearchBox.h"
 
@@ -11,6 +12,8 @@ BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAssetData >& PresetsData  )
 {
+	OnPresetSelected = InArgs._OnPresetSelected;
+	
 	AllPresetAssets.Reserve( PresetsData.Num() );
 	for ( const FAssetData& AssetData : PresetsData )
 	{
@@ -29,12 +32,15 @@ void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAss
 		[
 			SAssignNew ( SearchBox, SSearchBox )
 			.OnTextChanged( this, &SFactsPresetPicker::HandleSearchTextChanged )
+			.OnTextCommitted( this, &SFactsPresetPicker::HandleSearchTextCommitted )
+			.OnKeyDownHandler( this, &SFactsPresetPicker::HandleKeyDownFromSearchBox )
 		]
 
 		+ SVerticalBox::Slot()
 		.Padding( 4.f )
 		[
 			SAssignNew( PresetPicker, SListView< TSharedPtr< FAssetData > > )
+			.SelectionMode( ESelectionMode::Type::Single )
 			.ListItemsSource( &FilteredPresetAssets )
 			.OnGenerateRow( this, &SFactsPresetPicker::HandleGeneratePresetWidget )
 			.OnSelectionChanged( this, &SFactsPresetPicker::HandleSelectionChanged )
@@ -103,18 +109,26 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 			[
 				SNew( STextBlock )
 				.Text( FText::FromName( AssetData->AssetName ) )
-				.HighlightText_Lambda([ this ]() { return SearchBox.IsValid() ? SearchBox->GetText() : FText::GetEmpty(); } )
+				.HighlightText( SearchBox.Get(), &SSearchBox::GetText )
 				.ColorAndOpacity( FSlateColor::UseForeground() )
 			]
 		];
 }
 
-void SFactsPresetPicker::HandleSelectionChanged( TSharedPtr<FAssetData> AssetData, ESelectInfo::Type Arg )
+void SFactsPresetPicker::HandleSelectionChanged( TSharedPtr<FAssetData> AssetData, ESelectInfo::Type Type )
 {
-	
+	if ( Type == ESelectInfo::Type::Direct || Type == ESelectInfo::Type::OnNavigation )
+	{
+		return;
+	}
+
+	if ( OnPresetSelected.IsBound() )
+	{
+		OnPresetSelected.Execute( Cast< UFactsPreset >( AssetData->GetAsset() ) );
+	}
 }
 
-void SFactsPresetPicker::HandleSearchTextChanged(const FText& Text)
+void SFactsPresetPicker::HandleSearchTextChanged( const FText& Text )
 {
 	ON_SCOPE_EXIT{ PresetPicker->RequestListRefresh(); };
 
@@ -134,5 +148,85 @@ void SFactsPresetPicker::HandleSearchTextChanged(const FText& Text)
 		{
 			FilteredPresetAssets.Add( AssetData );
 		}
+	}
+}
+
+void SFactsPresetPicker::HandleSearchTextCommitted( const FText& Text, ETextCommit::Type Type )
+{
+	HandleSearchTextChanged( Text );
+
+	if ( Type == ETextCommit::Type::OnEnter )
+	{
+		TArray< TSharedPtr< FAssetData > > SelectionSet = PresetPicker->GetSelectedItems();
+		if ( SelectionSet.Num() == 0 )
+		{
+			AdjustActiveSelection( 1 );
+			SelectionSet = PresetPicker->GetSelectedItems();
+		}
+		
+		if ( OnPresetSelected.IsBound() )
+		{
+			OnPresetSelected.Execute( Cast< UFactsPreset >( SelectionSet[ 0 ]->GetAsset() ) );
+		}
+	}
+}
+
+FReply SFactsPresetPicker::HandleKeyDownFromSearchBox( const FGeometry& Geometry, const FKeyEvent& KeyEvent )
+{
+	int32 SelectionDelta = 0;
+
+	if ( KeyEvent.GetKey() == EKeys::Up )
+	{
+		SelectionDelta = -1;
+	}
+	else if ( KeyEvent.GetKey() == EKeys::Down )
+	{
+		SelectionDelta = +1;
+	}
+
+	if ( SelectionDelta != 0 )
+	{
+		AdjustActiveSelection( SelectionDelta );
+		
+		return FReply::Handled();
+	}
+
+	return FReply::Unhandled();
+}
+
+void SFactsPresetPicker::AdjustActiveSelection(int32 SelectionDelta)
+{
+	TArray< TSharedPtr< FAssetData > > SelectionSet = PresetPicker->GetSelectedItems();
+	int32 SelectedSuggestion = INDEX_NONE;
+
+	if ( SelectionSet.Num() > 0 )
+	{
+		if ( FilteredPresetAssets.Find( SelectionSet[ 0 ], /*out*/ SelectedSuggestion ) == false )
+		{
+			// Should never happen
+			ensureMsgf( false, TEXT( "SFactsPresetPicker has a selected item that wasn't in the filtered list" ) );
+			return;
+		}
+	}
+	else
+	{
+		SelectedSuggestion = 0;
+		SelectionDelta = 0;
+	}
+
+	if ( FilteredPresetAssets.Num() > 0 )
+	{
+		// Move up or down one, wrapping around
+		SelectedSuggestion = ( SelectedSuggestion + SelectionDelta + FilteredPresetAssets.Num() ) % FilteredPresetAssets.Num();
+
+		// Pick the new asset
+		const TSharedPtr< FAssetData >& NewSelection = FilteredPresetAssets[ SelectedSuggestion ];
+
+		PresetPicker->RequestScrollIntoView( NewSelection );
+		PresetPicker->SetSelection( NewSelection );
+	}
+	else
+	{
+		PresetPicker->ClearSelection();
 	}
 }

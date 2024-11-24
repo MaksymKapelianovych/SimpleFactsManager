@@ -46,7 +46,7 @@ class SIMPLEFACTSEDITOR_API SFactsEditor : public SCompoundWidget
 	
 public:
 	SLATE_BEGIN_ARGS( SFactsEditor ) {}
-
+		SLATE_ARGUMENT( bool, bIsGameStarted )
 	SLATE_END_ARGS()
 
 
@@ -54,6 +54,7 @@ public:
 	TArray< FSearchToggleState > GetSearchToggleStates();
 
 	void LoadFactsPreset( UFactsPreset* InPreset );
+	void LoadFactsPresetRecursive( UFactsPreset* InPreset, const FFactTreeItemPtr& FactItem ) const;
 
 private:
 	void HandleGameInstanceStarted();
@@ -64,7 +65,7 @@ private:
 	void OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray< FFactTreeItemPtr >& Children );
 	void HandleItemExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded );
 
-	TSharedRef<SWidget> HandleGeneratePresetsMenu() const;
+	TSharedRef<SWidget> HandleGeneratePresetsMenu();
 	
 	void HandleSearchTextChanged( const FText& SearchText );
 	void HandleSearchTextCommitted( const FText& SearchText, ETextCommit::Type Type );
@@ -100,6 +101,8 @@ private:
 	TSharedPtr<SWrapBox> SearchesContainer;
 	TArray< TSharedRef< SFactsEditorSearchToggle > > CurrentSearchToggles;
 	FText CurrentSearchText;
+
+	TObjectPtr< UFactsPreset > LoadedPreset;
 
 	// Save expansion state for tag item. The expansion state does not persist between editor sessions. 
 	static TArray< FFactTag > CollapsedStates;

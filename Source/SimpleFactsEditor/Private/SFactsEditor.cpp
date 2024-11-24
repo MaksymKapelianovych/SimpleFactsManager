@@ -32,9 +32,17 @@ FFactTreeItem::~FFactTreeItem()
 
 void FFactTreeItem::InitPIE()
 {
+	Value.Reset();
+	
 	if ( UFactSubsystem* FactSubsystem = FSimpleFactsEditorModule::Get().TryGetFactSubsystem() )
 	{
 		Handle = FactSubsystem->GetOnFactValueChangedDelegate( Tag ).AddSP( AsShared(), &FFactTreeItem::HandleValueChanged );
+		
+		int32 FactValue;
+		if ( FactSubsystem->TryGetFactValue( Tag, FactValue ) )
+		{
+			Value = FactValue;
+		}
 	}
 }
 
@@ -234,8 +242,12 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 			]
 		]
 	];
+	
 	FSimpleFactsEditorModule::Get().OnGameInstanceStarted.BindRaw( this, &SFactsEditor::HandleGameInstanceStarted );
-
+	if ( InArgs._bIsGameStarted )
+	{
+		HandleGameInstanceStarted();
+	}
 
 	CreateDefaultSearchToggles( {} ); // todo: change
 	RestoreExpansionState();
@@ -254,15 +266,22 @@ TArray<FSearchToggleState> SFactsEditor::GetSearchToggleStates()
 
 void SFactsEditor::LoadFactsPreset( UFactsPreset* InPreset )
 {
-	// todo: temporary commented out, fix
-	// for ( FFactTreeItemPtr& FactTreeItem : AllFactTreeItems )
-	// {
-	// 	if ( int32* PresetValue = InPreset->PresetValues.Find( FactTreeItem->Tag ) )
-	// 	{
-	// 		FactTreeItem->HandleNewValueCommited( *PresetValue, ETextCommit::Type::Default );
-	// 		FactTreeItem->HandleValueChanged( *PresetValue ); // todo handle if load is in editor, but not PIE
-	// 	}
-	// }
+	LoadedPreset = InPreset;
+	LoadFactsPresetRecursive( InPreset, RootItem );
+}
+
+void SFactsEditor::LoadFactsPresetRecursive( UFactsPreset* InPreset, const FFactTreeItemPtr& FactItem ) const
+{
+	if ( int32* PresetValue = InPreset->PresetValues.Find( FactItem->Tag ) )
+	{
+		FactItem->HandleNewValueCommited( *PresetValue, ETextCommit::Type::Default );
+		FactItem->HandleValueChanged( *PresetValue );
+	}
+
+	for ( const FFactTreeItemPtr& ChildItem : FactItem->Children )
+	{
+		LoadFactsPresetRecursive( InPreset, ChildItem );
+	}
 }
 
 void SFactsEditor::HandleGameInstanceStarted()
@@ -388,7 +407,7 @@ void SFactsEditor::HandleItemExpansionChanged( FFactTreeItemPtr FactTreeItem, bo
 	}
 }
 
-TSharedRef<SWidget> SFactsEditor::HandleGeneratePresetsMenu() const
+TSharedRef<SWidget> SFactsEditor::HandleGeneratePresetsMenu()
 {
 	FMenuBuilder MenuBuilder{true, nullptr};
 
@@ -426,6 +445,12 @@ TSharedRef<SWidget> SFactsEditor::HandleGeneratePresetsMenu() const
 			.Padding( 2.f )
 			[
 				SAssignNew( PresetPicker, SFactsPresetPicker, AssetData )
+				.OnPresetSelected_Lambda( [ this ]( UFactsPreset* Preset )
+				{
+					LoadFactsPreset( Preset );
+					check( ComboButton );
+					ComboButton->SetIsOpen( false );
+				})
 			];
 
 		ComboButton->SetMenuContentWidgetToFocus( PresetPicker->GetWidgetToFocusOnOpen() );

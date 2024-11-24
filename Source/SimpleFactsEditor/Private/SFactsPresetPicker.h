@@ -5,15 +5,19 @@
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
 
+class UFactsPreset;
+
 /**
  * 
  */
 class SIMPLEFACTSEDITOR_API SFactsPresetPicker : public SCompoundWidget
 {
 public:
+	DECLARE_DELEGATE_OneParam( FOnSelectionChanged, UFactsPreset* )
+	
 	SLATE_BEGIN_ARGS( SFactsPresetPicker ) {}
 
-		// SLATE_EVENT( FOnSelectionChanged, PresetSelected )
+		SLATE_EVENT( FOnSelectionChanged, OnPresetSelected )
 	SLATE_END_ARGS()
 
 
@@ -26,10 +30,14 @@ public:
 private:
 	// List view
 	TSharedRef< ITableRow > HandleGeneratePresetWidget( TSharedPtr< FAssetData > AssetData, const TSharedRef< STableViewBase >& OwnerTable );
-	void HandleSelectionChanged( TSharedPtr<FAssetData> AssetData, ESelectInfo::Type Arg );
+	void HandleSelectionChanged( TSharedPtr<FAssetData> AssetData, ESelectInfo::Type Type );
 
 	// Search
 	void HandleSearchTextChanged( const FText& Text );
+	void HandleSearchTextCommitted( const FText& Text, ETextCommit::Type Type );
+	FReply HandleKeyDownFromSearchBox( const FGeometry& Geometry, const FKeyEvent& KeyEvent );
+
+	void AdjustActiveSelection( int32 SelectionDelta );
 	
 private:
 	TSharedPtr< SListView< TSharedPtr< FAssetData > > > PresetPicker;
@@ -37,4 +45,6 @@ private:
 	TArray< TSharedPtr< FAssetData > > FilteredPresetAssets;
 	
 	TSharedPtr<SSearchBox> SearchBox;
+
+	FOnSelectionChanged OnPresetSelected;
 };
