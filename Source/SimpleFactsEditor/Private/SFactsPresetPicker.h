@@ -28,9 +28,13 @@ public:
 	TSharedPtr<SWidget> GetWidgetToFocusOnOpen();
 
 private:
+	void CachePresetsData(const TArray<FAssetData>& PresetsData);
+	
 	// List view
 	TSharedRef< ITableRow > HandleGeneratePresetWidget( TSharedPtr< FAssetData > AssetData, const TSharedRef< STableViewBase >& OwnerTable );
 	void HandleSelectionChanged( TSharedPtr<FAssetData> AssetData, ESelectInfo::Type Type );
+	void HandleSortListView( EColumnSortPriority::Type SortPriority, const FName& ColumnName, EColumnSortMode::Type SortMode );
+	EColumnSortMode::Type GetColumnSortMode() const;
 
 	// Search
 	void HandleSearchTextChanged( const FText& Text );
@@ -47,4 +51,6 @@ private:
 	TSharedPtr<SSearchBox> SearchBox;
 
 	FOnSelectionChanged OnPresetSelected;
+
+	EColumnSortMode::Type CurrentSortMode = EColumnSortMode::Ascending;
 };
