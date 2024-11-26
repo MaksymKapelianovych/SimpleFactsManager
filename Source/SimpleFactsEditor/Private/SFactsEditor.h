@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FactRuntimeDebugSubsystem.h"
+#include "FactsDebuggerSettingsLocal.h"
 #include "FactTypes.h"
 #include "Widgets/SCompoundWidget.h"
 
@@ -31,7 +31,7 @@ struct FFactTreeItem : public TSharedFromThis<FFactTreeItem>
 	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type );
 };
 
-enum EFactFilterMode
+enum class EFactFilterMode
 {
 	SearchBox, // acts as AND
 	SearchToggles // acts as OR
@@ -51,7 +51,6 @@ public:
 
 
 	virtual void Construct(const FArguments& InArgs );
-	TArray< FSearchToggleState > GetSearchToggleStates();
 
 	void LoadFactsPreset( UFactsPreset* InPreset );
 	void LoadFactsPresetRecursive( UFactsPreset* InPreset, const FFactTreeItemPtr& FactItem ) const;
@@ -66,21 +65,30 @@ private:
 	void HandleItemExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded );
 
 	TSharedRef<SWidget> HandleGeneratePresetsMenu();
-	
+	TSharedRef< SWidget > HandleGenerateOptionsMenu();
+
+	// Searching and filtering
 	void HandleSearchTextChanged( const FText& SearchText );
 	void HandleSearchTextCommitted( const FText& SearchText, ETextCommit::Type Type );
 	void FilterItems();
 	void FilterFactItemChildren( TArray< FString > FilterStrings, EFactFilterMode FilterMode, TArray< FFactTreeItemPtr>& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray );
 
-	void ExpandAll( TArray< FFactTreeItemPtr > FactItems );
+	// Options menu
+	void HandleExpandAllClicked();
+	void HandleCollapseAllClicked();
+
+	// Items expansion
+	void SetItemsExpansion( TArray< FFactTreeItemPtr > FactItems, bool bShouldExpand );
 	void RestoreExpansionState();
 
 	static bool FindItemByTagRecursive( const FFactTreeItemPtr& Item, const FFactTag Tag, TArray< FFactTreeItemPtr >& OutPath );
-	
+
+	// Search toggles
 	FReply HandleRemoveSearchToggle();
 	void CleanupSearchesMarkedForDelete();
 	void RefreshSearchToggles();
 	void CreateDefaultSearchToggles( TArray< FSearchToggleState > SearchToggleStates );
+	TArray< FSearchToggleState > GetSearchToggleStates();
 
 	FReply HandleClearTogglesClicked();
 	FReply HandleSearchToggleClicked();	
@@ -89,13 +97,24 @@ private:
 	FFactTreeItemPtr BuildFactItem( FFactTreeItemPtr ParentNode, TSharedPtr< FGameplayTagNode > ThisNode );
 	
 	FString OnItemToStringDebug( FFactTreeItemPtr FactTreeItem ) const;
+
+	// Settings
+	void LoadSettings();
+	void SaveSettings();
+	
+	void HandleSettingsChanged();
+	void HandleShowRootTagClicked();
+	void HandleShowFullNamesClicked();
+	void HandleShouldPinParentRowsClicked();
 	
 private:
 	TSharedPtr<SFactsTreeView> FactsTreeView;
 	FFactTreeItemPtr RootItem;
 	FFactTreeItemPtr FilteredRootItem;
 	
-	TSharedPtr<SComboButton> ComboButton;
+	TSharedPtr< SSearchBox > SearchBox; 
+	TSharedPtr< SComboButton > ComboButton;
+	TSharedPtr< SComboButton > OptionsButton;
 
 	TSharedPtr<SHorizontalBox> SearchesHBox;
 	TSharedPtr<SWrapBox> SearchesContainer;

@@ -6,23 +6,10 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "FactRuntimeDebugSubsystem.generated.h"
 
-class SFactsEditor;
-
-USTRUCT()
-struct FSearchToggleState
-{
-	GENERATED_BODY()
-	
-	UPROPERTY()
-	bool bIsToggleChecked = true;
-	UPROPERTY()
-	FText SearchText;
-};
-
 /**
  * 
  */
-UCLASS(Config = EditorPerProjectUserSettings, NotBlueprintType)
+UCLASS( NotBlueprintType )
 class SIMPLEFACTSEDITOR_API UFactRuntimeDebugSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()

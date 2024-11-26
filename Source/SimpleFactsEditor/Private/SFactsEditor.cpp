@@ -4,6 +4,7 @@
 #include "SFactsEditor.h"
 
 #include "ContentBrowserModule.h"
+#include "FactsDebuggerSettingsLocal.h"
 #include "FactsPreset.h"
 #include "FactSubsystem.h"
 #include "SFactsEditorSearchToggle.h"
@@ -122,12 +123,40 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 		.Padding( 2.f )
 		.AutoHeight()
 		[
-			SNew(SSearchBox)
-			.HintText(LOCTEXT("FactsEditor_SearchHintText", "Search..."))
-			.ToolTipText(LOCTEXT("FactsEditor_TooltipText", "Search facts by tag. You can search by string ('Quest2.Trigger') or by several strings, separated by spaces ('Quest Trigger')\n"
-												   "Press Enter to save this text as a toggle"))
-			.OnTextChanged(this, &SFactsEditor::HandleSearchTextChanged)
-			.OnTextCommitted( this, &SFactsEditor::HandleSearchTextCommitted )
+			SNew( SHorizontalBox )
+
+			+ SHorizontalBox::Slot()
+			.HAlign(HAlign_Fill)
+			.VAlign(VAlign_Center)
+			.Padding(0.f, 1.f, 0.f, 1.f)
+			[
+				SAssignNew( SearchBox, SSearchBox )
+				.HintText(LOCTEXT("FactsEditor_SearchHintText", "Search..."))
+				.ToolTipText(LOCTEXT("FactsEditor_TooltipText", "Search facts by tag. You can search by string ('Quest2.Trigger') or by several strings, separated by spaces ('Quest Trigger')\n"
+													   "Press Enter to save this text as a toggle"))
+				.OnTextChanged(this, &SFactsEditor::HandleSearchTextChanged)
+				.OnTextCommitted( this, &SFactsEditor::HandleSearchTextCommitted )
+			]
+
+			+ SHorizontalBox::Slot()
+			.HAlign(HAlign_Right)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			.Padding(4.f, 1.f, 0.f, 1.f)
+			[
+				SAssignNew( OptionsButton, SComboButton )
+				.ContentPadding(4.f)
+				.ToolTipText(LOCTEXT("ShowOptions_Tooltip", "Show options to affect the visibility of items in the Facts Debugger"))
+				.ComboButtonStyle( FAppStyle::Get(), "SimpleComboButtonWithIcon" ) // Use the tool bar item style for this button
+				.OnGetMenuContent( this, &SFactsEditor::HandleGenerateOptionsMenu)
+				.HasDownArrow(false)
+				.ButtonContent()
+				[
+					SNew(SImage)
+					.ColorAndOpacity(FSlateColor::UseForeground())
+					.Image( FAppStyle::Get().GetBrush("Icons.Settings") )
+				]
+			]
 		]
 		
 		// -------------------------------------------------------------------------------------------------------------
@@ -233,7 +262,7 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 				.OnGetChildren( this, &SFactsEditor::OnGetChildren)
 				.OnExpansionChanged( this, &SFactsEditor::HandleItemExpansionChanged )
 				.OnGeneratePinnedRow( this, &SFactsEditor::HandleGeneratePinnedTreeRow )
-				.ShouldStackHierarchyHeaders( true )
+				.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldPinParentRows; } )
 				.HeaderRow
 				(
 					SNew( SHeaderRow )
@@ -255,7 +284,7 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 		HandleGameInstanceStarted();
 	}
 
-	CreateDefaultSearchToggles( {} ); // todo: change
+	LoadSettings();
 	RestoreExpansionState();
 }
 
@@ -314,9 +343,12 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 		SLATE_BEGIN_ARGS( SFactTreeItem ) {}
 		SLATE_END_ARGS()
 
-		void Construct( const FArguments& InArgs, const TSharedRef< SFactsTreeView > InOwnerTable, FFactTreeItemPtr InItem )
+		void Construct( const FArguments& InArgs, const TSharedRef< STableViewBase > InOwnerTable, SFactsEditor* InFactsEditor, FFactTreeItemPtr InItem )
 		{
 			Item = InItem;
+			bShowFullName = GetDefault< UFactsDebuggerSettingsLocal >()->bShowFullFactNames;
+			FactsEditor = InFactsEditor;
+			
 			SMultiColumnTableRow::Construct( FSuperRowType::FArguments()
 				.Style( &FAppStyle::Get().GetWidgetStyle<FTableRowStyle>( "ContentBrowser.AssetListView.ColumnListTableRow" ) ), InOwnerTable );
 		}
@@ -338,7 +370,8 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 					[
 						SNew( STextBlock )
 						.ColorAndOpacity( Item->Tag.IsValid() ? FSlateColor::UseForeground() : FSlateColor::UseSubduedForeground() )
-						.Text( FText::FromString( Item->TagNode->GetSimpleTagName().ToString() ) )
+						.Text( FText::FromString( bShowFullName ? Item->Tag.ToString() : Item->TagNode->GetSimpleTagName().ToString() ) )
+						.HighlightText_Lambda( [ this ](){ return FactsEditor->CurrentSearchText; } )
 					];
 			}
 			else if ( InColumnName == "FactValue" )
@@ -357,11 +390,13 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 	private:
 
 		FFactTreeItemPtr Item;
+		bool bShowFullName = false;
+		SFactsEditor* FactsEditor;
 	};
 
 	if ( InItem.IsValid() )
 	{
-		return SNew( SFactTreeItem, FactsTreeView.ToSharedRef(), InItem );
+		return SNew( SFactTreeItem, TableViewBase, this, InItem );
 	}
 	else
 	{
@@ -376,6 +411,8 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 TSharedRef< ITableRow > SFactsEditor::HandleGeneratePinnedTreeRow( FFactTreeItemPtr FactTreeItem,
 	const TSharedRef<STableViewBase>& TableViewBase )
 {
+	bool bShowFullName = GetDefault< UFactsDebuggerSettingsLocal >()->bShowFullFactNames;
+	
 	return SNew( STableRow< TSharedPtr< FString > >, TableViewBase )
 		[
 			SNew( SBox )
@@ -383,7 +420,7 @@ TSharedRef< ITableRow > SFactsEditor::HandleGeneratePinnedTreeRow( FFactTreeItem
 			.VAlign( VAlign_Center )
 			[
 				SNew( STextBlock )
-				.Text( FText::FromString( FactTreeItem->TagNode->GetSimpleTagName().ToString() ) )
+				.Text( FText::FromString( bShowFullName ? FactTreeItem->Tag.ToString() : FactTreeItem->TagNode->GetSimpleTagName().ToString() ) )
 			]
 		];
 }
@@ -468,6 +505,66 @@ TSharedRef<SWidget> SFactsEditor::HandleGeneratePresetsMenu()
 	return MenuBuilder.MakeWidget(  );
 }
 
+TSharedRef< SWidget > SFactsEditor::HandleGenerateOptionsMenu()
+{
+	FMenuBuilder MenuBuilder( false, nullptr );
+
+	MenuBuilder.AddMenuEntry(
+		LOCTEXT( "Options_ExpandAll", "Expand All" ), FText::GetEmpty(), FSlateIcon(),
+		FUIAction( FExecuteAction::CreateRaw( this, &SFactsEditor::HandleExpandAllClicked ) )
+	);
+	
+	MenuBuilder.AddMenuEntry(
+		LOCTEXT( "Options_CollapseAll", "Collapse All" ), FText::GetEmpty(), FSlateIcon(),
+		FUIAction( FExecuteAction::CreateRaw( this, &SFactsEditor::HandleCollapseAllClicked ) )
+	);
+
+	MenuBuilder.AddSeparator();
+
+	FPropertyChangedEvent DummyEvent( nullptr );
+
+	MenuBuilder.AddMenuEntry(
+		LOCTEXT( "Options_ShowRootTag", "Show Root Fact Tag" ),
+		LOCTEXT( "Options_ShowRootTag_Tooltip", "Show Root Fact Tag" ),
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &SFactsEditor::HandleShowRootTagClicked ),
+			FCanExecuteAction(),
+			FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShowRootFactTag; })
+			),
+		NAME_None,
+	   EUserInterfaceActionType::ToggleButton
+	);
+
+	MenuBuilder.AddMenuEntry(
+		LOCTEXT( "Options_ShowFullNames", "Show Full Fact Names" ),
+		LOCTEXT( "Options_ShowFullNames_Tooltip", "Show Full Fact Names" ),
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateRaw(this, &SFactsEditor::HandleShowFullNamesClicked ),
+			FCanExecuteAction(),
+			FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShowFullFactNames; })
+			),
+	   NAME_None,
+	   EUserInterfaceActionType::ToggleButton
+	);
+
+	MenuBuilder.AddMenuEntry(
+		LOCTEXT( "Options_ShouldPinParentRows", "Should Pin Parent Rows" ),
+		LOCTEXT( "Options_ShouldPinParentRows_Tooltip", "Should Pin Parent Rows" ),
+		FSlateIcon(),
+		FUIAction(
+			FExecuteAction::CreateRaw( this, &SFactsEditor::HandleShouldPinParentRowsClicked ),
+			FCanExecuteAction(),
+			FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldPinParentRows; })
+			),
+	   NAME_None,
+	   EUserInterfaceActionType::ToggleButton
+	);
+	
+	return MenuBuilder.MakeWidget();
+}
+
 void SFactsEditor::HandleSearchTextChanged( const FText& SearchText )
 {
 	CurrentSearchText = SearchText;
@@ -514,6 +611,9 @@ void SFactsEditor::HandleSearchTextCommitted( const FText& SearchText, ETextComm
 	CurrentSearchToggles.Add( NewSearchToggle );
 
 	RefreshSearchToggles();
+	SearchBox->SetText( FText::GetEmpty() );
+
+	SaveSettings();
 }
 
 void SFactsEditor::FilterItems()
@@ -550,7 +650,7 @@ void SFactsEditor::FilterItems()
 		FilteredRootItem = TempVisibleItems;
 		if ( bExpandItems )
 		{
-			ExpandAll( FilteredRootItem->Children );
+			SetItemsExpansion( FilteredRootItem->Children, true );
 		}
 		else
 		{
@@ -566,7 +666,7 @@ void SFactsEditor::FilterItems()
 	FilteredRootItem = MakeShared< FFactTreeItem >();
 	FilterFactItemChildren( Tokens, EFactFilterMode::SearchBox, TempVisibleItems->Children, FilteredRootItem->Children );
 	FactsTreeView->SetTreeItemsSource( &FilteredRootItem->Children );
-	ExpandAll( FilteredRootItem->Children );
+	SetItemsExpansion( FilteredRootItem->Children, true );
 
 	FactsTreeView->RequestTreeRefresh();
 }
@@ -597,10 +697,10 @@ void SFactsEditor::FilterFactItemChildren( TArray<FString> FilterStrings, EFactF
 		bool bMatched = false;
 
 		switch ( FilterMode ) {
-		case SearchBox:
+		case EFactFilterMode::SearchBox:
 			bMatched = Algo::AllOf( FilterStrings, MatchSearchBox );
 			break;
-		case SearchToggles:
+		case EFactFilterMode::SearchToggles:
 			bMatched = Algo::AnyOf( FilterStrings, MatchSearchToggles );
 			break;
 		}
@@ -624,12 +724,24 @@ void SFactsEditor::FilterFactItemChildren( TArray<FString> FilterStrings, EFactF
 	}
 }
 
-void SFactsEditor::ExpandAll(TArray<FFactTreeItemPtr> FactItems)
+void SFactsEditor::HandleExpandAllClicked()
+{
+	SetItemsExpansion( FilteredRootItem->Children, true );
+	OptionsButton->SetIsOpen( false );
+}
+
+void SFactsEditor::HandleCollapseAllClicked()
+{
+	SetItemsExpansion( FilteredRootItem->Children, false );
+	OptionsButton->SetIsOpen( false );
+}
+
+void SFactsEditor::SetItemsExpansion( TArray<FFactTreeItemPtr> FactItems, bool bShouldExpand )
 {
 	for ( const FFactTreeItemPtr& Item : FactItems )
 	{
-		FactsTreeView->SetItemExpansion( Item, true );
-		ExpandAll( Item->Children );
+		FactsTreeView->SetItemExpansion( Item, bShouldExpand );
+		SetItemsExpansion( Item->Children, bShouldExpand );
 	}
 }
 
@@ -638,18 +750,15 @@ void SFactsEditor::RestoreExpansionState()
 	TGuardValue< bool > RestoringExpansion( bIsRestoringExpansion, true );
 	
 	// Default state is expanded.
-	ExpandAll( FilteredRootItem->Children );
+	SetItemsExpansion( FilteredRootItem->Children, true );
 
 	for ( const FFactTag& FactTag : CollapsedStates )
 	{
-		// for ( const FFactTreeItemPtr& Item : FilteredFactTreeItems )
-		// {
-			TArray< FFactTreeItemPtr > Path;
-			if ( FindItemByTagRecursive( FilteredRootItem, FactTag, Path))
-			{
-				FactsTreeView->SetItemExpansion(Path.Last(), false);
-			}
-		// }
+		TArray< FFactTreeItemPtr > Path;
+		if ( FindItemByTagRecursive( FilteredRootItem, FactTag, Path))
+		{
+			FactsTreeView->SetItemExpansion(Path.Last(), false);
+		}
 	}
 }
 
@@ -681,6 +790,7 @@ FReply SFactsEditor::HandleRemoveSearchToggle()
 	CleanupSearchesMarkedForDelete();
 	RefreshSearchToggles();
 	FilterItems();
+	SaveSettings();
 
 	return FReply::Handled();
 }
@@ -732,6 +842,7 @@ FReply SFactsEditor::HandleClearTogglesClicked()
 	}
 
 	FilterItems();
+	SaveSettings();
 
 	return FReply::Handled();
 }
@@ -739,6 +850,7 @@ FReply SFactsEditor::HandleClearTogglesClicked()
 FReply SFactsEditor::HandleSearchToggleClicked()
 {
 	FilterItems();
+	SaveSettings();
 	return FReply::Handled();
 }
 
@@ -748,13 +860,20 @@ void SFactsEditor::BuildFactTreeItems()
 
 	UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
 	TSharedPtr< FGameplayTagNode > Node = Manager.FindTagNode( FFactTag::GetRootTag() );
-	BuildFactItem( RootItem, Node );
-	FilteredRootItem = RootItem;
-	// Default state is expanded
-	// ExpandAll( FilteredRootItem->Children );
 
-	// CurrentSearchText = FText::GetEmpty();
-	// FilterItems();
+	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bShowRootFactTag )
+	{
+		BuildFactItem( RootItem, Node );
+	}
+	else
+	{
+		for ( TSharedPtr< FGameplayTagNode >& ChildNode : Node->GetChildTagNodes())
+		{
+			BuildFactItem( RootItem, ChildNode );
+		}
+	}
+	
+	FilteredRootItem = RootItem;
 }
 
 FFactTreeItemPtr SFactsEditor::BuildFactItem( FFactTreeItemPtr ParentNode, TSharedPtr< FGameplayTagNode > ThisNode )
@@ -779,6 +898,57 @@ FString SFactsEditor::OnItemToStringDebug( FFactTreeItemPtr FactTreeItem ) const
 	Args.Add( FactTreeItem->Tag.ToString() );
 	Args.Add( FactTreeItem->Value.IsSet() ? FString::FromInt( FactTreeItem->Value.GetValue() ) : "Undefined" );
 	return FString::Format( TEXT("{0} {1]"), Args );
+}
+
+void SFactsEditor::LoadSettings()
+{
+	UFactsDebuggerSettingsLocal* FactsDebuggerSettings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
+	FactsDebuggerSettings->OnChangedDelegate.BindSP( this , &SFactsEditor::HandleSettingsChanged );
+
+	CreateDefaultSearchToggles( FactsDebuggerSettings->ToggleStates );
+}
+
+void SFactsEditor::SaveSettings()
+{
+	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
+	// just copy now, it shouldn't be much elements in array. It it will be a problem - optimize
+	Settings->ToggleStates = GetSearchToggleStates();
+	Settings->SaveConfig();
+}
+
+void SFactsEditor::HandleSettingsChanged()
+{
+	// just rebuild the tree
+	BuildFactTreeItems();
+	FilterItems();
+}
+
+// todo: refactor it somehow, to avoid duplicating the same code for changing just one property
+void SFactsEditor::HandleShowRootTagClicked()
+{
+	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
+	Settings->bShowRootFactTag = !Settings->bShowRootFactTag;
+	Settings->SaveConfig();
+	
+	HandleSettingsChanged();
+}
+
+void SFactsEditor::HandleShowFullNamesClicked()
+{
+	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
+	Settings->bShowFullFactNames = !Settings->bShowFullFactNames;
+	Settings->SaveConfig();
+	
+	HandleSettingsChanged();
+}
+
+void SFactsEditor::HandleShouldPinParentRowsClicked()
+{
+	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
+	Settings->bShouldPinParentRows = !Settings->bShouldPinParentRows;
+	Settings->SaveConfig();
+	
+	HandleSettingsChanged();
 }
 
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
