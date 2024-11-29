@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FactTypes.h"
 #include "Engine/DeveloperSettings.h"
 #include "FactsDebuggerSettingsLocal.generated.h"
 
@@ -34,7 +35,13 @@ public:
 	bool bShowFullFactNames = false;
 
 	UPROPERTY(Config, EditAnywhere)
-	bool bShouldPinParentRows = true;
+	bool bShouldStackHierarchyHeaders = true;
+
+	UPROPERTY(Config, EditAnywhere)
+	TEnumAsByte< EOrientation > Orientation = Orient_Horizontal;
+
+	UPROPERTY(Config)
+	TArray< FFactTag > FavoriteFacts;
 
 	UPROPERTY(Config)
 	TArray< FSearchToggleState > ToggleStates;

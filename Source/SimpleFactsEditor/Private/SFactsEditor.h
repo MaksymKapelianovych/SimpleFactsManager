@@ -31,11 +31,6 @@ struct FFactTreeItem : public TSharedFromThis<FFactTreeItem>
 	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type );
 };
 
-enum class EFactFilterMode
-{
-	SearchBox, // acts as AND
-	SearchToggles // acts as OR
-};
 
 /**
  * 
@@ -71,14 +66,22 @@ private:
 	void HandleSearchTextChanged( const FText& SearchText );
 	void HandleSearchTextCommitted( const FText& SearchText, ETextCommit::Type Type );
 	void FilterItems();
-	void FilterFactItemChildren( TArray< FString > FilterStrings, EFactFilterMode FilterMode, TArray< FFactTreeItemPtr>& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray );
+
+	struct FFilterOptions
+	{
+		TArray< FString > SearchToggleStrings;
+		TArray< FString > SearchBarStrings;
+		bool bFilterFavorites;
+		
+	};
+	void FilterFactItemChildren( TArray< FFactTreeItemPtr>& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
 
 	// Options menu
 	void HandleExpandAllClicked();
 	void HandleCollapseAllClicked();
 
 	// Items expansion
-	void SetItemsExpansion( TArray< FFactTreeItemPtr > FactItems, bool bShouldExpand );
+	void SetItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, TArray< FFactTreeItemPtr > FactItems, bool bShouldExpand );
 	void RestoreExpansionState();
 
 	static bool FindItemByTagRecursive( const FFactTreeItemPtr& Item, const FFactTag Tag, TArray< FFactTreeItemPtr >& OutPath );
@@ -93,9 +96,11 @@ private:
 	FReply HandleClearTogglesClicked();
 	FReply HandleSearchToggleClicked();	
 
+public:
 	void BuildFactTreeItems();
 	FFactTreeItemPtr BuildFactItem( FFactTreeItemPtr ParentNode, TSharedPtr< FGameplayTagNode > ThisNode );
-	
+
+private:
 	FString OnItemToStringDebug( FFactTreeItemPtr FactTreeItem ) const;
 
 	// Settings
@@ -105,12 +110,17 @@ private:
 	void HandleSettingsChanged();
 	void HandleShowRootTagClicked();
 	void HandleShowFullNamesClicked();
-	void HandleShouldPinParentRowsClicked();
+	void HandleShouldStackHierarchyHeadersClicked();
+	void HandleOrientationChanged( EOrientation Orientation );
 	
 private:
+	TSharedPtr< SSplitter > Splitter;
 	TSharedPtr<SFactsTreeView> FactsTreeView;
+	TSharedPtr<SFactsTreeView> FavoriteFactsTreeView;
+	
 	FFactTreeItemPtr RootItem;
 	FFactTreeItemPtr FilteredRootItem;
+	FFactTreeItemPtr FavoritesRootItem;
 	
 	TSharedPtr< SSearchBox > SearchBox; 
 	TSharedPtr< SComboButton > ComboButton;
@@ -125,5 +135,8 @@ private:
 
 	// Save expansion state for tag item. The expansion state does not persist between editor sessions. 
 	static TArray< FFactTag > CollapsedStates;
+	static TArray< FFactTag > FavoriteFacts;
 	bool bIsRestoringExpansion = false;
+
+	bool bDisplayOnlyPinnedItems = false;
 };
