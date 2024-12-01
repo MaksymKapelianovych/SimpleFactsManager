@@ -1048,7 +1048,7 @@ void SFactsEditor::FilterFactItemChildren(TArray<FFactTreeItemPtr>& SourceArray,
 
 		// todo: refactor
 		switch (Result) {
-		case ETagCheckResult::None:
+		case ETagCheckResult::None: // Fact and it's parent tags is not in favorites
 			{
 				if ( Options.bFilterFavorites )
 				{
@@ -1060,6 +1060,7 @@ void SFactsEditor::FilterFactItemChildren(TArray<FFactTreeItemPtr>& SourceArray,
 					{
 						FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
 						*NewItem = *SourceItem;
+						NewItem->InitItem();
 					}
 					else
 					{
@@ -1069,25 +1070,67 @@ void SFactsEditor::FilterFactItemChildren(TArray<FFactTreeItemPtr>& SourceArray,
 						{
 							FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
 							*NewItem = *SourceItem;
+							NewItem->InitItem();
 							NewItem->Children = FilteredChildren;
 						}
 					}
 				}
 			}
 			break;
-		case ETagCheckResult::Partial:
+		case ETagCheckResult::Partial: // Fact is not in favorites, but one of the parent tags is 
 			{
-				TArray< FFactTreeItemPtr > FilteredChildren;
-				FilterFactItemChildren( SourceItem->Children, FilteredChildren, Options );
-				if ( FilteredChildren.Num() )
+				// find actual favorite children
+				if ( Options.bFilterFavorites ) 
 				{
-					FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
-					*NewItem = *SourceItem;
-					NewItem->Children = FilteredChildren;
+					TArray< FFactTreeItemPtr > FilteredChildren;
+					FilterFactItemChildren( SourceItem->Children, FilteredChildren, Options );
+					if ( FilteredChildren.Num() )
+					{
+						FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+						*NewItem = *SourceItem;
+						NewItem->InitItem();
+						NewItem->Children = FilteredChildren;
+					}
+				}
+				else
+				{
+					if ( GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree == false )
+					{
+						if ( bMatched )
+						{
+							FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+							*NewItem = *SourceItem;
+							NewItem->InitItem();
+						}
+						else
+						{
+							TArray< FFactTreeItemPtr > FilteredChildren;
+							FilterFactItemChildren( SourceItem->Children, FilteredChildren, Options );
+							if ( FilteredChildren.Num() )
+							{
+								FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+								*NewItem = *SourceItem;
+								NewItem->InitItem();
+								NewItem->Children = FilteredChildren;
+							}
+						}
+					}
+					else
+					{
+						TArray< FFactTreeItemPtr > FilteredChildren;
+						FilterFactItemChildren( SourceItem->Children, FilteredChildren, Options );
+						if ( FilteredChildren.Num() )
+						{
+							FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+							*NewItem = *SourceItem;
+							NewItem->InitItem();
+							NewItem->Children = FilteredChildren;
+						}
+					}
 				}
 			}
 			break;
-		case ETagCheckResult::Full:
+		case ETagCheckResult::Full: // Fact is favorite
 			{
 				if ( Options.bFilterFavorites )
 				{
@@ -1095,6 +1138,7 @@ void SFactsEditor::FilterFactItemChildren(TArray<FFactTreeItemPtr>& SourceArray,
 					{
 						FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
 						*NewItem = *SourceItem;
+						NewItem->InitItem();
 					}
 					else
 					{
@@ -1104,13 +1148,34 @@ void SFactsEditor::FilterFactItemChildren(TArray<FFactTreeItemPtr>& SourceArray,
 						{
 							FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
 							*NewItem = *SourceItem;
+							NewItem->InitItem();
 							NewItem->Children = FilteredChildren;
 						}
 					}
 				}
 				else
 				{
-					// skip
+					if ( GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree == false )
+					{
+						if ( bMatched )
+						{
+							FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+							*NewItem = *SourceItem;
+							NewItem->InitItem();
+						}
+						else
+						{
+							TArray< FFactTreeItemPtr > FilteredChildren;
+							FilterFactItemChildren( SourceItem->Children, FilteredChildren, Options );
+							if ( FilteredChildren.Num() )
+							{
+								FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+								*NewItem = *SourceItem;
+								NewItem->InitItem();
+								NewItem->Children = FilteredChildren;
+							}
+						}
+					}
 				}
 			}
 			break;
