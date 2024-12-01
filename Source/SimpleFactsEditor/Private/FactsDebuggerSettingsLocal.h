@@ -38,6 +38,9 @@ public:
 	bool bShouldStackHierarchyHeaders = true;
 
 	UPROPERTY(Config, EditAnywhere)
+	bool bRemoveFavoritesFromMainTree = true;
+
+	UPROPERTY(Config, EditAnywhere)
 	TEnumAsByte< EOrientation > Orientation = Orient_Horizontal;
 
 	UPROPERTY(Config)

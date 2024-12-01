@@ -27,8 +27,14 @@ struct FFactTreeItem : public TSharedFromThis<FFactTreeItem>
 	~FFactTreeItem();
 
 	void InitPIE();
+	void InitItem();
 	void HandleValueChanged(int32 NewValue);
 	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type );
+
+	TOptional< int32 > GetValue() const
+	{
+		return Value;
+	}
 };
 
 
@@ -110,9 +116,13 @@ private:
 	void HandleSettingsChanged();
 	void HandleShowRootTagClicked();
 	void HandleShowFullNamesClicked();
+	void HandleRemoveFavoritesClicked();
 	void HandleShouldStackHierarchyHeadersClicked();
 	void HandleOrientationChanged( EOrientation Orientation );
-	
+
+public:
+	static TArray< FFactTag > FavoriteFacts;
+
 private:
 	TSharedPtr< SSplitter > Splitter;
 	TSharedPtr<SFactsTreeView> FactsTreeView;
@@ -135,7 +145,6 @@ private:
 
 	// Save expansion state for tag item. The expansion state does not persist between editor sessions. 
 	static TArray< FFactTag > CollapsedStates;
-	static TArray< FFactTag > FavoriteFacts;
 	bool bIsRestoringExpansion = false;
 
 	bool bDisplayOnlyPinnedItems = false;

@@ -26,6 +26,150 @@
 TArray< FFactTag > SFactsEditor::CollapsedStates;
 TArray< FFactTag > SFactsEditor::FavoriteFacts;
 
+namespace Utils
+{
+	struct FFilterOptions
+	{
+		TArray< FString > SearchToggleStrings;
+		TArray< FString > SearchBarStrings;
+		bool bFilterFavorites;
+		
+	};
+	void FilterFactItemChildren( TArray< FFactTreeItemPtr>& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
+
+	void CopyMatchedItem( FFactTreeItemPtr SourceItem, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options, bool bShouldFilterChildren )
+	{
+		if ( bShouldFilterChildren )
+		{
+			TArray< FFactTreeItemPtr > FilteredChildren;
+			FilterFactItemChildren( SourceItem->Children, FilteredChildren, Options );
+			if ( FilteredChildren.Num() )
+			{
+				FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+				*NewItem = *SourceItem;
+				NewItem->InitItem();
+				NewItem->Children = FilteredChildren;
+			}
+		}
+		else
+		{
+			FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+			*NewItem = *SourceItem;
+			NewItem->InitItem();			}
+	}
+
+	bool MatchSearchToggle( const TArray< FString >& SearchStrings, const FString& TagString )
+	{
+		if ( SearchStrings.IsEmpty() )
+		{
+			return true;
+		}
+		
+		for ( const FString& SearchString : SearchStrings )
+		{
+			TArray<FString> Tokens;
+			SearchString.ParseIntoArray( Tokens, TEXT("&") );
+
+			auto Projection = [ TagString ]( const FString& Token ) { return TagString.Contains( Token ); };
+			if ( Algo::AllOf( Tokens, Projection ) )
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool MatchSearchBox( const TArray< FString >& SearchStrings, const FString& TagString )
+	{
+		if ( SearchStrings.IsEmpty() )
+		{
+			return true;
+		}
+		
+		for ( const FString& SearchString : SearchStrings )
+		{
+			if ( TagString.Contains( SearchString ) == false )
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	enum class ETagMatchResult
+	{
+		None,
+		Partial,
+		Full
+	};
+		
+	ETagMatchResult MatchFavorites( FFactTag CheckedTag )
+	{
+		bool bPartialMatch = false;
+		for ( FFactTag FavoriteFact : SFactsEditor::FavoriteFacts )
+		{
+			if ( CheckedTag == FavoriteFact )
+			{
+				return ETagMatchResult::Full;
+			}
+			if ( FavoriteFact.MatchesTag( CheckedTag ) )
+			{
+				bPartialMatch = true;
+			}
+		}
+
+		if ( bPartialMatch )
+		{
+			return ETagMatchResult::Partial;
+		}
+
+		return ETagMatchResult::None;
+	};
+	
+	void FilterFactItemChildren( TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
+	{
+		const UFactsDebuggerSettingsLocal* Settings = GetDefault< UFactsDebuggerSettingsLocal >();
+		auto MatchText = [ &Options ]( const FString& TagString )
+		{
+			return MatchSearchBox( Options.SearchBarStrings, TagString ) && MatchSearchToggle( Options.SearchToggleStrings, TagString );
+		};
+
+		for ( const FFactTreeItemPtr& SourceItem : SourceArray )
+		{
+			ETagMatchResult Result = MatchFavorites( SourceItem->Tag );
+
+			switch (Result) {
+			case ETagMatchResult::None: // Fact and it's parent tags is not in favorites
+				{
+					if ( Options.bFilterFavorites == false )
+					{
+						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, MatchText( SourceItem->Tag.ToString() ) == false );
+					}
+				}
+				break;
+			case ETagMatchResult::Partial: // Fact is not in favorites, but one of the parent tags is 
+				{
+					bool bShouldFilterChildren = Options.bFilterFavorites || ( Settings->bRemoveFavoritesFromMainTree || MatchText( SourceItem->Tag.ToString() ) == false );
+					Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, bShouldFilterChildren );
+				}
+				break;
+			case ETagMatchResult::Full: // Fact is favorite
+				{
+					if ( Options.bFilterFavorites || Settings->bRemoveFavoritesFromMainTree == false )
+					{
+						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, MatchText( SourceItem->Tag.ToString() ) == false );
+					}
+				}
+				break;
+			}
+		}
+	}
+
+}
+
+
 FFactTreeItem::~FFactTreeItem()
 {
 	if ( UFactSubsystem* FactSubsystem = FSimpleFactsEditorModule::Get().TryGetFactSubsystem() )
@@ -37,10 +181,14 @@ FFactTreeItem::~FFactTreeItem()
 void FFactTreeItem::InitPIE()
 {
 	Value.Reset();
-	
+	InitItem();
+}
+
+void FFactTreeItem::InitItem()
+{
 	if ( UFactSubsystem* FactSubsystem = FSimpleFactsEditorModule::Get().TryGetFactSubsystem() )
 	{
-		Handle = FactSubsystem->GetOnFactValueChangedDelegate( Tag ).AddSP( AsShared(), &FFactTreeItem::HandleValueChanged );
+		Handle = FactSubsystem->GetOnFactValueChangedDelegate( Tag ).AddRaw( this, &FFactTreeItem::HandleValueChanged );
 		
 		int32 FactValue;
 		if ( FactSubsystem->TryGetFactValue( Tag, FactValue ) )
@@ -383,7 +531,8 @@ void SFactsEditor::LoadFactsPresetRecursive( UFactsPreset* InPreset, const FFact
 
 void SFactsEditor::HandleGameInstanceStarted()
 {
-	InitItem( RootItem.ToSharedRef() );
+	InitItem( FilteredRootItem.ToSharedRef() );
+	InitItem( FavoritesRootItem.ToSharedRef() );
 }
 
 void SFactsEditor::InitItem( FFactTreeItemRef Item )
@@ -453,9 +602,9 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 			else if ( InColumnName == "FactValue" )
 			{
 				return SNew( SNumericEntryBox< int32 > )
-					.Value_Lambda( [ this ](){ return Item->Value; } )
+					.Value_Raw( Item.Get(), &FFactTreeItem::GetValue )
 					.OnValueCommitted( FOnInt32ValueCommitted::CreateRaw( Item.Get(), &FFactTreeItem::HandleNewValueCommited ) )
-					.UndeterminedString( LOCTEXT( "FactUndefinedValue", "Undefined") );
+					.UndeterminedString( LOCTEXT( "FactUndefinedValue", "undefined") );
 			}
 			else
 			{
@@ -698,6 +847,19 @@ TSharedRef< SWidget > SFactsEditor::HandleGenerateOptionsMenu()
 		   NAME_None,
 		   EUserInterfaceActionType::ToggleButton
 		);
+
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT( "Options_RemoveFavorites", "Remove Favorites from Main Tree" ),
+			LOCTEXT( "Options_RemoveFavorites_Tooltip", "Remove Favorites from Main Tree" ),
+			FSlateIcon(),
+			FUIAction(
+				FExecuteAction::CreateRaw(this, &SFactsEditor::HandleRemoveFavoritesClicked ),
+				FCanExecuteAction(),
+				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree; })
+				),
+		   NAME_None,
+		   EUserInterfaceActionType::ToggleButton
+		);
 	}
 	MenuBuilder.EndSection();
 
@@ -808,11 +970,11 @@ void SFactsEditor::FilterItems()
 	FavoritesRootItem = MakeShared< FFactTreeItem >();
 
 	// Filtering
-	FFilterOptions Options{ ActiveTogglesText, Tokens, false };
-	FilterFactItemChildren( RootItem->Children,  FilteredRootItem->Children, Options );
+	Utils::FFilterOptions Options{ ActiveTogglesText, Tokens, false };
+	Utils::FilterFactItemChildren( RootItem->Children,  FilteredRootItem->Children, Options );
 
-	FFilterOptions FavoritesOptions{ ActiveTogglesText, Tokens, true };
-	FilterFactItemChildren( RootItem->Children,  FavoritesRootItem->Children, FavoritesOptions );
+	Utils::FFilterOptions FavoritesOptions{ ActiveTogglesText, Tokens, true };
+	Utils::FilterFactItemChildren( RootItem->Children,  FavoritesRootItem->Children, FavoritesOptions );
 	
 	FactsTreeView->SetTreeItemsSource( &FilteredRootItem->Children );
 	FavoriteFactsTreeView->SetTreeItemsSource( &FavoritesRootItem->Children );
@@ -1180,6 +1342,15 @@ void SFactsEditor::HandleShowFullNamesClicked()
 {
 	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
 	Settings->bShowFullFactNames = !Settings->bShowFullFactNames;
+	Settings->SaveConfig();
+	
+	HandleSettingsChanged();
+}
+
+void SFactsEditor::HandleRemoveFavoritesClicked()
+{
+	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
+	Settings->bRemoveFavoritesFromMainTree = !Settings->bRemoveFavoritesFromMainTree;
 	Settings->SaveConfig();
 	
 	HandleSettingsChanged();
