@@ -73,15 +73,6 @@ private:
 	void HandleSearchTextCommitted( const FText& SearchText, ETextCommit::Type Type );
 	void FilterItems();
 
-	struct FFilterOptions
-	{
-		TArray< FString > SearchToggleStrings;
-		TArray< FString > SearchBarStrings;
-		bool bFilterFavorites;
-		
-	};
-	void FilterFactItemChildren( TArray< FFactTreeItemPtr>& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
-
 	// Options menu
 	void HandleExpandAllClicked();
 	void HandleCollapseAllClicked();
