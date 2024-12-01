@@ -10,6 +10,7 @@
 #include "FactSubsystem.h"
 #include "IDocumentation.h"
 #include "SFactsEditorSearchToggle.h"
+#include "SFactsExpanderArrow.h"
 #include "SFactsPresetPicker.h"
 #include "SimpleFactsEditor.h"
 #include "SlateOptMacros.h"
@@ -440,7 +441,7 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 						.DefaultLabel( LOCTEXT( "FactTag", "Tag" ) )
 
 						+ SHeaderRow::Column( "FactValue" )
-						.ManualWidth( 100.f )
+						.ManualWidth( 90.f )
 						.DefaultLabel( LOCTEXT( "FactValue", "Value" ) )
 						.DefaultTooltip( LOCTEXT( "FactValue_Tooltip", "Current value of this fact. Undefined means that value for this fact was not yet set" ) )
 					)
@@ -478,7 +479,7 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 						.DefaultLabel( LOCTEXT( "FactTag", "Tag" ) )
 
 						+ SHeaderRow::Column( "FactValue" )
-						.ManualWidth( 100.f )
+						.ManualWidth( 90.f )
 						.DefaultLabel( LOCTEXT( "FactValue", "Value" ) )
 						.DefaultTooltip( LOCTEXT( "FactValue_Tooltip", "Current value of this fact. Undefined means that value for this fact was not yet set" ) )
 					)
@@ -586,8 +587,7 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 					+ SHorizontalBox::Slot()
 					.AutoWidth()
 					[
-						SNew( SExpanderArrow, SharedThis( this ) )
-						.ShouldDrawWires( true )
+						SNew( SFactsExpanderArrow, SharedThis( this ) )
 					]
 					+SHorizontalBox::Slot()
 					.FillWidth( 1.f )
