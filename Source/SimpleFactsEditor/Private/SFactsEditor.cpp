@@ -24,7 +24,7 @@
 
 #define LOCTEXT_NAMESPACE "FactsEditor"
 
-TArray< FFactTag > SFactsEditor::CollapsedStates;
+TSet< FFactTag > SFactsEditor::ExpandedStates;
 TArray< FFactTag > SFactsEditor::FavoriteFacts;
 
 namespace Utils
@@ -495,7 +495,6 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 	}
 
 	LoadSettings();
-	RestoreExpansionState();
 	FilterItems();
 }
 
@@ -714,18 +713,16 @@ void SFactsEditor::OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray<FFactTre
 
 void SFactsEditor::HandleItemExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded )
 {
-	if ( bIsRestoringExpansion || RootItem != FilteredRootItem )
+	if ( bPersistExpansionChange && FactTreeItem->Children.Num() )
 	{
-		return;
-	}
-	
-	if ( bInExpanded )
-	{
-		CollapsedStates.Remove( FactTreeItem->Tag );
-	}
-	else
-	{
-		CollapsedStates.Add( FactTreeItem->Tag );
+		if ( bInExpanded )
+		{
+			ExpandedStates.Add(FactTreeItem->Tag);
+		}
+		else
+		{
+			ExpandedStates.Remove(FactTreeItem->Tag);
+		}
 	}
 }
 
@@ -978,9 +975,18 @@ void SFactsEditor::FilterItems()
 	
 	FactsTreeView->SetTreeItemsSource( &FilteredRootItem->Children );
 	FavoriteFactsTreeView->SetTreeItemsSource( &FavoritesRootItem->Children );
-	
-	SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, true );
-	SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, true );
+
+	if ( ActiveTogglesText.Num() || Tokens.Num() )
+	{
+		SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, true, false );
+		SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, true, false );
+	}
+	else
+	{
+		// RestoreExpansionState();
+		SetDefaultItemsExpansion( FactsTreeView, FilteredRootItem->Children );
+		SetDefaultItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children );
+	}
 
 	FactsTreeView->RequestTreeRefresh();
 	FavoriteFactsTreeView->RequestTreeRefresh();
@@ -988,46 +994,65 @@ void SFactsEditor::FilterItems()
 
 void SFactsEditor::HandleExpandAllClicked()
 {
-	SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, true );
-	SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, true );
+	SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, true, true );
+	SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, true, true );
 	OptionsButton->SetIsOpen( false );
 }
 
 void SFactsEditor::HandleCollapseAllClicked()
 {
-	SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, false );
-	SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, false );
+	SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, false, true );
+	SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, false, true );
 	OptionsButton->SetIsOpen( false );
 }
 
-void SFactsEditor::SetItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, TArray<FFactTreeItemPtr> FactItems, bool bShouldExpand )
+void SFactsEditor::SetItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, TArray<FFactTreeItemPtr> FactItems, bool bShouldExpand, bool bPersistExpansion )
 {
+	TGuardValue< bool > PersistExpansionChangeGuard( bPersistExpansionChange, bPersistExpansion );
+
 	for ( const FFactTreeItemPtr& Item : FactItems )
 	{
 		TreeView->SetItemExpansion( Item, bShouldExpand );
-		SetItemsExpansion( TreeView, Item->Children, bShouldExpand );
+		SetItemsExpansion( TreeView, Item->Children, bShouldExpand, bPersistExpansion );
 	}
 }
 
 void SFactsEditor::RestoreExpansionState()
 {
-	TGuardValue< bool > RestoringExpansion( bIsRestoringExpansion, true );
+	TGuardValue< bool > PersistExpansionChangeGuard( bPersistExpansionChange, false );
 	
-	// Default state is expanded.
-	SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, true );
-	SetItemsExpansion( FactsTreeView, FavoritesRootItem->Children, true );
+	const UFactsDebuggerSettingsLocal* Settings = GetDefault< UFactsDebuggerSettingsLocal >();
 
-	for ( const FFactTag& FactTag : CollapsedStates )
+	for ( const FFactTag& FactTag : ExpandedStates )
 	{
 		TArray< FFactTreeItemPtr > Path;
-		if ( FindItemByTagRecursive( FilteredRootItem, FactTag, Path) )
+		bool bFoundItemInFavorites = FindItemByTagRecursive( FavoritesRootItem, FactTag, Path );
+		if ( bFoundItemInFavorites )
 		{
-			FactsTreeView->SetItemExpansion(Path.Last(), false);
+			FavoriteFactsTreeView->SetItemExpansion( Path.Last(), true );
 		}
-		else if ( FindItemByTagRecursive( FavoritesRootItem, FactTag, Path ) )
+
+		if ( bFoundItemInFavorites == false || ( bFoundItemInFavorites && Settings->bRemoveFavoritesFromMainTree == false ) )
 		{
-			FavoriteFactsTreeView->SetItemExpansion(Path.Last(), false);
+			if ( FindItemByTagRecursive( FilteredRootItem, FactTag, Path) )
+			{
+				FactsTreeView->SetItemExpansion( Path.Last(), true );
+			}
 		}
+	}
+}
+
+void SFactsEditor::SetDefaultItemsExpansion( TSharedPtr<SFactsTreeView> TreeView, TArray<FFactTreeItemPtr> FactItems )
+{
+	TGuardValue< bool > PersistExpansionChangeGuard( bPersistExpansionChange, false );
+
+	for ( const FFactTreeItemPtr& Item : FactItems )
+	{
+		if ( ExpandedStates.Contains( Item->Tag ) )
+		{
+			TreeView->SetItemExpansion( Item, true );
+		}
+		SetDefaultItemsExpansion( TreeView, Item->Children );
 	}
 }
 

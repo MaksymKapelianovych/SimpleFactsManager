@@ -78,8 +78,9 @@ private:
 	void HandleCollapseAllClicked();
 
 	// Items expansion
-	void SetItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, TArray< FFactTreeItemPtr > FactItems, bool bShouldExpand );
+	void SetItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, TArray< FFactTreeItemPtr > FactItems, bool bShouldExpand, bool bPersistExpansion );
 	void RestoreExpansionState();
+	void SetDefaultItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, TArray< FFactTreeItemPtr > FactItems );
 
 	static bool FindItemByTagRecursive( const FFactTreeItemPtr& Item, const FFactTag Tag, TArray< FFactTreeItemPtr >& OutPath );
 
@@ -135,8 +136,8 @@ private:
 	TObjectPtr< UFactsPreset > LoadedPreset;
 
 	// Save expansion state for tag item. The expansion state does not persist between editor sessions. 
-	static TArray< FFactTag > CollapsedStates;
-	bool bIsRestoringExpansion = false;
+	static TSet< FFactTag > ExpandedStates;
+	bool bPersistExpansionChange = true;
 
 	bool bDisplayOnlyPinnedItems = false;
 };
