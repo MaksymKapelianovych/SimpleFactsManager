@@ -559,12 +559,22 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 			Item = InItem;
 			bShowFullName = GetDefault< UFactsDebuggerSettingsLocal >()->bShowFullFactNames;
 			FactsEditor = InFactsEditor;
-			
+
+			Animation = FCurveSequence(0.f, AnimationDuration, ECurveEaseFunction::Linear );
+			Item->OnFactItemValueChanged.BindRaw( this, &SFactTreeItem::HandleItemValueChanged );
+
 			SMultiColumnTableRow::Construct( FSuperRowType::FArguments()
 				.Style( &FAppStyle::Get().GetWidgetStyle<FTableRowStyle>( "ContentBrowser.AssetListView.ColumnListTableRow" ) ), InOwnerTable );
 
 			FavoriteBrush = FAppStyle::Get().GetBrush( "Icons.Star" );
 			NormalBrush = FFactsEditorStyleStyle::Get().GetBrush( "Icons.Star.Outline" );
+			EvenColor = FStyleColors::Recessed.GetColor( FWidgetStyle() );
+			OddColor = FStyleColors::Background.GetColor( FWidgetStyle() );
+		}
+
+		virtual void ResetRow() override
+		{
+			Item->OnFactItemValueChanged.Unbind();
 		}
 		
 		virtual TSharedRef<SWidget> GenerateWidgetForColumn( const FName& InColumnName ) override
@@ -600,10 +610,14 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 			}
 			else if ( InColumnName == "FactValue" )
 			{
-				return SNew( SNumericEntryBox< int32 > )
-					.Value_Raw( Item.Get(), &FFactTreeItem::GetValue )
-					.OnValueCommitted( FOnInt32ValueCommitted::CreateRaw( Item.Get(), &FFactTreeItem::HandleNewValueCommited ) )
-					.UndeterminedString( LOCTEXT( "FactUndefinedValue", "undefined") );
+				return SNew( SBox )
+					.Padding( 1.f )
+					[
+						SNew( SNumericEntryBox< int32 > )
+						.Value_Raw( Item.Get(), &FFactTreeItem::GetValue )
+						.OnValueCommitted( FOnInt32ValueCommitted::CreateRaw( Item.Get(), &FFactTreeItem::HandleNewValueCommited ) )
+						.UndeterminedString( LOCTEXT( "FactUndefinedValue", "undefined") )
+					];
 			}
 			else
 			{
@@ -625,6 +639,25 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 			FactsEditor->SaveSettings();
 			FactsEditor->FilterItems();
 			return FReply::Handled();
+		}
+
+		void HandleItemValueChanged( int32 NewValue )
+		{
+			Animation.Play( AsShared() );
+		}
+
+		const virtual FSlateBrush* GetBorder() const override
+		{
+			if ( Animation.IsPlaying() )
+			{
+				const bool bEvenEntryIndex = (IndexInList % 2 == 0);
+				
+				const float Progress = FMath::Min(Animation.GetLerp(), 1 - Animation.GetLerp());
+				ChangedBrush.TintColor = FMath::Lerp(bEvenEntryIndex ? EvenColor : OddColor, Color, Progress);
+				return &ChangedBrush;
+			}
+
+			return STableRow< FFactTreeItemPtr >::GetBorder();
 		}
 
 		const FSlateBrush* GetItemBrush() const
@@ -670,6 +703,13 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 
 		const FSlateBrush* FavoriteBrush = nullptr;
 		const FSlateBrush* NormalBrush = nullptr;
+		mutable FSlateColorBrush ChangedBrush = FSlateColorBrush( FStyleColors::Background );
+		FLinearColor EvenColor;
+		FLinearColor OddColor;
+
+		FCurveSequence Animation;
+		const float AnimationDuration = 1.f;
+		const FLinearColor Color{ 0.1f, 0.5f, 0.1f, 0.2f };
 	};
 
 	if ( InItem.IsValid() )
