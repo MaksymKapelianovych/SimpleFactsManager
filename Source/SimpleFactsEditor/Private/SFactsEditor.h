@@ -95,6 +95,7 @@ private:
 	void RefreshSearchToggles();
 	void CreateDefaultSearchToggles( TArray< FSearchToggleState > SearchToggleStates );
 	TArray< FSearchToggleState > GetSearchToggleStates();
+	bool IsAnySearchToggleActive() const;
 
 	FReply HandleClearTogglesClicked();
 	FReply HandleSearchToggleClicked();	

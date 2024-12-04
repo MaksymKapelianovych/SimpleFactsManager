@@ -20,7 +20,9 @@
 #include "Engine/AssetManager.h"
 #include "Widgets/Input/SNumericEntryBox.h"
 #include "Widgets/Input/SSearchBox.h"
+#include "Widgets/Layout/SWidgetSwitcher.h"
 #include "Widgets/Layout/SWrapBox.h"
+#include "Widgets/Text/SRichTextBlock.h"
 
 #define LOCTEXT_NAMESPACE "FactsEditor"
 
@@ -421,84 +423,197 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 		.FillHeight( 1.f )
 		[
 			SNew( SBorder )
-			.BorderImage( FAppStyle::Get().GetBrush( "ToolPanel.GroupBorder" ) )
+			.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Panel" ) )
 			[
 				SAssignNew( Splitter, SSplitter )
 				.Orientation( GetDefault< UFactsDebuggerSettingsLocal >()->Orientation )
 
 				+ SSplitter::Slot()
 				[
-					SAssignNew( FavoriteFactsTreeView, SFactsTreeView )
-					.TreeItemsSource( &FavoritesRootItem->Children )
-					.OnGenerateRow( this, &SFactsEditor::OnGenerateWidgetForFactsTreeView )
-					.OnGetChildren( this, &SFactsEditor::OnGetChildren )
-					.OnExpansionChanged( this, &SFactsEditor::HandleItemExpansionChanged )
-					.OnGeneratePinnedRow( this, &SFactsEditor::HandleGeneratePinnedTreeRow )
-					.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; } )
-					.HeaderRow
-					(
-						SNew( SHeaderRow )
+					SNew( SVerticalBox )
 
-						+ SHeaderRow::Column( "Favorites" )
-						.FixedWidth( 24.f )
-						.HAlignHeader(HAlign_Center)
-						.VAlignHeader(VAlign_Center)
-						.HAlignCell(HAlign_Center)
-						.VAlignCell(VAlign_Center)
-						// .DefaultTooltip( LOCTEXT( "Favorites_ToolTip", "Removes Fact from Favorites Tree" ) )
+					+ SVerticalBox::Slot()
+					.AutoHeight()
+					[
+						SNew( SBorder )
+						.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Background" ) )
+						.Padding( 0.f, 0.f, 0.f, 3.f )
 						[
-							SNew(SImage)
-							.ColorAndOpacity(FSlateColor::UseForeground())
-							.Image( FAppStyle::Get().GetBrush("Icons.Star") )
+							SNew( SBorder )
+							.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
+							.Padding( 4.f )
+							[
+								SNew( STextBlock )
+								.Text( LOCTEXT( "FavoritesTree_Label", "Favorites" ) )
+								.TextStyle( FAppStyle::Get(), "ButtonText" )
+								.Font( FAppStyle::Get().GetFontStyle( "NormalFontBold" ) )
+							]	
 						]
-						
-						+ SHeaderRow::Column( "FactTag" )
-						.SortPriority( EColumnSortPriority::Secondary )
-						.DefaultLabel( LOCTEXT( "FactTag", "Tag" ) )
+					]
+					
+					+ SVerticalBox::Slot()
+					.FillHeight( 1.f )
+					[
+						SNew ( SWidgetSwitcher )
+						.WidgetIndex_Lambda( [ this ]()
+						{
+							return FavoritesRootItem->Children.Num() ? 0 : 1;
+						} )
 
-						+ SHeaderRow::Column( "FactValue" )
-						.ManualWidth( 90.f )
-						.DefaultLabel( LOCTEXT( "FactValue", "Value" ) )
-						.DefaultTooltip( LOCTEXT( "FactValue_Tooltip", "Current value of this fact. Undefined means that value for this fact was not yet set" ) )
-					)
+						+ SWidgetSwitcher::Slot()
+						.HAlign( HAlign_Fill )
+						[
+							SAssignNew( FavoriteFactsTreeView, SFactsTreeView )
+							.TreeItemsSource( &FavoritesRootItem->Children )
+							.OnGenerateRow( this, &SFactsEditor::OnGenerateWidgetForFactsTreeView )
+							.OnGetChildren( this, &SFactsEditor::OnGetChildren )
+							.OnExpansionChanged( this, &SFactsEditor::HandleItemExpansionChanged )
+							.OnGeneratePinnedRow( this, &SFactsEditor::HandleGeneratePinnedTreeRow )
+							.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; } )
+							.HeaderRow
+							(
+								SNew( SHeaderRow )
+
+								+ SHeaderRow::Column( "Favorites" )
+								.FixedWidth( 24.f )
+								.HAlignHeader(HAlign_Center)
+								.VAlignHeader(VAlign_Center)
+								.HAlignCell(HAlign_Center)
+								.VAlignCell(VAlign_Center)
+								[
+									SNew( SImage )
+									.ColorAndOpacity( FSlateColor::UseForeground() )
+									.Image( FAppStyle::Get().GetBrush( "Icons.Star" ) )
+								]
+								
+								+ SHeaderRow::Column( "FactTag" )
+								.SortPriority( EColumnSortPriority::Secondary )
+								.DefaultLabel( LOCTEXT( "FactTag", "Tag" ) )
+
+								+ SHeaderRow::Column( "FactValue" )
+								.ManualWidth( 90.f )
+								.DefaultLabel( LOCTEXT( "FactValue", "Value" ) )
+								.DefaultTooltip( LOCTEXT( "FactValue_Tooltip", "Current value of this fact. Undefined means that value for this fact was not yet set" ) )
+							)
+						]
+
+						// For when no rows exist in view
+						+ SWidgetSwitcher::Slot()
+						.HAlign( HAlign_Fill )
+						.Padding(0.0f, 24.0f, 0.0f, 2.0f)
+						[
+							SNew( SRichTextBlock )
+							.DecoratorStyleSet( &FFactsEditorStyleStyle::Get() )
+							.AutoWrapText( true )
+							.Justification( ETextJustify::Center )
+							.Text_Lambda( [ this ]()
+							{
+								if ( SFactsEditor::FavoriteFacts.IsEmpty() )
+								{
+									return LOCTEXT( "EmptyFavoritesTree", "No Facts marked as \"Favorite\".\nClick <img src=\"RichText.StarOutline\"/> in \"All\" to add Fact to \"Favorites\"." );
+								}
+
+								return LOCTEXT( "EmptyFavoritesTree", "No matching Facts found. Check your filters." );
+							} )
+							+ SRichTextBlock::ImageDecorator()
+						]
+					]
 				]
 
 				+ SSplitter::Slot()
 				[
-					SAssignNew( FactsTreeView, SFactsTreeView )
-					.TreeItemsSource( &FilteredRootItem->Children )
-					.OnItemToString_Debug( this, &SFactsEditor::OnItemToStringDebug )
-					.OnGenerateRow( this, &SFactsEditor::OnGenerateWidgetForFactsTreeView )
-					.OnGetChildren( this, &SFactsEditor::OnGetChildren)
-					.OnExpansionChanged( this, &SFactsEditor::HandleItemExpansionChanged )
-					.OnGeneratePinnedRow( this, &SFactsEditor::HandleGeneratePinnedTreeRow )
-					.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; } )
-					.HeaderRow
-					(
-						SNew( SHeaderRow )
-
-						+ SHeaderRow::Column( "Favorites" )
-						.FixedWidth( 24.f )
-						.HAlignHeader(HAlign_Center)
-						.VAlignHeader(VAlign_Center)
-						.HAlignCell(HAlign_Center)
-						.VAlignCell(VAlign_Center)
-						// .DefaultTooltip( LOCTEXT( "Favorites_ToolTip", "Moves Fact to Favorites Tree" ) )
+					SNew( SVerticalBox )
+					
+					+ SVerticalBox::Slot()
+					.AutoHeight()
+					[
+						SNew( SBorder )
+						.BorderImage(FAppStyle::Get().GetBrush("Brushes.Background"))
+						.Padding( 0.f, 0.f, 0.f, 3.f )
 						[
-							SNew(SImage)
-							.ColorAndOpacity(FSlateColor::UseForeground())
-							.Image( FAppStyle::Get().GetBrush("Icons.Star") )
+							SNew(SBorder)
+							.BorderImage(FAppStyle::Get().GetBrush("Brushes.Header"))
+							.Padding( 4.f )
+							[
+								SNew(STextBlock)
+								.Text(LOCTEXT("MainTree_Label", "All"))
+								.TextStyle(FAppStyle::Get(), "ButtonText")
+								.Font(FAppStyle::Get().GetFontStyle("NormalFontBold"))
+							]
 						]
-						
-						+ SHeaderRow::Column( "FactTag" )
-						.SortPriority( EColumnSortPriority::Secondary )
-						.DefaultLabel( LOCTEXT( "FactTag", "Tag" ) )
+					]
 
-						+ SHeaderRow::Column( "FactValue" )
-						.ManualWidth( 90.f )
-						.DefaultLabel( LOCTEXT( "FactValue", "Value" ) )
-						.DefaultTooltip( LOCTEXT( "FactValue_Tooltip", "Current value of this fact. Undefined means that value for this fact was not yet set" ) )
-					)
+					+ SVerticalBox::Slot()
+					.FillHeight( 1.f )
+					[
+						SNew ( SWidgetSwitcher )
+						.WidgetIndex_Lambda( [ this ]()
+						{
+							return FilteredRootItem->Children.Num() ? 0 : 1;
+						} )
+
+						+ SWidgetSwitcher::Slot()
+						.HAlign( HAlign_Fill )
+						[
+							SAssignNew( FactsTreeView, SFactsTreeView )
+							.TreeItemsSource( &FilteredRootItem->Children )
+							.OnItemToString_Debug( this, &SFactsEditor::OnItemToStringDebug )
+							.OnGenerateRow( this, &SFactsEditor::OnGenerateWidgetForFactsTreeView )
+							.OnGetChildren( this, &SFactsEditor::OnGetChildren)
+							.OnExpansionChanged( this, &SFactsEditor::HandleItemExpansionChanged )
+							.OnGeneratePinnedRow( this, &SFactsEditor::HandleGeneratePinnedTreeRow )
+							.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; } )
+							.HeaderRow
+							(
+								SNew( SHeaderRow )
+
+								+ SHeaderRow::Column( "Favorites" )
+								.FixedWidth( 24.f )
+								.HAlignHeader(HAlign_Center)
+								.VAlignHeader(VAlign_Center)
+								.HAlignCell(HAlign_Center)
+								.VAlignCell(VAlign_Center)
+								[
+									SNew(SImage)
+									.ColorAndOpacity(FSlateColor::UseForeground())
+									.Image_Lambda( []()
+									{
+										return GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree
+											? FFactsEditorStyleStyle::Get().GetBrush( "Icons.Star.Outline" )
+											: FFactsEditorStyleStyle::Get().GetBrush( "Icons.Star.OutlineFilled" );
+									} )
+								]
+								
+								+ SHeaderRow::Column( "FactTag" )
+								.SortPriority( EColumnSortPriority::Secondary )
+								.DefaultLabel( LOCTEXT( "FactTag", "Tag" ) )
+
+								+ SHeaderRow::Column( "FactValue" )
+								.ManualWidth( 90.f )
+								.DefaultLabel( LOCTEXT( "FactValue", "Value" ) )
+								.DefaultTooltip( LOCTEXT( "FactValue_Tooltip", "Current value of this fact. Undefined means that value for this fact was not yet set" ) )
+							)
+						]
+
+						// For when no rows exist in view
+						+ SWidgetSwitcher::Slot()
+						.HAlign( HAlign_Fill )
+						.Padding( 0.0f, 24.0f, 0.0f, 2.0f )
+						[
+							SNew( STextBlock )
+							.AutoWrapText( true )
+							.Justification( ETextJustify::Center )
+							.Text_Lambda( [ this ]()
+							{
+								if ( RootItem->Children.IsEmpty() )
+								{
+									return LOCTEXT( "EmptyFavoritesTree", "No Facts was found. Create Facts by adding subtags to \"Fact\" tag" );
+								}
+
+								return LOCTEXT( "EmptyFavoritesTree", "No matching Facts found. Check your filters." );
+							} )
+						]
+					]
 				]
 			]
 		]
@@ -523,6 +638,19 @@ TArray<FSearchToggleState> SFactsEditor::GetSearchToggleStates()
 	}
 
 	return SearchToggleStates;
+}
+
+bool SFactsEditor::IsAnySearchToggleActive() const
+{
+	for ( const SFactsEditorSearchToggleRef SearchToggle : CurrentSearchToggles )
+	{
+		if ( SearchToggle->GetIsToggleChecked() )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void SFactsEditor::LoadFactsPreset( UFactsPreset* InPreset )

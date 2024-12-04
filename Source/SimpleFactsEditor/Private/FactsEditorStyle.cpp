@@ -44,4 +44,10 @@ FFactsEditorStyleStyle::FFactsEditorStyleStyle() : FSlateStyleSet( GetStyleSetNa
 	Set("ClassIcon.FactsPreset", new IMAGE_BRUSH( TEXT("FactsPreset_16x_white"), Icon16 ));
 	Set("ClassThumbnail.FactsPreset", new IMAGE_BRUSH( TEXT("FactsPreset_64x_white"), Icon64 ));
 	Set( "Icons.Star.Outline", new IMAGE_BRUSH_SVG( "StarOutline", Icon16 ) );
+	Set( "Icons.Star.OutlineFilled", new IMAGE_BRUSH_SVG( "StarOutlineFilled", Icon16 ) );
+	
+	Set( "RichText.StarOutline", FInlineTextImageStyle()
+			.SetImage( IMAGE_BRUSH_SVG( "StarOutline", Icon16 ) )
+			.SetBaseline( 0 )
+		);
 }
