@@ -33,7 +33,7 @@ namespace Utils
 	{
 		TArray< FString > SearchToggleStrings;
 		TArray< FString > SearchBarStrings;
-		bool bFilterFavorites;
+		bool bFilteringFavorites;
 		
 	};
 	void FilterFactItemChildren( TArray< FFactTreeItemPtr>& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
@@ -115,7 +115,8 @@ namespace Utils
 			{
 				return ETagMatchResult::Full;
 			}
-			if ( FavoriteFact.MatchesTag( CheckedTag ) )
+
+			if ( CheckedTag.MatchesTag( FavoriteFact ) || FavoriteFact.MatchesTag( CheckedTag ) )
 			{
 				bPartialMatch = true;
 			}
@@ -144,21 +145,30 @@ namespace Utils
 			switch (Result) {
 			case ETagMatchResult::None: // Fact and it's parent tags is not in favorites
 				{
-					if ( Options.bFilterFavorites == false )
+					if ( Options.bFilteringFavorites == false )
 					{
 						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, MatchText( SourceItem->Tag.ToString() ) == false );
 					}
 				}
 				break;
-			case ETagMatchResult::Partial: // Fact is not in favorites, but one of the parent tags is 
+			case ETagMatchResult::Partial: // Fact is not in favorites, but one of the parent/children tags is 
 				{
-					bool bShouldFilterChildren = Options.bFilterFavorites || ( Settings->bRemoveFavoritesFromMainTree || MatchText( SourceItem->Tag.ToString() ) == false );
-					Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, bShouldFilterChildren );
+					if ( Options.bFilteringFavorites )
+					{
+						bool bShouldFilterChildren = ( Options.SearchBarStrings.IsEmpty() && Options.SearchToggleStrings.IsEmpty() ) || MatchText( SourceItem->Tag.ToString() ) == false;
+						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, bShouldFilterChildren );
+
+					}
+					else
+					{
+						bool bShouldFilterChildren = Settings->bRemoveFavoritesFromMainTree || MatchText( SourceItem->Tag.ToString() ) == false;
+						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, bShouldFilterChildren );
+					}
 				}
 				break;
 			case ETagMatchResult::Full: // Fact is favorite
 				{
-					if ( Options.bFilterFavorites || Settings->bRemoveFavoritesFromMainTree == false )
+					if ( Options.bFilteringFavorites || Settings->bRemoveFavoritesFromMainTree == false )
 					{
 						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, MatchText( SourceItem->Tag.ToString() ) == false );
 					}
@@ -202,6 +212,10 @@ void FFactTreeItem::InitItem()
 void FFactTreeItem::HandleValueChanged( int32 NewValue )
 {
 	Value = NewValue;
+	if ( bFactManualChanging == false )
+	{
+		OnFactItemValueChanged.ExecuteIfBound( NewValue );
+	}
 }
 
 void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type )
@@ -210,6 +224,8 @@ void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Ty
 	{
 		return;
 	}
+
+	TGuardValue< bool > FactManualChangingGuard{ bFactManualChanging, true };
 	
 	Value = NewValue;
 	if ( UFactSubsystem* FactSubsystem = FSimpleFactsEditorModule::Get().TryGetFactSubsystem() )
