@@ -37,7 +37,7 @@ private:
     TSharedPtr<SWidget> SummonFactsEditorUI();
     
     TWeakPtr<SDockTab> FactsEditorTab;
-    TSharedPtr<SFactsEditor> FactsEditor;
+    TWeakPtr<SFactsEditor> FactsEditor;
 
     TWeakObjectPtr< UGameInstance > WeakGameInstance;
     bool bPIEActive = false;;

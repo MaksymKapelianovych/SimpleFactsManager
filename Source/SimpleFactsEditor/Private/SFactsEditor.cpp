@@ -648,7 +648,8 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 			]
 		]
 	];
-	
+
+	TagChangedHandle = UGameplayTagsManager::OnEditorRefreshGameplayTagTree.AddSP( this, &SFactsEditor::HandleSettingsChanged );
 	FSimpleFactsEditorModule::Get().OnGameInstanceStarted.BindRaw( this, &SFactsEditor::HandleGameInstanceStarted );
 	if ( InArgs._bIsGameStarted )
 	{
@@ -657,6 +658,12 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 
 	LoadSettings();
 	FilterItems();
+}
+
+SFactsEditor::~SFactsEditor()
+{
+	UGameplayTagsManager::OnEditorRefreshGameplayTagTree.Remove( TagChangedHandle );
+	FSimpleFactsEditorModule::Get().OnGameInstanceStarted.Unbind();
 }
 
 TArray<FSearchToggleState> SFactsEditor::GetSearchToggleStates()

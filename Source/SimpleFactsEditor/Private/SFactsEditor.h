@@ -57,6 +57,7 @@ public:
 
 
 	virtual void Construct(const FArguments& InArgs );
+	virtual ~SFactsEditor() override;
 
 	void LoadFactsPreset( UFactsPreset* InPreset );
 	void LoadFactsPresetRecursive( UFactsPreset* InPreset, const FFactTreeItemPtr& FactItem ) const;
@@ -149,4 +150,6 @@ private:
 	bool bPersistExpansionChange = true;
 
 	bool bDisplayOnlyPinnedItems = false;
+
+	FDelegateHandle TagChangedHandle;
 };

@@ -47,17 +47,18 @@ void FSimpleFactsEditorModule::ShutdownModule()
 	}
 }
 
+// todo: change implementation to allow loading presets from C++/BP
 void FSimpleFactsEditorModule::LoadPresetIntoEditor( UFactsPreset* InPresetToLoad )
 {
 	if ( FactsEditor.IsValid() )
 	{
-		FactsEditor->LoadFactsPreset( InPresetToLoad );
+		FactsEditor.Pin()->LoadFactsPreset( InPresetToLoad );
 	}
 	else
 	{
 		if (FGlobalTabmanager::Get()->TryInvokeTab( FTabId("FactsEditorApp") ).IsValid() )
 		{
-			FactsEditor->LoadFactsPreset( InPresetToLoad );
+			FactsEditor.Pin()->LoadFactsPreset( InPresetToLoad );
 		}
 	}
 }
