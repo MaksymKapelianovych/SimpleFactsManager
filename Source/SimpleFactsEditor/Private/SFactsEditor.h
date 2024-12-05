@@ -69,7 +69,8 @@ private:
 	TSharedRef< ITableRow > OnGenerateWidgetForFactsTreeView( FFactTreeItemPtr FactTreeItem, const TSharedRef< STableViewBase >& TableViewBase );
 	TSharedRef< ITableRow > HandleGeneratePinnedTreeRow( FFactTreeItemPtr FactTreeItem, const TSharedRef< STableViewBase >& TableViewBase);
 	void OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray< FFactTreeItemPtr >& Children );
-	void HandleItemExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded );
+	void HandleMainExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded );
+	void HandleFavoriteExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded );
 
 	FText GetFilterStatusTextFavorites() const;
 	FText GetFilterStatusTextAll() const;
@@ -90,7 +91,7 @@ private:
 	// Items expansion
 	void SetItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, TArray< FFactTreeItemPtr > FactItems, bool bShouldExpand, bool bPersistExpansion );
 	void RestoreExpansionState();
-	void SetDefaultItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, TArray< FFactTreeItemPtr > FactItems );
+	void SetDefaultItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, const TArray< FFactTreeItemPtr >& FactItems, const TSet< FFactTag >& ExpandedFacts );
 
 	static bool FindItemByTagRecursive( const FFactTreeItemPtr& Item, const FFactTag Tag, TArray< FFactTreeItemPtr >& OutPath );
 
@@ -151,7 +152,8 @@ private:
 	TObjectPtr< UFactsPreset > LoadedPreset;
 
 	// Save expansion state for tag item. The expansion state does not persist between editor sessions. 
-	static TSet< FFactTag > ExpandedStates;
+	static TSet< FFactTag > MainExpandedFacts;
+	static TSet< FFactTag > FavoritesExpandedFacts;
 	bool bPersistExpansionChange = true;
 
 	bool bDisplayOnlyPinnedItems = false;

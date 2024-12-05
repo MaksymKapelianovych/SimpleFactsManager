@@ -26,7 +26,8 @@
 
 #define LOCTEXT_NAMESPACE "FactsEditor"
 
-TSet< FFactTag > SFactsEditor::ExpandedStates;
+TSet< FFactTag > SFactsEditor::MainExpandedFacts;
+TSet< FFactTag > SFactsEditor::FavoritesExpandedFacts;
 TArray< FFactTag > SFactsEditor::FavoriteFacts;
 
 namespace Utils
@@ -473,7 +474,7 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 							.TreeItemsSource( &FavoritesRootItem->Children )
 							.OnGenerateRow( this, &SFactsEditor::OnGenerateWidgetForFactsTreeView )
 							.OnGetChildren( this, &SFactsEditor::OnGetChildren )
-							.OnExpansionChanged( this, &SFactsEditor::HandleItemExpansionChanged )
+							.OnExpansionChanged( this, &SFactsEditor::HandleFavoriteExpansionChanged )
 							.OnGeneratePinnedRow( this, &SFactsEditor::HandleGeneratePinnedTreeRow )
 							.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; } )
 							.HeaderRow
@@ -581,7 +582,7 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 							.OnItemToString_Debug( this, &SFactsEditor::OnItemToStringDebug )
 							.OnGenerateRow( this, &SFactsEditor::OnGenerateWidgetForFactsTreeView )
 							.OnGetChildren( this, &SFactsEditor::OnGetChildren)
-							.OnExpansionChanged( this, &SFactsEditor::HandleItemExpansionChanged )
+							.OnExpansionChanged( this, &SFactsEditor::HandleMainExpansionChanged )
 							.OnGeneratePinnedRow( this, &SFactsEditor::HandleGeneratePinnedTreeRow )
 							.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; } )
 							.HeaderRow
@@ -941,17 +942,32 @@ void SFactsEditor::OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray<FFactTre
 	}
 }
 
-void SFactsEditor::HandleItemExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded )
+void SFactsEditor::HandleMainExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded )
 {
 	if ( bPersistExpansionChange && FactTreeItem->Children.Num() )
 	{
 		if ( bInExpanded )
 		{
-			ExpandedStates.Add(FactTreeItem->Tag);
+			MainExpandedFacts.Add(FactTreeItem->Tag);
 		}
 		else
 		{
-			ExpandedStates.Remove(FactTreeItem->Tag);
+			MainExpandedFacts.Remove(FactTreeItem->Tag);
+		}
+	}
+}
+
+void SFactsEditor::HandleFavoriteExpansionChanged(FFactTreeItemPtr FactTreeItem, bool bInExpanded)
+{
+	if ( bPersistExpansionChange && FactTreeItem->Children.Num() )
+	{
+		if ( bInExpanded )
+		{
+			FavoritesExpandedFacts.Add(FactTreeItem->Tag);
+		}
+		else
+		{
+			FavoritesExpandedFacts.Remove(FactTreeItem->Tag);
 		}
 	}
 }
@@ -1275,8 +1291,8 @@ void SFactsEditor::FilterItems()
 	else
 	{
 		// RestoreExpansionState();
-		SetDefaultItemsExpansion( FactsTreeView, FilteredRootItem->Children );
-		SetDefaultItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children );
+		SetDefaultItemsExpansion( FactsTreeView, FilteredRootItem->Children, SFactsEditor::MainExpandedFacts );
+		SetDefaultItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, SFactsEditor::FavoritesExpandedFacts );
 	}
 
 	FactsTreeView->RequestTreeRefresh();
@@ -1314,16 +1330,17 @@ void SFactsEditor::RestoreExpansionState()
 	
 	const UFactsDebuggerSettingsLocal* Settings = GetDefault< UFactsDebuggerSettingsLocal >();
 
-	for ( const FFactTag& FactTag : ExpandedStates )
+	TArray< FFactTreeItemPtr > Path;
+	for ( const FFactTag& FactTag : MainExpandedFacts )
 	{
-		TArray< FFactTreeItemPtr > Path;
-		bool bFoundItemInFavorites = FindItemByTagRecursive( FavoritesRootItem, FactTag, Path );
-		if ( bFoundItemInFavorites )
-		{
-			FavoriteFactsTreeView->SetItemExpansion( Path.Last(), true );
-		}
+		Path.Reset();
+		// bool bFoundItemInFavorites = FindItemByTagRecursive( FavoritesRootItem, FactTag, Path );
+		// if ( bFoundItemInFavorites )
+		// {
+		// 	FavoriteFactsTreeView->SetItemExpansion( Path.Last(), true );
+		// }
 
-		if ( bFoundItemInFavorites == false || ( bFoundItemInFavorites && Settings->bRemoveFavoritesFromMainTree == false ) )
+		// if ( bFoundItemInFavorites == false || ( bFoundItemInFavorites && Settings->bRemoveFavoritesFromMainTree == false ) )
 		{
 			if ( FindItemByTagRecursive( FilteredRootItem, FactTag, Path) )
 			{
@@ -1331,19 +1348,28 @@ void SFactsEditor::RestoreExpansionState()
 			}
 		}
 	}
+
+	for ( const FFactTag& FactTag : FavoritesExpandedFacts )
+	{
+		Path.Reset();
+		if ( FindItemByTagRecursive( FavoritesRootItem, FactTag, Path ) )
+		{
+			FavoriteFactsTreeView->SetItemExpansion( Path.Last(), true );
+		}
+	}
 }
 
-void SFactsEditor::SetDefaultItemsExpansion( TSharedPtr<SFactsTreeView> TreeView, TArray<FFactTreeItemPtr> FactItems )
+void SFactsEditor::SetDefaultItemsExpansion( TSharedPtr<SFactsTreeView> TreeView, const TArray<FFactTreeItemPtr>& FactItems, const TSet< FFactTag >& ExpandedFacts )
 {
 	TGuardValue< bool > PersistExpansionChangeGuard( bPersistExpansionChange, false );
 
 	for ( const FFactTreeItemPtr& Item : FactItems )
 	{
-		if ( ExpandedStates.Contains( Item->Tag ) )
+		if ( ExpandedFacts.Contains( Item->Tag ) )
 		{
 			TreeView->SetItemExpansion( Item, true );
 		}
-		SetDefaultItemsExpansion( TreeView, Item->Children );
+		SetDefaultItemsExpansion( TreeView, Item->Children, ExpandedFacts );
 	}
 }
 
