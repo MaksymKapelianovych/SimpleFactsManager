@@ -70,6 +70,9 @@ private:
 	void OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray< FFactTreeItemPtr >& Children );
 	void HandleItemExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded );
 
+	FText GetFilterStatusText( const TSharedPtr< SFactsTreeView > TreeView ) const;
+	FSlateColor GetFilterStatusTextColor( const TSharedPtr< SFactsTreeView > TreeView ) const;
+
 	TSharedRef<SWidget> HandleGeneratePresetsMenu();
 	TSharedRef< SWidget > HandleGenerateOptionsMenu();
 

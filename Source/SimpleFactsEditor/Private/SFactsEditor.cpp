@@ -441,7 +441,7 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 						[
 							SNew( SBorder )
 							.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
-							.Padding( 4.f )
+							.Padding( 10.f, 4.f )
 							[
 								SNew( STextBlock )
 								.Text( LOCTEXT( "FavoritesTree_Label", "Favorites" ) )
@@ -518,6 +518,21 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 							+ SRichTextBlock::ImageDecorator()
 						]
 					]
+
+					+ SVerticalBox::Slot()
+					.AutoHeight()
+					[
+						SNew( SBorder )
+						.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
+						.VAlign( VAlign_Center )
+						.HAlign( HAlign_Left )
+						.Padding( 10.f, 4.f )
+						[
+							SNew( STextBlock )
+							.Text( this, &SFactsEditor::GetFilterStatusText, FavoriteFactsTreeView )
+							.ColorAndOpacity( this, &SFactsEditor::GetFilterStatusTextColor, FavoriteFactsTreeView )
+						]
+					]
 				]
 
 				+ SSplitter::Slot()
@@ -528,17 +543,17 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 					.AutoHeight()
 					[
 						SNew( SBorder )
-						.BorderImage(FAppStyle::Get().GetBrush("Brushes.Background"))
+						.BorderImage( FAppStyle::Get().GetBrush("Brushes.Background" ) )
 						.Padding( 0.f, 0.f, 0.f, 3.f )
 						[
-							SNew(SBorder)
-							.BorderImage(FAppStyle::Get().GetBrush("Brushes.Header"))
-							.Padding( 4.f )
+							SNew( SBorder )
+							.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
+							.Padding( 10.f, 4.f )
 							[
-								SNew(STextBlock)
-								.Text(LOCTEXT("MainTree_Label", "All"))
-								.TextStyle(FAppStyle::Get(), "ButtonText")
-								.Font(FAppStyle::Get().GetFontStyle("NormalFontBold"))
+								SNew( STextBlock )
+								.Text( LOCTEXT( "MainTree_Label", "All" ) )
+								.TextStyle( FAppStyle::Get(), "ButtonText" )
+								.Font( FAppStyle::Get().GetFontStyle("NormalFontBold" ) )
 							]
 						]
 					]
@@ -612,6 +627,21 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 
 								return LOCTEXT( "EmptyFavoritesTree", "No matching Facts found. Check your filters." );
 							} )
+						]
+					]
+					
+					+ SVerticalBox::Slot()
+					.AutoHeight()
+					[
+						SNew( SBorder )
+						.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
+						.VAlign( VAlign_Center )
+						.HAlign( HAlign_Left )
+						.Padding( 10.f, 4.f )
+						[
+							SNew( STextBlock )
+							.Text(this, &SFactsEditor::GetFilterStatusText, FactsTreeView )
+							.ColorAndOpacity(this, &SFactsEditor::GetFilterStatusTextColor, FactsTreeView )
 						]
 					]
 				]
@@ -908,6 +938,26 @@ void SFactsEditor::HandleItemExpansionChanged( FFactTreeItemPtr FactTreeItem, bo
 			ExpandedStates.Remove(FactTreeItem->Tag);
 		}
 	}
+}
+
+FText SFactsEditor::GetFilterStatusText(const TSharedPtr<SFactsTreeView> TreeView) const
+{
+	return FText::Format( LOCTEXT( "ShowingAllFacts", "{0} facts ({1} total)" ), FText::AsNumber( TreeView->GetItems().Num() ), FText::AsNumber( 11000) );
+}
+
+FSlateColor SFactsEditor::GetFilterStatusTextColor( const TSharedPtr< SFactsTreeView > TreeView ) const
+{
+	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false )
+	{
+		return FSlateColor::UseForeground();
+	}
+
+	if ( TreeView->GetRootItems().IsEmpty() )
+	{
+		return FStyleColors::AccentRed;
+	}
+
+	return FStyleColors::AccentGreen;
 }
 
 TSharedRef<SWidget> SFactsEditor::HandleGeneratePresetsMenu()
