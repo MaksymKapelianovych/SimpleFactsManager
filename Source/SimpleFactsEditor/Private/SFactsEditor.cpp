@@ -31,6 +31,12 @@ TArray< FFactTag > SFactsEditor::FavoriteFacts;
 
 namespace Utils
 {
+	int32 AllFilteredFactsCount = 0;
+	int32 AllFavoriteFactsCount = 0;
+	
+	int32 CurrentFilteredFactsCount = 0;
+	int32 CurrentFavoriteFactsCount = 0;
+	
 	struct FFilterOptions
 	{
 		TArray< FString > SearchToggleStrings;
@@ -529,7 +535,7 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 						.Padding( 10.f, 4.f )
 						[
 							SNew( STextBlock )
-							.Text( this, &SFactsEditor::GetFilterStatusText, FavoriteFactsTreeView )
+							.Text( this, &SFactsEditor::GetFilterStatusTextFavorites )
 							.ColorAndOpacity( this, &SFactsEditor::GetFilterStatusTextColor, FavoriteFactsTreeView )
 						]
 					]
@@ -640,7 +646,7 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 						.Padding( 10.f, 4.f )
 						[
 							SNew( STextBlock )
-							.Text(this, &SFactsEditor::GetFilterStatusText, FactsTreeView )
+							.Text(this, &SFactsEditor::GetFilterStatusTextAll )
 							.ColorAndOpacity(this, &SFactsEditor::GetFilterStatusTextColor, FactsTreeView )
 						]
 					]
@@ -817,6 +823,9 @@ TSharedRef<ITableRow> SFactsEditor::OnGenerateWidgetForFactsTreeView( FFactTreeI
 				SFactsEditor::FavoriteFacts.Add( Item->Tag );
 			}
 			
+			Utils::AllFilteredFactsCount = FactsEditor->CountAllFilteredItems( FactsEditor->RootItem );
+			Utils::AllFavoriteFactsCount = FactsEditor->CountAllFavoriteItems( FactsEditor->RootItem, false );
+
 			FactsEditor->SaveSettings();
 			FactsEditor->FilterItems();
 			return FReply::Handled();
@@ -947,9 +956,34 @@ void SFactsEditor::HandleItemExpansionChanged( FFactTreeItemPtr FactTreeItem, bo
 	}
 }
 
-FText SFactsEditor::GetFilterStatusText(const TSharedPtr<SFactsTreeView> TreeView) const
+FText SFactsEditor::GetFilterStatusTextFavorites() const
 {
-	return FText::Format( LOCTEXT( "ShowingAllFacts", "{0} facts ({1} total)" ), FText::AsNumber( TreeView->GetItems().Num() ), FText::AsNumber( 11000) );
+	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false )
+	{
+		return FText::Format( LOCTEXT( "ShowingAllFavoriteFacts", "{0} facts" ), FText::AsNumber( Utils::AllFavoriteFactsCount ) );
+	}
+
+	if ( FavoriteFactsTreeView->GetRootItems().IsEmpty() )
+	{
+		return FText::Format( LOCTEXT( "NoMatchingFavoriteFacts", "No matching facts ({0} total)" ), FText::AsNumber( Utils::AllFavoriteFactsCount ) );
+	}
+	
+	return FText::Format( LOCTEXT( "ShowingFilteredFavoriteFacts", "{0} facts ({1} total)" ), FText::AsNumber( Utils::CurrentFavoriteFactsCount ), FText::AsNumber( Utils::AllFavoriteFactsCount ) );
+}
+
+FText SFactsEditor::GetFilterStatusTextAll() const
+{
+	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false )
+	{
+		return FText::Format( LOCTEXT( "ShowingAllFavoriteFacts", "{0} facts" ), FText::AsNumber( Utils::AllFilteredFactsCount ) );
+	}
+
+	if ( FactsTreeView->GetRootItems().IsEmpty() )
+	{
+		return FText::Format( LOCTEXT( "NoMatchingFavoriteFacts", "No matching facts ({0} total)" ), FText::AsNumber( Utils::AllFilteredFactsCount ) );
+	}
+	
+	return FText::Format( LOCTEXT( "ShowingFilteredFavoriteFacts", "{0} facts ({1} total)" ), FText::AsNumber( Utils::CurrentFilteredFactsCount ), FText::AsNumber( Utils::AllFilteredFactsCount ) );
 }
 
 FSlateColor SFactsEditor::GetFilterStatusTextColor( const TSharedPtr< SFactsTreeView > TreeView ) const
@@ -1098,6 +1132,19 @@ TSharedRef< SWidget > SFactsEditor::HandleGenerateOptionsMenu()
 		   NAME_None,
 		   EUserInterfaceActionType::ToggleButton
 		);
+
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT( "Options_CountLeafs", "Count Only Leaf Facts" ),
+			LOCTEXT( "Options_CountLeafs_Tooltip", "Count only leaf Facts for numbers displayed below the trees" ),
+			FSlateIcon(),
+			FUIAction(
+				FExecuteAction::CreateRaw(this, &SFactsEditor::HandleCountOnlyLeafsClicked ),
+				FCanExecuteAction(),
+				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bCountOnlyLeafFacts; })
+				),
+		   NAME_None,
+		   EUserInterfaceActionType::ToggleButton
+		);
 	}
 	MenuBuilder.EndSection();
 
@@ -1213,6 +1260,9 @@ void SFactsEditor::FilterItems()
 
 	Utils::FFilterOptions FavoritesOptions{ ActiveTogglesText, Tokens, true };
 	Utils::FilterFactItemChildren( RootItem->Children,  FavoritesRootItem->Children, FavoritesOptions );
+
+	Utils::CurrentFilteredFactsCount = CountAllFilteredItems( FilteredRootItem );
+	Utils::CurrentFavoriteFactsCount = CountAllFavoriteItems( FavoritesRootItem, false );
 	
 	FactsTreeView->SetTreeItemsSource( &FilteredRootItem->Children );
 	FavoriteFactsTreeView->SetTreeItemsSource( &FavoritesRootItem->Children );
@@ -1407,7 +1457,10 @@ void SFactsEditor::BuildFactTreeItems()
 			BuildFactItem( RootItem, ChildNode );
 		}
 	}
-	
+
+	Utils::AllFilteredFactsCount = CountAllFilteredItems( RootItem );
+	Utils::AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
+
 	FilteredRootItem = RootItem;
 	FavoritesRootItem = MakeShared< FFactTreeItem >();
 }
@@ -1426,6 +1479,68 @@ FFactTreeItemPtr SFactsEditor::BuildFactItem( FFactTreeItemPtr ParentNode, TShar
 	}
 
 	return NewItem;
+}
+
+int32 SFactsEditor::CountAllFilteredItems( FFactTreeItemPtr ParentNode ) const
+{
+	int32 Result = 0;
+	
+	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree && SFactsEditor::FavoriteFacts.Contains( ParentNode->Tag ) )
+	{
+		return Result;
+	}
+
+	for ( FFactTreeItemPtr Child : ParentNode->Children )
+	{
+		if ( int32 Temp = CountAllFilteredItems( Child ) )
+		{
+			Result += Temp;
+		}
+	}
+
+	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bCountOnlyLeafFacts && ParentNode->Children.Num() > 0 )
+	{
+		return Result;
+	}
+
+	if ( ParentNode->Tag.IsValid() )
+	{
+		Result++;
+	}
+
+	return Result;
+}
+
+int32 SFactsEditor::CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool bIsParentFavorite ) const
+{
+	int32 Result = 0;
+	
+	if ( bIsParentFavorite == false && SFactsEditor::FavoriteFacts.Contains( ParentNode->Tag ) )
+	{
+		bIsParentFavorite = true;
+	}
+
+	bool bHasFavoriteChild = false;
+	for ( FFactTreeItemPtr Child : ParentNode->Children )
+	{
+		if ( int32 Temp = CountAllFavoriteItems( Child, bIsParentFavorite ) )
+		{
+			bHasFavoriteChild = true;
+			Result += Temp;
+		}
+	}
+
+	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bCountOnlyLeafFacts && ParentNode->Children.Num() > 0 )
+	{
+		return Result;
+	}
+	
+	if ( ParentNode->Tag.IsValid() && ( bIsParentFavorite || bHasFavoriteChild ) )
+	{
+		Result++;
+	}
+
+	return Result;
 }
 
 FString SFactsEditor::OnItemToStringDebug( FFactTreeItemPtr FactTreeItem ) const
@@ -1494,6 +1609,15 @@ void SFactsEditor::HandleShouldStackHierarchyHeadersClicked()
 {
 	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
 	Settings->bShouldStackHierarchyHeaders = !Settings->bShouldStackHierarchyHeaders;
+	Settings->SaveConfig();
+	
+	HandleSettingsChanged();
+}
+
+void SFactsEditor::HandleCountOnlyLeafsClicked()
+{
+	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
+	Settings->bCountOnlyLeafFacts = !Settings->bCountOnlyLeafFacts;
 	Settings->SaveConfig();
 	
 	HandleSettingsChanged();

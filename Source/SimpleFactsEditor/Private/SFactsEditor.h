@@ -71,7 +71,8 @@ private:
 	void OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray< FFactTreeItemPtr >& Children );
 	void HandleItemExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded );
 
-	FText GetFilterStatusText( const TSharedPtr< SFactsTreeView > TreeView ) const;
+	FText GetFilterStatusTextFavorites() const;
+	FText GetFilterStatusTextAll() const;
 	FSlateColor GetFilterStatusTextColor( const TSharedPtr< SFactsTreeView > TreeView ) const;
 
 	TSharedRef<SWidget> HandleGeneratePresetsMenu();
@@ -108,6 +109,9 @@ public:
 	void BuildFactTreeItems();
 	FFactTreeItemPtr BuildFactItem( FFactTreeItemPtr ParentNode, TSharedPtr< FGameplayTagNode > ThisNode );
 
+	int32 CountAllFilteredItems( FFactTreeItemPtr ParentNode ) const;
+	int32 CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool bIsParentFavorite ) const;
+
 private:
 	FString OnItemToStringDebug( FFactTreeItemPtr FactTreeItem ) const;
 
@@ -120,6 +124,7 @@ private:
 	void HandleShowFullNamesClicked();
 	void HandleRemoveFavoritesClicked();
 	void HandleShouldStackHierarchyHeadersClicked();
+	void HandleCountOnlyLeafsClicked();
 	void HandleOrientationChanged( EOrientation Orientation );
 
 public:

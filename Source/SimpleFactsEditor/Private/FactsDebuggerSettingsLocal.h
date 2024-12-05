@@ -41,6 +41,9 @@ public:
 	bool bRemoveFavoritesFromMainTree = true;
 
 	UPROPERTY(Config, EditAnywhere)
+	bool bCountOnlyLeafFacts = false;
+	
+	UPROPERTY(Config, EditAnywhere)
 	TEnumAsByte< EOrientation > Orientation = Orient_Horizontal;
 
 	UPROPERTY(Config)
