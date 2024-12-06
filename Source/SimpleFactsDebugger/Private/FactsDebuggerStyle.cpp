@@ -1,41 +1,41 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "FactsEditorStyle.h"
+#include "FactsDebuggerStyle.h"
 
 #include "Interfaces/IPluginManager.h"
 #include "Styling/SlateStyleMacros.h"
 #include "Styling/SlateStyleRegistry.h"
 
-TSharedPtr<FFactsEditorStyleStyle> FFactsEditorStyleStyle::StyleInstance;
+TSharedPtr<FFactsDebuggerStyle> FFactsDebuggerStyle::StyleInstance;
 
-void FFactsEditorStyleStyle::Register()
+void FFactsDebuggerStyle::Register()
 {
 	check(!StyleInstance.IsValid());
-	StyleInstance = MakeShared<FFactsEditorStyleStyle>();
+	StyleInstance = MakeShared<FFactsDebuggerStyle>();
 	FSlateStyleRegistry::RegisterSlateStyle(*StyleInstance);
 }
 
-void FFactsEditorStyleStyle::Unregister()
+void FFactsDebuggerStyle::Unregister()
 {
 	check(StyleInstance.IsValid());
 	FSlateStyleRegistry::UnRegisterSlateStyle(*StyleInstance);
 	StyleInstance.Reset();
 }
 
-FFactsEditorStyleStyle& FFactsEditorStyleStyle::Get()
+FFactsDebuggerStyle& FFactsDebuggerStyle::Get()
 {
 	check( StyleInstance.IsValid() );
 	return *StyleInstance;
 }
 
-FName FFactsEditorStyleStyle::GetStyleSetName()
+FName FFactsDebuggerStyle::GetStyleSetName()
 {
-	static FName FlowEditorStyleName( TEXT( "FactsEditorStyle" ) );
-	return FlowEditorStyleName;
+	static FName FactsDebuggerStyleName( TEXT( "FactsDebuggerStyle" ) );
+	return FactsDebuggerStyleName;
 }
 
-FFactsEditorStyleStyle::FFactsEditorStyleStyle() : FSlateStyleSet( GetStyleSetName() )
+FFactsDebuggerStyle::FFactsDebuggerStyle() : FSlateStyleSet( GetStyleSetName() )
 {
 	const FVector2D Icon16(16.0f, 16.0f);
 	const FVector2D Icon64(64.0f, 64.0f);

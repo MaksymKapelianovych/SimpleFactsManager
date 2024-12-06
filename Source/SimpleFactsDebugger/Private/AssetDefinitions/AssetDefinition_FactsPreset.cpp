@@ -4,26 +4,26 @@
 #include "AssetDefinition_FactsPreset.h"
 
 #include "ContentBrowserMenuContexts.h"
-#include "FactsEditorStyle.h"
+#include "FactsDebuggerStyle.h"
 #include "FactsPreset.h"
-#include "SimpleFactsEditor.h"
+#include "SimpleFactsDebugger.h"
 
 #define LOCTEXT_NAMESPACE "AssetTypeActions"
 
 
 namespace MenuExtentions_FactsPreset
 {
-	void OpenPresetInFactsEditor( const FToolMenuContext& MenuContext )
+	void OpenPresetInFactsDebugger( const FToolMenuContext& MenuContext )
 	{
 		if (const UContentBrowserAssetContextMenuContext* Context = UContentBrowserAssetContextMenuContext::FindContextWithAssets(MenuContext))
 		{
 			TArray<UFactsPreset*> FactsPresets = Context->LoadSelectedObjects<UFactsPreset>(  );
 			check( FactsPresets.Num() == 1 );
-			FSimpleFactsEditorModule::Get().LoadPresetIntoEditor( FactsPresets[0] );
+			FSimpleFactsDebuggerModule::Get().LoadPresetIntoDebugger( FactsPresets[0] );
 		}
 	}
 	
-	bool CanOpenPresetInFactsEditor( const FToolMenuContext& MenuContext )
+	bool CanOpenPresetInFactsDebugger( const FToolMenuContext& MenuContext )
 	{
 		if ( const UContentBrowserAssetContextMenuContext* Context = UContentBrowserAssetContextMenuContext::FindContextWithAssets( MenuContext ) )
 		{
@@ -44,14 +44,14 @@ namespace MenuExtentions_FactsPreset
 
 			{
 				FToolUIAction UIAction;
-				UIAction.ExecuteAction = FToolMenuExecuteAction::CreateStatic( &OpenPresetInFactsEditor );
-				UIAction.IsActionVisibleDelegate = FToolMenuCanExecuteAction::CreateStatic( &CanOpenPresetInFactsEditor );
+				UIAction.ExecuteAction = FToolMenuExecuteAction::CreateStatic( &OpenPresetInFactsDebugger );
+				UIAction.IsActionVisibleDelegate = FToolMenuCanExecuteAction::CreateStatic( &CanOpenPresetInFactsDebugger );
 			
 				Section.AddMenuEntry(
-					"FactsPreset_OpenInFactsEditor",
-					LOCTEXT( "FactsPreset_OpenInFactsEditor", "Open this Preset in FactsEditor" ),
-					LOCTEXT( "FactsPreset_OpenInFactsEditorTooltip", "Open this Preset in FactsEditor" ),
-					FSlateIcon(FFactsEditorStyleStyle::GetStyleSetName(), "ClassIcon.FactsPreset"),
+					"FactsPreset_OpenInFactsDebugger",
+					LOCTEXT( "FactsPreset_OpenInFactsDebugger", "Open this Preset in FactsDebugger" ),
+					LOCTEXT( "FactsPreset_OpenInFactsDebuggerTooltip", "Open this Preset in FactsDebugger" ),
+					FSlateIcon(FFactsDebuggerStyle::GetStyleSetName(), "ClassIcon.FactsPreset"),
 					UIAction
 				);
 			}

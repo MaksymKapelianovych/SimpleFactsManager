@@ -3,23 +3,23 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-class SFactsEditor;
+class SFactsDebugger;
 class UFactsPreset;
 class UFactSubsystem;
 
-class FSimpleFactsEditorModule : public IModuleInterface
+class FSimpleFactsDebuggerModule : public IModuleInterface
 {
 public:
-    static FORCEINLINE FSimpleFactsEditorModule& Get()
+    static FORCEINLINE FSimpleFactsDebuggerModule& Get()
     {
-        static FName SimpleFactsEditorModule( "SimpleFactsEditor" );
-        return FModuleManager::LoadModuleChecked<FSimpleFactsEditorModule>( SimpleFactsEditorModule );
+        static FName SimpleFactsDebuggerModule( "SimpleFactsDebugger" );
+        return FModuleManager::LoadModuleChecked<FSimpleFactsDebuggerModule>( SimpleFactsDebuggerModule );
     }
     
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;
 
-    void LoadPresetIntoEditor( UFactsPreset* InPresetToLoad );
+    void LoadPresetIntoDebugger( UFactsPreset* InPresetToLoad );
 
     void HandleGameInstanceStarted( UGameInstance* GameInstance );
     void HandleGameInstanceEnded();
@@ -33,11 +33,11 @@ private:
     void HandlePIEStarted( const bool bIsSimulating );
     void HandlePIEEnded( const bool bIsSimulating );
     
-    TSharedRef<SDockTab> SpawnFactsEditorTab( const FSpawnTabArgs& SpawnTabArgs );
-    TSharedPtr<SWidget> SummonFactsEditorUI();
+    TSharedRef<SDockTab> SpawnFactsDebuggerTab( const FSpawnTabArgs& SpawnTabArgs );
+    TSharedPtr<SWidget> SummonFactsDebuggerUI();
     
-    TWeakPtr<SDockTab> FactsEditorTab;
-    TWeakPtr<SFactsEditor> FactsEditor;
+    TWeakPtr<SDockTab> FactsDebuggerTab;
+    TWeakPtr<SFactsDebugger> FactsDebugger;
 
     TWeakObjectPtr< UGameInstance > WeakGameInstance;
     bool bPIEActive = false;;

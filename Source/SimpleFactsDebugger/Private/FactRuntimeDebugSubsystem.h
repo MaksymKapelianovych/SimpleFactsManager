@@ -10,7 +10,7 @@
  * 
  */
 UCLASS( NotBlueprintType )
-class SIMPLEFACTSEDITOR_API UFactRuntimeDebugSubsystem : public UGameInstanceSubsystem
+class UFactRuntimeDebugSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 

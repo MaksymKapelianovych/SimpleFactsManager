@@ -10,7 +10,7 @@ class UFactsPreset;
 /**
  * 
  */
-class SIMPLEFACTSEDITOR_API SFactsPresetPicker : public SCompoundWidget
+class SFactsPresetPicker : public SCompoundWidget
 {
 public:
 	DECLARE_DELEGATE_OneParam( FOnSelectionChanged, UFactsPreset* )

@@ -2,7 +2,7 @@
 
 
 #include "SFactsPresetPicker.h"
-#include "FactsEditorStyle.h"
+#include "FactsDebuggerStyle.h"
 #include "FactsPreset.h"
 #include "SlateOptMacros.h"
 #include "Logging/StructuredLog.h"
@@ -105,7 +105,7 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 					.BorderImage( FAppStyle::GetBrush( "AssetThumbnail.AssetBackground" ) )
 					[
 						SNew( SImage )
-						.Image( FFactsEditorStyleStyle::Get().GetBrush( "ClassThumbnail.FactsPreset" ) )
+						.Image( FFactsDebuggerStyle::Get().GetBrush( "ClassThumbnail.FactsPreset" ) )
 						.DesiredSizeOverride( FVector2d{ 36.f } )
 					]
 				]

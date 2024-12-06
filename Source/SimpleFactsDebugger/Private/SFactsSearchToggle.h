@@ -8,10 +8,10 @@
 /**
  * 
  */
-class SIMPLEFACTSEDITOR_API SFactsEditorSearchToggle : public SCompoundWidget
+class SFactsSearchToggle : public SCompoundWidget
 {
 public:
-	SLATE_BEGIN_ARGS( SFactsEditorSearchToggle ) {}
+	SLATE_BEGIN_ARGS( SFactsSearchToggle ) {}
 			SLATE_EVENT( FOnClicked, OnAltClicked )
 			SLATE_EVENT( FOnClicked, OnRightButtonClicked )
 			SLATE_EVENT( FOnClicked, OnClickedOnce )
@@ -19,7 +19,7 @@ public:
 	
 	void Construct( const FArguments& InArgs, const FText& InButtonText );
 
-	virtual ~SFactsEditorSearchToggle() override;
+	virtual ~SFactsSearchToggle() override;
 	
 	virtual FReply OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
 	virtual FReply OnMouseButtonUp( const FGeometry& InMyGeometry, const FPointerEvent& InMouseEvent ) override;
@@ -52,5 +52,5 @@ private:
 	FText SearchText;
 };
 
-using SFactsEditorSearchToggleRef = TSharedRef< SFactsEditorSearchToggle >;
-using SFactsEditorSearchTogglePtr = TSharedPtr< SFactsEditorSearchToggle >;
+using SFactsSearchToggleRef = TSharedRef< SFactsSearchToggle >;
+using SFactsSearchTogglePtr = TSharedPtr< SFactsSearchToggle >;

@@ -1,8 +1,8 @@
 using UnrealBuildTool;
 
-public class SimpleFactsEditor : ModuleRules
+public class SimpleFactsDebugger : ModuleRules
 {
-    public SimpleFactsEditor(ReadOnlyTargetRules Target) : base(Target)
+    public SimpleFactsDebugger(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 

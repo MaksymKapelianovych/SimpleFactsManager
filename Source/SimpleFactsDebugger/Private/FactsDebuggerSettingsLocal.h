@@ -20,7 +20,7 @@ struct FSearchToggleState
 
 
 UCLASS( Config = EditorPerProjectUserSettings, DefaultConfig )
-class SIMPLEFACTSEDITOR_API UFactsDebuggerSettingsLocal : public UObject
+class UFactsDebuggerSettingsLocal : public UObject
 {
 	GENERATED_BODY()
 

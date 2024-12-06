@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-struct FFactsEditorStyleStyle final : public FSlateStyleSet
+struct FFactsDebuggerStyle final : public FSlateStyleSet
 {
 	/** Register style set */
 	static void Register();
@@ -12,13 +12,13 @@ struct FFactsEditorStyleStyle final : public FSlateStyleSet
 	static void Unregister();
 
 	/** Access the singleton instance for this style set */
-	static FFactsEditorStyleStyle& Get();
+	static FFactsDebuggerStyle& Get();
 	static FName GetStyleSetName();
 
-	FFactsEditorStyleStyle();
-	virtual ~FFactsEditorStyleStyle() override = default;
+	FFactsDebuggerStyle();
+	virtual ~FFactsDebuggerStyle() override = default;
 
 private:
 
-	static TSharedPtr<FFactsEditorStyleStyle> StyleInstance;
+	static TSharedPtr<FFactsDebuggerStyle> StyleInstance;
 };

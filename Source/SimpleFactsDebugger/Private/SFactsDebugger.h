@@ -8,7 +8,7 @@
 #include "Widgets/SCompoundWidget.h"
 
 class UFactsPreset;
-class SFactsEditorSearchToggle;
+class SFactsSearchToggle;
 class SWrapBox;
 
 using FFactTreeItemRef = TSharedRef< struct FFactTreeItem >;
@@ -46,18 +46,18 @@ struct FFactTreeItem : public TSharedFromThis<FFactTreeItem>
 /**
  * 
  */
-class SIMPLEFACTSEDITOR_API SFactsEditor : public SCompoundWidget
+class SFactsDebugger : public SCompoundWidget
 {
 	using SFactsTreeView = STreeView<TSharedPtr<FFactTreeItem>>;
 	
 public:
-	SLATE_BEGIN_ARGS( SFactsEditor ) {}
+	SLATE_BEGIN_ARGS( SFactsDebugger ) {}
 		SLATE_ARGUMENT( bool, bIsGameStarted )
 	SLATE_END_ARGS()
 
 
 	virtual void Construct(const FArguments& InArgs );
-	virtual ~SFactsEditor() override;
+	virtual ~SFactsDebugger() override;
 
 	void LoadFactsPreset( UFactsPreset* InPreset );
 	void LoadFactsPresetRecursive( UFactsPreset* InPreset, const FFactTreeItemPtr& FactItem ) const;
@@ -151,7 +151,7 @@ private:
 
 	TSharedPtr<SHorizontalBox> SearchesHBox;
 	TSharedPtr<SWrapBox> SearchesContainer;
-	TArray< TSharedRef< SFactsEditorSearchToggle > > CurrentSearchToggles;
+	TArray< TSharedRef< SFactsSearchToggle > > CurrentSearchToggles;
 	FText CurrentSearchText;
 
 	TObjectPtr< UFactsPreset > LoadedPreset;
