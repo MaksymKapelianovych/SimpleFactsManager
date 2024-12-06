@@ -748,22 +748,25 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 		SLATE_BEGIN_ARGS( SFactTreeItem ) {}
 		SLATE_END_ARGS()
 
+		SFactTreeItem()
+			: FavoriteBrush( FAppStyle::Get().GetBrush( "Icons.Star" ) )
+			, NormalBrush( FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.Outline" ) )
+			, EvenColor( USlateThemeManager::Get().GetColor( EStyleColor::Recessed ) )
+			, OddColor( USlateThemeManager::Get().GetColor( EStyleColor::Background ) )
+			, Animation( FCurveSequence(0.f, AnimationDuration, ECurveEaseFunction::Linear ) )
+			, AnimationColor( FFactsDebuggerStyle::Get().GetColor( "Colors.FactChanged" ) )
+		{ }
+
 		void Construct( const FArguments& InArgs, const TSharedRef< STableViewBase > InOwnerTable, SFactsDebugger* InFactsDebugger, FFactTreeItemPtr InItem )
 		{
 			Item = InItem;
 			bShowFullName = GetDefault< UFactsDebuggerSettingsLocal >()->bShowFullFactNames;
 			FactsDebugger = InFactsDebugger;
 
-			Animation = FCurveSequence(0.f, AnimationDuration, ECurveEaseFunction::Linear );
-			Item->OnFactItemValueChanged.BindRaw( this, &SFactTreeItem::HandleItemValueChanged );
-
 			SMultiColumnTableRow::Construct( FSuperRowType::FArguments()
 				.Style( &FAppStyle::Get().GetWidgetStyle<FTableRowStyle>( "ContentBrowser.AssetListView.ColumnListTableRow" ) ), InOwnerTable );
 
-			FavoriteBrush = FAppStyle::Get().GetBrush( "Icons.Star" );
-			NormalBrush = FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.Outline" );
-			EvenColor = FStyleColors::Recessed.GetColor( FWidgetStyle() );
-			OddColor = FStyleColors::Background.GetColor( FWidgetStyle() );
+			Item->OnFactItemValueChanged.BindRaw( this, &SFactTreeItem::HandleItemValueChanged );
 		}
 
 		virtual void ResetRow() override
@@ -850,7 +853,7 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 				const bool bEvenEntryIndex = (IndexInList % 2 == 0);
 				
 				const float Progress = FMath::Min(Animation.GetLerp(), 1 - Animation.GetLerp());
-				ChangedBrush.TintColor = FMath::Lerp(bEvenEntryIndex ? EvenColor : OddColor, Color, Progress);
+				ChangedBrush.TintColor = FMath::Lerp(bEvenEntryIndex ? EvenColor : OddColor, AnimationColor, Progress);
 				return &ChangedBrush;
 			}
 
@@ -901,12 +904,13 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 		const FSlateBrush* FavoriteBrush = nullptr;
 		const FSlateBrush* NormalBrush = nullptr;
 		mutable FSlateColorBrush ChangedBrush = FSlateColorBrush( FStyleColors::Background );
+		
 		FLinearColor EvenColor;
 		FLinearColor OddColor;
 
-		FCurveSequence Animation;
 		const float AnimationDuration = 1.f;
-		const FLinearColor Color{ 0.1f, 0.5f, 0.1f, 0.2f };
+		FCurveSequence Animation;
+		FLinearColor AnimationColor;
 	};
 
 	if ( InItem.IsValid() )
@@ -1073,7 +1077,6 @@ TSharedRef<SWidget> SFactsDebugger::HandleGeneratePresetsMenu()
 	MenuBuilder.BeginSection( NAME_None, LOCTEXT( "LoadPreset_MenuSection", "Load preset" ));
 	{
 		TArray<FAssetData> AssetData;
-		// UAssetManager::Get().GetPrimaryAssetDataList( FPrimaryAssetType(UFactsPreset::StaticClass()->GetFName()), AssetData );
 		IAssetRegistry::Get()->GetAssetsByClass( UFactsPreset::StaticClass()->GetClassPathName(), AssetData );
 
 		TSharedPtr< SFactsPresetPicker > PresetPicker;
@@ -1275,7 +1278,7 @@ TSharedPtr<SWidget> SFactsDebugger::HandleGenerateFavoritesContextMenu()
 	MenuBuilder.BeginSection( "", LOCTEXT( "ContextMenu_FavoritesSection", "Favorites" ) );
 	{
 		MenuBuilder.AddMenuEntry(
-			LOCTEXT( "ContextMenu_ClearAllFavorites", "Clear All Favorites" ),
+			LOCTEXT( "ContextMenu_RemoveAllFavorites", "Remove All Favorites" ),
 			FText::GetEmpty(),
 			FSlateIcon(),
 			FUIAction(
@@ -1297,8 +1300,8 @@ TSharedPtr<SWidget> SFactsDebugger::HandleGenerateFavoritesContextMenu()
 		);
 		
 		MenuBuilder.AddMenuEntry(
-			LOCTEXT( "ContextMenu_ClearItemFavorites", "Clear Children Favorites" ),
-			LOCTEXT( "ContextMenu_ClearItemFavorites_ToolTip", "Clear all child facts that are Favorites (including this item)" ),
+			LOCTEXT( "ContextMenu_RemoveItemFavorites", "Remove All Favorites for Item" ),
+			LOCTEXT( "ContextMenu_RemoveItemFavorites_ToolTip", "Remove all children facts that are Favorites (including this item)" ),
 			FSlateIcon(),
 			FUIAction(
 				FExecuteAction::CreateLambda( [ this ]()

@@ -116,7 +116,7 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 				[
 					SNew( SBorder )
 					.BorderImage( FAppStyle::GetBrush( "WhiteBrush" ) )
-					.BorderBackgroundColor( FLinearColor( FColor( 243, 113, 42 ) ) ) // todo: move to StyleSet
+					.BorderBackgroundColor( FFactsDebuggerStyle::Get().GetColor( "Colors.FactsPreset" ) )
 					.Padding( FMargin{ 0.f, 2.f, 0.f, 0.f } )
 				]
 				

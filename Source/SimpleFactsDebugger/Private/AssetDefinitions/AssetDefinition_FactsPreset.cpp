@@ -67,7 +67,7 @@ FText UAssetDefinition_FactsPreset::GetAssetDisplayName() const
 
 FLinearColor UAssetDefinition_FactsPreset::GetAssetColor() const
 {
-	return FColor(243, 113, 42);
+	return FFactsDebuggerStyle::Get().GetColor( "Colors.FactsPreset" );
 }
 
 TSoftClassPtr<UObject> UAssetDefinition_FactsPreset::GetAssetClass() const
