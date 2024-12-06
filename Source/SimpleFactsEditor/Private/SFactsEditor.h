@@ -69,8 +69,8 @@ private:
 	TSharedRef< ITableRow > OnGenerateWidgetForFactsTreeView( FFactTreeItemPtr FactTreeItem, const TSharedRef< STableViewBase >& TableViewBase );
 	TSharedRef< ITableRow > HandleGeneratePinnedTreeRow( FFactTreeItemPtr FactTreeItem, const TSharedRef< STableViewBase >& TableViewBase);
 	void OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray< FFactTreeItemPtr >& Children );
-	void HandleMainExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded );
-	void HandleFavoriteExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded );
+	void HandleMainExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive );
+	void HandleFavoriteExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive );
 
 	FText GetFilterStatusTextFavorites() const;
 	FText GetFilterStatusTextAll() const;
@@ -78,6 +78,11 @@ private:
 
 	TSharedRef<SWidget> HandleGeneratePresetsMenu();
 	TSharedRef< SWidget > HandleGenerateOptionsMenu();
+	TSharedPtr< SWidget > HandleGenerateMainContextMenu();
+	TSharedPtr< SWidget > HandleGenerateFavoritesContextMenu();
+	
+	void ClearFavoritesRecursive( FFactTreeItemPtr Item );
+	bool HasFavoritesRecursive( FFactTreeItemPtr Item );
 
 	// Searching and filtering
 	void HandleSearchTextChanged( const FText& SearchText );

@@ -474,9 +474,12 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 							.TreeItemsSource( &FavoritesRootItem->Children )
 							.OnGenerateRow( this, &SFactsEditor::OnGenerateWidgetForFactsTreeView )
 							.OnGetChildren( this, &SFactsEditor::OnGetChildren )
-							.OnExpansionChanged( this, &SFactsEditor::HandleFavoriteExpansionChanged )
+							.OnExpansionChanged( this, &SFactsEditor::HandleFavoriteExpansionChanged, false )
+							.OnSetExpansionRecursive( this, &SFactsEditor::HandleFavoriteExpansionChanged, true )
 							.OnGeneratePinnedRow( this, &SFactsEditor::HandleGeneratePinnedTreeRow )
 							.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; } )
+							.OnContextMenuOpening( this, &SFactsEditor::HandleGenerateFavoritesContextMenu )
+							.SelectionMode( ESelectionMode::Type::Single )
 							.HeaderRow
 							(
 								SNew( SHeaderRow )
@@ -582,9 +585,12 @@ void SFactsEditor::Construct( const FArguments& InArgs )
 							.OnItemToString_Debug( this, &SFactsEditor::OnItemToStringDebug )
 							.OnGenerateRow( this, &SFactsEditor::OnGenerateWidgetForFactsTreeView )
 							.OnGetChildren( this, &SFactsEditor::OnGetChildren)
-							.OnExpansionChanged( this, &SFactsEditor::HandleMainExpansionChanged )
+							.OnExpansionChanged( this, &SFactsEditor::HandleMainExpansionChanged, false )
+							.OnSetExpansionRecursive( this, &SFactsEditor::HandleMainExpansionChanged, true )
 							.OnGeneratePinnedRow( this, &SFactsEditor::HandleGeneratePinnedTreeRow )
 							.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; } )
+							.OnContextMenuOpening( this, &SFactsEditor::HandleGenerateMainContextMenu )
+							.SelectionMode( ESelectionMode::Type::Single )
 							.HeaderRow
 							(
 								SNew( SHeaderRow )
@@ -942,32 +948,54 @@ void SFactsEditor::OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray<FFactTre
 	}
 }
 
-void SFactsEditor::HandleMainExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded )
+void SFactsEditor::HandleMainExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive  )
 {
 	if ( bPersistExpansionChange && FactTreeItem->Children.Num() )
 	{
 		if ( bInExpanded )
 		{
-			MainExpandedFacts.Add(FactTreeItem->Tag);
+			MainExpandedFacts.Add( FactTreeItem->Tag );
 		}
 		else
 		{
-			MainExpandedFacts.Remove(FactTreeItem->Tag);
+			MainExpandedFacts.Remove( FactTreeItem->Tag );
+		}
+		
+		if ( bRecursive )
+		{
+			// if it is not recursive, then it is already expanded
+			FactsTreeView->SetItemExpansion( FactTreeItem, bInExpanded );
+			
+			for ( FFactTreeItemPtr Child : FactTreeItem->Children )
+			{
+				HandleMainExpansionChanged( Child, bInExpanded, bRecursive );
+			}
 		}
 	}
 }
 
-void SFactsEditor::HandleFavoriteExpansionChanged(FFactTreeItemPtr FactTreeItem, bool bInExpanded)
+void SFactsEditor::HandleFavoriteExpansionChanged(FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive )
 {
 	if ( bPersistExpansionChange && FactTreeItem->Children.Num() )
 	{
 		if ( bInExpanded )
 		{
-			FavoritesExpandedFacts.Add(FactTreeItem->Tag);
+			FavoritesExpandedFacts.Add( FactTreeItem->Tag );
 		}
 		else
 		{
-			FavoritesExpandedFacts.Remove(FactTreeItem->Tag);
+			FavoritesExpandedFacts.Remove( FactTreeItem->Tag );
+		}
+
+		if ( bRecursive )
+		{
+			// if it is not recursive, then it is already expanded
+			FavoriteFactsTreeView->SetItemExpansion( FactTreeItem, bInExpanded );
+			
+			for ( FFactTreeItemPtr Child : FactTreeItem->Children )
+			{
+				HandleFavoriteExpansionChanged( Child, bInExpanded, bRecursive );
+			}
 		}
 	}
 }
@@ -1195,6 +1223,151 @@ TSharedRef< SWidget > SFactsEditor::HandleGenerateOptionsMenu()
 	MenuBuilder.EndSection();
 	
 	return MenuBuilder.MakeWidget();
+}
+
+TSharedPtr< SWidget > SFactsEditor::HandleGenerateMainContextMenu()
+{
+	FMenuBuilder MenuBuilder{true, nullptr};
+
+	MenuBuilder.BeginSection( "", LOCTEXT( "ContextMenu_TreeSection", "Hierarchy" ) );
+	{
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT( "ContextMenu_ExpandTree", "Expand Tree" ),
+			FText::GetEmpty(),
+			FSlateIcon(),
+			FUIAction( FExecuteAction::CreateRaw( this, &SFactsEditor::SetItemsExpansion, FactsTreeView, FilteredRootItem->Children, true, true ) )
+		);
+	
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT( "ContextMenu_CollapseTree", "Collapse Tree" ),
+			FText::GetEmpty(),
+			FSlateIcon(),
+			FUIAction( FExecuteAction::CreateRaw( this, &SFactsEditor::SetItemsExpansion, FactsTreeView, FilteredRootItem->Children, false, true ) )
+		);
+	}
+	MenuBuilder.EndSection();
+
+	return MenuBuilder.MakeWidget();
+}
+
+TSharedPtr<SWidget> SFactsEditor::HandleGenerateFavoritesContextMenu()
+{
+	FMenuBuilder MenuBuilder{ true, nullptr };
+
+	MenuBuilder.BeginSection( "", LOCTEXT( "ContextMenu_TreeSection", "Hierarchy" ) );
+	{
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT( "ContextMenu_ExpandTree", "Expand Tree" ),
+			FText::GetEmpty(),
+			FSlateIcon(),
+			FUIAction( FExecuteAction::CreateRaw( this, &SFactsEditor::SetItemsExpansion, FavoriteFactsTreeView, FavoritesRootItem->Children, true, true ) )
+		);
+	
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT( "ContextMenu_CollapseTree", "Collapse Tree" ),
+			FText::GetEmpty(),
+			FSlateIcon(),
+			FUIAction( FExecuteAction::CreateRaw( this, &SFactsEditor::SetItemsExpansion, FavoriteFactsTreeView, FavoritesRootItem->Children, false, true ) )
+		);
+	}
+	MenuBuilder.EndSection();
+
+	MenuBuilder.BeginSection( "", LOCTEXT( "ContextMenu_FavoritesSection", "Favorites" ) );
+	{
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT( "ContextMenu_ClearAllFavorites", "Clear All Favorites" ),
+			FText::GetEmpty(),
+			FSlateIcon(),
+			FUIAction(
+				FExecuteAction::CreateLambda( [ this ]()
+				{
+					ClearFavoritesRecursive( FavoritesRootItem );
+
+					Utils::AllFilteredFactsCount = 0;
+					Utils::AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
+
+					SaveSettings();
+					FilterItems();
+				} ),
+				FCanExecuteAction::CreateLambda( [ this ]()
+				{
+					return Utils::AllFavoriteFactsCount > 0;
+				} )
+			)
+		);
+		
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT( "ContextMenu_ClearItemFavorites", "Clear Children Favorites" ),
+			LOCTEXT( "ContextMenu_ClearItemFavorites_ToolTip", "Clear all child facts that are Favorites (including this item)" ),
+			FSlateIcon(),
+			FUIAction(
+				FExecuteAction::CreateLambda( [ this ]()
+				{
+					TArray< FFactTreeItemPtr > SelectedItems = FavoriteFactsTreeView->GetSelectedItems();
+					checkf( SelectedItems.Num() <= 1, TEXT( "SelectionMode for Favorites tree should be ESelectionMode::Type::Single" ) );
+
+					if ( SelectedItems.IsEmpty() )
+					{
+						return;
+					}
+					
+					ClearFavoritesRecursive( SelectedItems[0] );
+
+					Utils::AllFilteredFactsCount = CountAllFilteredItems( RootItem );
+					Utils::AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
+
+					SaveSettings();
+					FilterItems();
+				} ),
+				FCanExecuteAction::CreateLambda( [ this ]()
+				{
+					TArray< FFactTreeItemPtr > SelectedItems = FavoriteFactsTreeView->GetSelectedItems();
+					checkf( SelectedItems.Num() <= 1, TEXT( "SelectionMode for Favorites tree should be ESelectionMode::Type::Single" ) );
+
+					if ( SelectedItems.IsEmpty() )
+					{
+						return false;
+					}
+
+					return HasFavoritesRecursive( SelectedItems[0] );
+				} )
+			)
+		);
+	}
+	MenuBuilder.EndSection();
+
+	return MenuBuilder.MakeWidget();
+}
+
+void SFactsEditor::ClearFavoritesRecursive( FFactTreeItemPtr Item )
+{
+	if ( SFactsEditor::FavoriteFacts.Contains( Item->Tag ) )
+	{
+		SFactsEditor::FavoriteFacts.Remove( Item->Tag );
+	}
+
+	for ( FFactTreeItemPtr Child : Item->Children )
+	{
+		ClearFavoritesRecursive( Child );
+	}
+}
+
+bool SFactsEditor::HasFavoritesRecursive( FFactTreeItemPtr Item )
+{
+	if ( SFactsEditor::FavoriteFacts.Contains( Item->Tag ) )
+	{
+		return true;
+	}
+
+	for ( FFactTreeItemPtr Child : Item->Children )
+	{
+		if ( HasFavoritesRecursive( Child ) )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void SFactsEditor::HandleSearchTextChanged( const FText& SearchText )
