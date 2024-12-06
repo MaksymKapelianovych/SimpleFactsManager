@@ -7,9 +7,6 @@
 
 class UFactsPreset;
 
-/**
- * 
- */
 class SFactsPresetPicker : public SCompoundWidget
 {
 public:
@@ -21,10 +18,8 @@ public:
 	SLATE_END_ARGS()
 
 
-	/** Constructs this widget with InArgs */
 	void Construct( const FArguments& InArgs, const TArray< FAssetData >& PresetsData );
 
-	/** @returns widget to focus (search box) when the picker is opened. */
 	TSharedPtr<SWidget> GetWidgetToFocusOnOpen();
 
 private:
@@ -44,7 +39,7 @@ private:
 	void AdjustActiveSelection( int32 SelectionDelta );
 	
 private:
-	TSharedPtr< SListView< TSharedPtr< FAssetData > > > PresetPicker;
+	TSharedPtr< SListView< TSharedPtr< FAssetData > > > PresetsListView;
 	TArray< TSharedPtr< FAssetData > > AllPresetAssets;
 	TArray< TSharedPtr< FAssetData > > FilteredPresetAssets;
 	

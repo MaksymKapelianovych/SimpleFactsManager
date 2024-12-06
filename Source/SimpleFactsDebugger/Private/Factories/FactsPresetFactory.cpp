@@ -4,8 +4,6 @@
 #include "FactsPresetFactory.h"
 #include "FactsPreset.h"
 
-#define LOCTEXT_NAMESPACE "FactsPresetFactory"
-
 UFactsPresetFactory::UFactsPresetFactory()
 {
 	SupportedClass = UFactsPreset::StaticClass();
@@ -16,12 +14,10 @@ UFactsPresetFactory::UFactsPresetFactory()
 UObject* UFactsPresetFactory::FactoryCreateNew( UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags,
 	UObject* Context, FFeedbackContext* Warn )
 {
-	return NewObject<UFactsPreset>( InParent, InClass, InName, Flags );
+	return NewObject< UFactsPreset >( InParent, InClass, InName, Flags );
 }
 
 bool UFactsPresetFactory::ShouldShowInNewMenu() const
 {
 	return true;
 }
-
-#undef LOCTEXT_NAMESPACE

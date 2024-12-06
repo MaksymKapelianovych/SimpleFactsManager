@@ -20,5 +20,5 @@ struct FFactsDebuggerStyle final : public FSlateStyleSet
 
 private:
 
-	static TSharedPtr<FFactsDebuggerStyle> StyleInstance;
+	static TSharedPtr< FFactsDebuggerStyle > StyleInstance;
 };

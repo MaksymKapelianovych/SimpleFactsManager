@@ -15,11 +15,11 @@ namespace MenuExtentions_FactsPreset
 {
 	void OpenPresetInFactsDebugger( const FToolMenuContext& MenuContext )
 	{
-		if (const UContentBrowserAssetContextMenuContext* Context = UContentBrowserAssetContextMenuContext::FindContextWithAssets(MenuContext))
+		if ( const UContentBrowserAssetContextMenuContext* Context = UContentBrowserAssetContextMenuContext::FindContextWithAssets( MenuContext ) )
 		{
-			TArray<UFactsPreset*> FactsPresets = Context->LoadSelectedObjects<UFactsPreset>(  );
+			TArray< UFactsPreset* > FactsPresets = Context->LoadSelectedObjects< UFactsPreset >(  );
 			check( FactsPresets.Num() == 1 );
-			FSimpleFactsDebuggerModule::Get().LoadPresetIntoDebugger( FactsPresets[0] );
+			FSimpleFactsDebuggerModule::Get().LoadPresetIntoDebugger( FactsPresets[ 0 ] );
 		}
 	}
 	
@@ -51,7 +51,7 @@ namespace MenuExtentions_FactsPreset
 					"FactsPreset_OpenInFactsDebugger",
 					LOCTEXT( "FactsPreset_OpenInFactsDebugger", "Open this Preset in FactsDebugger" ),
 					LOCTEXT( "FactsPreset_OpenInFactsDebuggerTooltip", "Open this Preset in FactsDebugger" ),
-					FSlateIcon(FFactsDebuggerStyle::GetStyleSetName(), "ClassIcon.FactsPreset"),
+					FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "ClassIcon.FactsPreset" ),
 					UIAction
 				);
 			}

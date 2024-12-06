@@ -7,13 +7,15 @@
 #include "WorkspaceMenuStructureModule.h"
 #include "Styling/SlateStyleRegistry.h"
 
+static const FName FactsDebuggerTabName( "FactsDebugger" );
+
 static FAutoConsoleCommandWithWorld GShowFactsDebugger
 (
-	TEXT("FactsDebugger"),
-	TEXT("Displays the Facts Debugger"),
+	TEXT( "FactsDebugger" ),
+	TEXT( "Displays the Facts Debugger" ),
 	FConsoleCommandWithWorldDelegate::CreateLambda( []( UWorld* World )
 	{
-		FGlobalTabmanager::Get()->TryInvokeTab( FTabId("FactsDebuggerApp") );
+		FGlobalTabmanager::Get()->TryInvokeTab( FactsDebuggerTabName );
 	} )
 );
 
@@ -24,11 +26,11 @@ void FSimpleFactsDebuggerModule::StartupModule()
 	FFactsDebuggerStyle::Register();
 	
 	// Facts Debugger
-	FGlobalTabmanager::Get()->RegisterNomadTabSpawner( FName(TEXT("FactsDebuggerApp")), FOnSpawnTab::CreateRaw(this, &FSimpleFactsDebuggerModule::SpawnFactsDebuggerTab))
-		.SetDisplayName( LOCTEXT( "FactsDebuggerTabTitle", "Facts Debugger"))
-		.SetTooltipText( LOCTEXT( "FactsDebuggerTooltipText", "Open Facts Debugger tab."))
+	FGlobalTabmanager::Get()->RegisterNomadTabSpawner( FactsDebuggerTabName, FOnSpawnTab::CreateRaw(this, &FSimpleFactsDebuggerModule::SpawnFactsDebuggerTab ) )
+		.SetDisplayName( LOCTEXT( "FactsDebuggerTabTitle", "Facts Debugger" ) )
+		.SetTooltipText( LOCTEXT( "FactsDebuggerTooltipText", "Open Facts Debugger tab." ) )
 		.SetIcon( FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "ClassIcon.FactsPreset" ) )
-		.SetGroup(WorkspaceMenu::GetMenuStructure().GetToolsCategory());
+		.SetGroup( WorkspaceMenu::GetMenuStructure().GetToolsCategory() );
 
 }
 
@@ -36,11 +38,11 @@ void FSimpleFactsDebuggerModule::ShutdownModule()
 {
 	FFactsDebuggerStyle::Unregister();
 	
-	if (FSlateApplication::IsInitialized())
+	if ( FSlateApplication::IsInitialized() )
 	{
-		FGlobalTabmanager::Get()->UnregisterNomadTabSpawner( FName(TEXT("FactsDebuggerApp")) );
+		FGlobalTabmanager::Get()->UnregisterNomadTabSpawner( FactsDebuggerTabName );
 
-		if (FactsDebuggerTab.IsValid())
+		if ( FactsDebuggerTab.IsValid() )
 		{
 			FactsDebuggerTab.Pin()->RequestCloseTab();
 		}
@@ -56,7 +58,7 @@ void FSimpleFactsDebuggerModule::LoadPresetIntoDebugger( UFactsPreset* InPresetT
 	}
 	else
 	{
-		if (FGlobalTabmanager::Get()->TryInvokeTab( FTabId("FactsDebuggerApp") ).IsValid() )
+		if ( FGlobalTabmanager::Get()->TryInvokeTab( FactsDebuggerTabName ).IsValid() )
 		{
 			FactsDebugger.Pin()->LoadFactsPreset( InPresetToLoad );
 		}
@@ -95,7 +97,7 @@ void FSimpleFactsDebuggerModule::HandlePIEEnded( const bool bIsSimulating )
 	bPIEActive = false;
 }
 
-TSharedRef<SDockTab> FSimpleFactsDebuggerModule::SpawnFactsDebuggerTab( const FSpawnTabArgs& SpawnTabArgs )
+TSharedRef< SDockTab > FSimpleFactsDebuggerModule::SpawnFactsDebuggerTab( const FSpawnTabArgs& SpawnTabArgs )
 {
 	return SAssignNew( FactsDebuggerTab, SDockTab )
 		.TabRole( ETabRole::NomadTab )
@@ -104,7 +106,7 @@ TSharedRef<SDockTab> FSimpleFactsDebuggerModule::SpawnFactsDebuggerTab( const FS
 		];
 }
 
-TSharedPtr<SWidget> FSimpleFactsDebuggerModule::SummonFactsDebuggerUI()
+TSharedPtr< SWidget > FSimpleFactsDebuggerModule::SummonFactsDebuggerUI()
 {
 	if( IsInGameThread() )
 	{
@@ -118,4 +120,4 @@ TSharedPtr<SWidget> FSimpleFactsDebuggerModule::SummonFactsDebuggerUI()
 
 #undef LOCTEXT_NAMESPACE
     
-IMPLEMENT_MODULE(FSimpleFactsDebuggerModule, SimpleFactsDebugger)
+IMPLEMENT_MODULE( FSimpleFactsDebuggerModule, SimpleFactsDebugger )

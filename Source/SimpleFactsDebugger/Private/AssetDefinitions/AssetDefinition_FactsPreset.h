@@ -5,9 +5,6 @@
 #include "AssetDefinitionDefault.h"
 #include "AssetDefinition_FactsPreset.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class UAssetDefinition_FactsPreset : public UAssetDefinitionDefault
 {

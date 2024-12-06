@@ -6,9 +6,6 @@
 #include "Factories/Factory.h"
 #include "FactsPresetFactory.generated.h"
 
-/**
- * 
- */
 UCLASS(MinimalAPI)
 class UFactsPresetFactory : public UFactory
 {

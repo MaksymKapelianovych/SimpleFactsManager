@@ -16,8 +16,8 @@ void SFactsSearchToggle::Construct( const FArguments& InArgs, const FText& InBut
 	OnClickedOnce = InArgs._OnClickedOnce;
 	
 	SearchText = InButtonText;
-	CheckedColor = USlateThemeManager::Get().GetColor(EStyleColor::Primary);
-	UncheckedColor = USlateThemeManager::Get().GetColor(EStyleColor::Black);
+	CheckedColor = USlateThemeManager::Get().GetColor( EStyleColor::Primary );
+	UncheckedColor = USlateThemeManager::Get().GetColor( EStyleColor::Black );
 	
 	ChildSlot
 	[
@@ -49,7 +49,7 @@ void SFactsSearchToggle::Construct( const FArguments& InArgs, const FText& InBut
 
 				// -----------------------------------------------------------------------------------------------------
 				// Image that shows if this search is checked
-				+SHorizontalBox::Slot()
+				+ SHorizontalBox::Slot()
 				.VAlign( VAlign_Center )
 				.AutoWidth()
 				[
@@ -63,7 +63,7 @@ void SFactsSearchToggle::Construct( const FArguments& InArgs, const FText& InBut
 
 				// -----------------------------------------------------------------------------------------------------
 				// Search text
-				+SHorizontalBox::Slot()
+				+ SHorizontalBox::Slot()
 				.Padding( 2.f )
 				.VAlign( VAlign_Center )
 				[

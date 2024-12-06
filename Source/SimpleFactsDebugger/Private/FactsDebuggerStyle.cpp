@@ -7,19 +7,19 @@
 #include "Styling/SlateStyleMacros.h"
 #include "Styling/SlateStyleRegistry.h"
 
-TSharedPtr<FFactsDebuggerStyle> FFactsDebuggerStyle::StyleInstance;
+TSharedPtr< FFactsDebuggerStyle > FFactsDebuggerStyle::StyleInstance;
 
 void FFactsDebuggerStyle::Register()
 {
-	check(!StyleInstance.IsValid());
-	StyleInstance = MakeShared<FFactsDebuggerStyle>();
-	FSlateStyleRegistry::RegisterSlateStyle(*StyleInstance);
+	check( StyleInstance.IsValid() == false );
+	StyleInstance = MakeShared< FFactsDebuggerStyle >();
+	FSlateStyleRegistry::RegisterSlateStyle( *StyleInstance );
 }
 
 void FFactsDebuggerStyle::Unregister()
 {
-	check(StyleInstance.IsValid());
-	FSlateStyleRegistry::UnRegisterSlateStyle(*StyleInstance);
+	check( StyleInstance.IsValid() );
+	FSlateStyleRegistry::UnRegisterSlateStyle( *StyleInstance );
 	StyleInstance.Reset();
 }
 
@@ -37,10 +37,10 @@ FName FFactsDebuggerStyle::GetStyleSetName()
 
 FFactsDebuggerStyle::FFactsDebuggerStyle() : FSlateStyleSet( GetStyleSetName() )
 {
-	FSlateStyleSet::SetContentRoot(IPluginManager::Get().FindPlugin(TEXT("SimpleFactsManager"))->GetBaseDir() / TEXT("Resources"));
+	FSlateStyleSet::SetContentRoot( IPluginManager::Get().FindPlugin( TEXT( "SimpleFactsManager" ) )->GetBaseDir() / TEXT( "Resources" ) );
 	
-	Set("ClassIcon.FactsPreset", new IMAGE_BRUSH( TEXT("FactsPreset_16x_white"), CoreStyleConstants::Icon16x16 ));
-	Set("ClassThumbnail.FactsPreset", new IMAGE_BRUSH( TEXT("FactsPreset_64x_white"), CoreStyleConstants::Icon64x64 ));
+	Set( "ClassIcon.FactsPreset", new IMAGE_BRUSH( TEXT( "FactsPreset_16x_white" ), CoreStyleConstants::Icon16x16 ) );
+	Set( "ClassThumbnail.FactsPreset", new IMAGE_BRUSH( TEXT( "FactsPreset_64x_white" ), CoreStyleConstants::Icon64x64 ) );
 	Set( "Icons.Star.Outline", new IMAGE_BRUSH_SVG( "StarOutline", CoreStyleConstants::Icon16x16 ) );
 	Set( "Icons.Star.OutlineFilled", new IMAGE_BRUSH_SVG( "StarOutlineFilled", CoreStyleConstants::Icon16x16 ) );
 	

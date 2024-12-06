@@ -36,9 +36,9 @@ void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAss
 		[
 			SNew( SBorder )
 			.Padding( 6.f )
-			.BorderImage(FAppStyle::Get().GetBrush("Brushes.Panel"))
+			.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Panel" ) )
 			[
-				SAssignNew( PresetPicker, SListView< TSharedPtr< FAssetData > > )
+				SAssignNew( PresetsListView, SListView< TSharedPtr< FAssetData > > )
 				.SelectionMode( ESelectionMode::Type::Single )
 				.ListItemsSource( &FilteredPresetAssets )
 				.OnGenerateRow( this, &SFactsPresetPicker::HandleGeneratePresetWidget )
@@ -46,7 +46,8 @@ void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAss
 				.HeaderRow
 				(
 					SNew( SHeaderRow )
-					+ SHeaderRow::Column( "Name" ).DefaultLabel( NSLOCTEXT( "FactsDebugger", "ProfilerListColName", "Name" ) )
+					+ SHeaderRow::Column( "Name" )
+					.DefaultLabel( NSLOCTEXT( "FactsDebugger", "ProfilerListColName", "Name" ) )
 					.SortPriority( EColumnSortPriority::Primary )
 					.SortMode( this, &SFactsPresetPicker::GetColumnSortMode )
 					.OnSort( this, &SFactsPresetPicker::HandleSortListView )
@@ -65,7 +66,7 @@ TSharedPtr<SWidget> SFactsPresetPicker::GetWidgetToFocusOnOpen()
 	return SearchBox;
 }
 
-void SFactsPresetPicker::CachePresetsData(const TArray<FAssetData>& PresetsData)
+void SFactsPresetPicker::CachePresetsData( const TArray< FAssetData >& PresetsData )
 {
 	AllPresetAssets.Reserve( PresetsData.Num() );
 	for ( const FAssetData& AssetData : PresetsData )
@@ -87,7 +88,7 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 	}
 
 	return SNew( STableRow< TSharedPtr< FAssetData > >, OwnerTable )
-		.Style( &FAppStyle::Get().GetWidgetStyle<FTableRowStyle>( "ContentBrowser.AssetListView.ColumnListTableRow" ) )
+		.Style( &FAppStyle::Get().GetWidgetStyle< FTableRowStyle >( "ContentBrowser.AssetListView.ColumnListTableRow" ) )
 		[
 			SNew( SHorizontalBox )
 
@@ -135,7 +136,7 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 				[
 					SNew( STextBlock )
 					.Text( FText::FromName( AssetData->AssetName ) )
-					.Font( FAppStyle::Get().GetFontStyle("ContentBrowser.AssetTileViewNameFont") )
+					.Font( FAppStyle::Get().GetFontStyle( "ContentBrowser.AssetTileViewNameFont" ) )
 					.HighlightText( SearchBox.Get(), &SSearchBox::GetText )
 					.ColorAndOpacity( FSlateColor::UseForeground() )
 				]
@@ -153,7 +154,7 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 		];
 }
 
-void SFactsPresetPicker::HandleSelectionChanged( TSharedPtr<FAssetData> AssetData, ESelectInfo::Type Type )
+void SFactsPresetPicker::HandleSelectionChanged( TSharedPtr< FAssetData > AssetData, ESelectInfo::Type Type )
 {
 	if ( Type == ESelectInfo::Type::Direct || Type == ESelectInfo::Type::OnNavigation )
 	{
@@ -166,14 +167,12 @@ void SFactsPresetPicker::HandleSelectionChanged( TSharedPtr<FAssetData> AssetDat
 	}
 }
 
-void SFactsPresetPicker::HandleSortListView(EColumnSortPriority::Type SortPriority, const FName& ColumnName,
-	EColumnSortMode::Type SortMode)
+void SFactsPresetPicker::HandleSortListView( EColumnSortPriority::Type SortPriority, const FName& ColumnName, EColumnSortMode::Type SortMode )
 {
 	CurrentSortMode = SortMode;
 	
 	if ( ColumnName == "Name" )
 	{
-		UE_LOGFMT( LogTemp, Warning, "SortPriority - {0}, SortMode - {1}", SortPriority,  SortMode );
 		AllPresetAssets.Sort( [ SortMode ]( const TSharedPtr< FAssetData >& Lhs, const TSharedPtr< FAssetData >& Rhs )
 		{
 			int32 CompareResult = Lhs->AssetName.Compare( Rhs->AssetName );
@@ -187,7 +186,7 @@ void SFactsPresetPicker::HandleSortListView(EColumnSortPriority::Type SortPriori
         } );
 	}
 
-	PresetPicker->RequestListRefresh();
+	PresetsListView->RequestListRefresh();
 }
 
 EColumnSortMode::Type SFactsPresetPicker::GetColumnSortMode() const
@@ -197,7 +196,7 @@ EColumnSortMode::Type SFactsPresetPicker::GetColumnSortMode() const
 
 void SFactsPresetPicker::HandleSearchTextChanged( const FText& Text )
 {
-	ON_SCOPE_EXIT{ PresetPicker->RequestListRefresh(); };
+	ON_SCOPE_EXIT{ PresetsListView->RequestListRefresh(); };
 
 	FilteredPresetAssets.Empty();
 	if ( Text.IsEmpty() )
@@ -224,11 +223,11 @@ void SFactsPresetPicker::HandleSearchTextCommitted( const FText& Text, ETextComm
 
 	if ( Type == ETextCommit::Type::OnEnter )
 	{
-		TArray< TSharedPtr< FAssetData > > SelectionSet = PresetPicker->GetSelectedItems();
+		TArray< TSharedPtr< FAssetData > > SelectionSet = PresetsListView->GetSelectedItems();
 		if ( SelectionSet.Num() == 0 )
 		{
 			AdjustActiveSelection( 1 );
-			SelectionSet = PresetPicker->GetSelectedItems();
+			SelectionSet = PresetsListView->GetSelectedItems();
 		}
 		
 		if ( OnPresetSelected.IsBound() )
@@ -263,7 +262,7 @@ FReply SFactsPresetPicker::HandleKeyDownFromSearchBox( const FGeometry& Geometry
 
 void SFactsPresetPicker::AdjustActiveSelection(int32 SelectionDelta)
 {
-	TArray< TSharedPtr< FAssetData > > SelectionSet = PresetPicker->GetSelectedItems();
+	TArray< TSharedPtr< FAssetData > > SelectionSet = PresetsListView->GetSelectedItems();
 	int32 SelectedSuggestion = INDEX_NONE;
 
 	if ( SelectionSet.Num() > 0 )
@@ -289,11 +288,11 @@ void SFactsPresetPicker::AdjustActiveSelection(int32 SelectionDelta)
 		// Pick the new asset
 		const TSharedPtr< FAssetData >& NewSelection = FilteredPresetAssets[ SelectedSuggestion ];
 
-		PresetPicker->RequestScrollIntoView( NewSelection );
-		PresetPicker->SetSelection( NewSelection );
+		PresetsListView->RequestScrollIntoView( NewSelection );
+		PresetsListView->SetSelection( NewSelection );
 	}
 	else
 	{
-		PresetPicker->ClearSelection();
+		PresetsListView->ClearSelection();
 	}
 }

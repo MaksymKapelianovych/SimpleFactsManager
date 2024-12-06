@@ -14,7 +14,7 @@ class SWrapBox;
 using FFactTreeItemRef = TSharedRef< struct FFactTreeItem >;
 using FFactTreeItemPtr = TSharedPtr< struct FFactTreeItem >;
 
-struct FFactTreeItem : public TSharedFromThis<FFactTreeItem>
+struct FFactTreeItem : public TSharedFromThis< FFactTreeItem >
 {
 	FFactTag Tag;
 	TOptional< int32 > Value;
@@ -28,7 +28,7 @@ struct FFactTreeItem : public TSharedFromThis<FFactTreeItem>
 
 	void InitPIE();
 	void InitItem();
-	void HandleValueChanged(int32 NewValue);
+	void HandleValueChanged( int32 NewValue );
 	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type );
 
 	TOptional< int32 > GetValue() const
@@ -43,12 +43,9 @@ struct FFactTreeItem : public TSharedFromThis<FFactTreeItem>
 };
 
 
-/**
- * 
- */
 class SFactsDebugger : public SCompoundWidget
 {
-	using SFactsTreeView = STreeView<TSharedPtr<FFactTreeItem>>;
+	using SFactsTreeView = STreeView< TSharedPtr< FFactTreeItem > >;
 	
 public:
 	SLATE_BEGIN_ARGS( SFactsDebugger ) {}
@@ -56,7 +53,7 @@ public:
 	SLATE_END_ARGS()
 
 
-	virtual void Construct(const FArguments& InArgs );
+	virtual void Construct( const FArguments& InArgs );
 	virtual ~SFactsDebugger() override;
 
 	void LoadFactsPreset( UFactsPreset* InPreset );
@@ -76,7 +73,7 @@ private:
 	FText GetFilterStatusTextAll() const;
 	FSlateColor GetFilterStatusTextColor( const TSharedPtr< SFactsTreeView > TreeView ) const;
 
-	TSharedRef<SWidget> HandleGeneratePresetsMenu();
+	TSharedRef< SWidget > HandleGeneratePresetsMenu();
 	TSharedRef< SWidget > HandleGenerateOptionsMenu();
 	TSharedPtr< SWidget > HandleGenerateMainContextMenu();
 	TSharedPtr< SWidget > HandleGenerateFavoritesContextMenu();
@@ -138,8 +135,8 @@ public:
 
 private:
 	TSharedPtr< SSplitter > Splitter;
-	TSharedPtr<SFactsTreeView> FactsTreeView;
-	TSharedPtr<SFactsTreeView> FavoriteFactsTreeView;
+	TSharedPtr< SFactsTreeView > FactsTreeView;
+	TSharedPtr< SFactsTreeView > FavoriteFactsTreeView;
 	
 	FFactTreeItemPtr RootItem;
 	FFactTreeItemPtr FilteredRootItem;
@@ -149,8 +146,8 @@ private:
 	TSharedPtr< SComboButton > ComboButton;
 	TSharedPtr< SComboButton > OptionsButton;
 
-	TSharedPtr<SHorizontalBox> SearchesHBox;
-	TSharedPtr<SWrapBox> SearchesContainer;
+	TSharedPtr< SHorizontalBox > SearchesHBox;
+	TSharedPtr< SWrapBox > SearchesContainer;
 	TArray< TSharedRef< SFactsSearchToggle > > CurrentSearchToggles;
 	FText CurrentSearchText;
 

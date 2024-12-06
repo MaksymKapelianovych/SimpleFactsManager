@@ -77,8 +77,8 @@ namespace Utils
 		
 		for ( const FString& SearchString : SearchStrings )
 		{
-			TArray<FString> Tokens;
-			SearchString.ParseIntoArray( Tokens, TEXT("&") );
+			TArray< FString > Tokens;
+			SearchString.ParseIntoArray( Tokens, TEXT( " " ) );
 
 			auto Projection = [ TagString ]( const FString& Token ) { return TagString.Contains( Token ); };
 			if ( Algo::AllOf( Tokens, Projection ) )
@@ -151,12 +151,13 @@ namespace Utils
 		{
 			ETagMatchResult Result = MatchFavorites( SourceItem->Tag );
 
-			switch (Result) {
+			switch ( Result ) {
 			case ETagMatchResult::None: // Fact and it's parent tags is not in favorites
 				{
 					if ( Options.bFilteringFavorites == false )
 					{
-						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, MatchText( SourceItem->Tag.ToString() ) == false );
+						bool bShouldFilterChildren = MatchText( SourceItem->Tag.ToString() ) == false;
+						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, bShouldFilterChildren );
 					}
 				}
 				break;
@@ -179,7 +180,8 @@ namespace Utils
 				{
 					if ( Options.bFilteringFavorites || Settings->bRemoveFavoritesFromMainTree == false )
 					{
-						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, MatchText( SourceItem->Tag.ToString() ) == false );
+						bool bShouldFilterChildren = MatchText( SourceItem->Tag.ToString() ) == false;
+						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, bShouldFilterChildren );
 					}
 				}
 				break;
@@ -251,7 +253,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 	ChildSlot
 	[
-		SNew(SVerticalBox)
+		SNew( SVerticalBox )
 
 		// -------------------------------------------------------------------------------------------------------------
 		// Presets menu
@@ -263,32 +265,31 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 		[
 			SAssignNew( ComboButton, SComboButton )
 			.ToolTipText( LOCTEXT( "PresetsButton_Toolpit", "Open presets menu" ) )
-			.ComboButtonStyle(&FAppStyle::Get().GetWidgetStyle<FComboButtonStyle>("ComboButton"))
 			.OnGetMenuContent( this, &SFactsDebugger::HandleGeneratePresetsMenu )
 			.ForegroundColor( FStyleColors::Foreground )
 			.ButtonContent()
 			[
-				SNew(SHorizontalBox)
+				SNew( SHorizontalBox )
 
 				// -------------------------------------------------------------------------------------------------------------
 				// Preset icon
 				+ SHorizontalBox::Slot()
-				.Padding(0, 1, 4, 0)
+				.Padding( 0, 1, 4, 0 )
 				.AutoWidth()
 				[
-					SNew(SImage)
-					.Image(FAppStyle::Get().GetBrush("AssetEditor.SaveAsset"))
-					.ColorAndOpacity(FSlateColor::UseForeground())
+					SNew( SImage )
+					.Image( FAppStyle::Get().GetBrush( "AssetEditor.SaveAsset" ) )
+					.ColorAndOpacity( FSlateColor::UseForeground() )
 				]
 
 				// -------------------------------------------------------------------------------------------------------------
 				// Preset text
 				+ SHorizontalBox::Slot()
-				.Padding(0, 1, 0, 0)
+				.Padding( 0, 1, 0, 0 )
 				.AutoWidth()
 				[
-					SNew(STextBlock)
-					.Text(LOCTEXT("PresetsButton", "Presets"))
+					SNew( STextBlock )
+					.Text( LOCTEXT( "PresetsButton", "Presets" ) )
 				]
 			]
 		]
@@ -303,35 +304,35 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			SNew( SHorizontalBox )
 
 			+ SHorizontalBox::Slot()
-			.HAlign(HAlign_Fill)
-			.VAlign(VAlign_Center)
+			.HAlign( HAlign_Fill )
+			.VAlign( VAlign_Center )
 			.Padding(0.f, 1.f, 0.f, 1.f)
 			[
 				SAssignNew( SearchBox, SSearchBox )
-				.HintText(LOCTEXT("FactsDebugger_SearchHintText", "Search..."))
-				.ToolTipText(LOCTEXT("FactsDebugger_TooltipText", "Search facts by tag. You can search by string ('Quest2.Trigger') or by several strings, separated by spaces ('Quest Trigger')\n"
-													   "Press Enter to save this text as a toggle"))
-				.OnTextChanged(this, &SFactsDebugger::HandleSearchTextChanged)
+				.HintText( LOCTEXT( "FactsDebugger_SearchHintText", "Search..." ) )
+				.ToolTipText( LOCTEXT( "FactsDebugger_TooltipText", "Search facts by tag. You can search by string ('Quest2.Trigger') or by several strings, separated by spaces ('Quest Trigger')\n"
+													   "Press Enter to save this text as a toggle" ) )
+				.OnTextChanged( this, &SFactsDebugger::HandleSearchTextChanged )
 				.OnTextCommitted( this, &SFactsDebugger::HandleSearchTextCommitted )
 			]
 
 			+ SHorizontalBox::Slot()
-			.HAlign(HAlign_Right)
-			.VAlign(VAlign_Center)
+			.HAlign( HAlign_Right )
+			.VAlign( VAlign_Center )
 			.AutoWidth()
-			.Padding(4.f, 1.f, 0.f, 1.f)
+			.Padding( 4.f, 1.f, 0.f, 1.f )
 			[
 				SAssignNew( OptionsButton, SComboButton )
-				.ContentPadding(4.f)
-				.ToolTipText(LOCTEXT("ShowOptions_Tooltip", "Show options to affect the visibility of items in the Facts Debugger"))
+				.ContentPadding( 4.f )
+				.ToolTipText( LOCTEXT( "ShowOptions_Tooltip", "Show options to affect the visibility of items in the Facts Debugger" ) )
 				.ComboButtonStyle( FAppStyle::Get(), "SimpleComboButtonWithIcon" ) // Use the tool bar item style for this button
-				.OnGetMenuContent( this, &SFactsDebugger::HandleGenerateOptionsMenu)
-				.HasDownArrow(false)
+				.OnGetMenuContent( this, &SFactsDebugger::HandleGenerateOptionsMenu )
+				.HasDownArrow( false )
 				.ButtonContent()
 				[
-					SNew(SImage)
-					.ColorAndOpacity(FSlateColor::UseForeground())
-					.Image( FAppStyle::Get().GetBrush("Icons.Settings") )
+					SNew( SImage )
+					.ColorAndOpacity( FSlateColor::UseForeground() )
+					.Image( FAppStyle::Get().GetBrush( "Icons.Settings") )
 				]
 			]
 		]
@@ -340,7 +341,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 		// Search toggles
 
 		+ SVerticalBox::Slot()
-		.Padding( FMargin{ 8.f, 4.f, 8.f, 4.f } )
+		.Padding( 8.f, 4.f, 8.f, 4.f )
 		.AutoHeight()
 		[
 			SAssignNew( SearchesHBox, SHorizontalBox )
@@ -376,14 +377,14 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 				.ForegroundColor( FSlateColor::UseForeground() )
 				.Visibility_Lambda( [ this ]()
 				{
-					const SFactsSearchToggleRef* FoundElem = CurrentSearchToggles.FindByPredicate( []( const SFactsSearchToggleRef& SearchToggle)
+					const SFactsSearchToggleRef* FoundElem = CurrentSearchToggles.FindByPredicate( []( const SFactsSearchToggleRef& SearchToggle )
 					{
 						return SearchToggle->GetIsToggleChecked();
 					} );
 
 					return FoundElem ? EVisibility::Visible : EVisibility::Collapsed;
 				} )
-				.OnClicked( this, &SFactsDebugger::HandleClearTogglesClicked)
+				.OnClicked( this, &SFactsDebugger::HandleClearTogglesClicked )
 				[
 					SNew( STextBlock )
 					.Text( LOCTEXT( "ClearSearchesButtonText", "Clear selected" ) )
@@ -510,7 +511,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 						// For when no rows exist in view
 						+ SWidgetSwitcher::Slot()
 						.HAlign( HAlign_Fill )
-						.Padding(0.0f, 24.0f, 0.0f, 2.0f)
+						.Padding( 0.0f, 24.0f, 0.0f, 2.0f )
 						[
 							SNew( SRichTextBlock )
 							.DecoratorStyleSet( &FFactsDebuggerStyle::Get() )
@@ -553,7 +554,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 					.AutoHeight()
 					[
 						SNew( SBorder )
-						.BorderImage( FAppStyle::Get().GetBrush("Brushes.Background" ) )
+						.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Background" ) )
 						.Padding( 0.f, 0.f, 0.f, 3.f )
 						[
 							SNew( SBorder )
@@ -563,7 +564,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 								SNew( STextBlock )
 								.Text( LOCTEXT( "MainTree_Label", "All" ) )
 								.TextStyle( FAppStyle::Get(), "ButtonText" )
-								.Font( FAppStyle::Get().GetFontStyle("NormalFontBold" ) )
+								.Font( FAppStyle::Get().GetFontStyle( "NormalFontBold" ) )
 							]
 						]
 					]
@@ -597,13 +598,13 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 								+ SHeaderRow::Column( "Favorites" )
 								.FixedWidth( 24.f )
-								.HAlignHeader(HAlign_Center)
-								.VAlignHeader(VAlign_Center)
-								.HAlignCell(HAlign_Center)
-								.VAlignCell(VAlign_Center)
+								.HAlignHeader( HAlign_Center )
+								.VAlignHeader( VAlign_Center )
+								.HAlignCell( HAlign_Center )
+								.VAlignCell( VAlign_Center )
 								[
-									SNew(SImage)
-									.ColorAndOpacity(FSlateColor::UseForeground())
+									SNew( SImage )
+									.ColorAndOpacity( FSlateColor::UseForeground() )
 									.Image_Lambda( []()
 									{
 										return GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree
@@ -653,8 +654,8 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 						.Padding( 10.f, 4.f )
 						[
 							SNew( STextBlock )
-							.Text(this, &SFactsDebugger::GetFilterStatusTextAll )
-							.ColorAndOpacity(this, &SFactsDebugger::GetFilterStatusTextColor, FactsTreeView )
+							.Text( this, &SFactsDebugger::GetFilterStatusTextAll )
+							.ColorAndOpacity( this, &SFactsDebugger::GetFilterStatusTextColor, FactsTreeView )
 						]
 					]
 				]
@@ -739,8 +740,7 @@ void SFactsDebugger::InitItem( FFactTreeItemRef Item )
 	}
 }
 
-TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTreeItemPtr InItem,
-                                                                      const TSharedRef<STableViewBase>& TableViewBase )
+TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTreeItemPtr InItem, const TSharedRef<STableViewBase>& TableViewBase )
 {
 	class SFactTreeItem : public SMultiColumnTableRow< FFactTreeItemPtr >
 	{
@@ -813,7 +813,7 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 						SNew( SNumericEntryBox< int32 > )
 						.Value_Raw( Item.Get(), &FFactTreeItem::GetValue )
 						.OnValueCommitted( FOnInt32ValueCommitted::CreateRaw( Item.Get(), &FFactTreeItem::HandleNewValueCommited ) )
-						.UndeterminedString( LOCTEXT( "FactUndefinedValue", "undefined") )
+						.UndeterminedString( LOCTEXT( "FactUndefinedValue", "undefined" ) )
 					];
 			}
 			else
@@ -850,10 +850,10 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 		{
 			if ( Animation.IsPlaying() )
 			{
-				const bool bEvenEntryIndex = (IndexInList % 2 == 0);
+				const bool bEvenEntryIndex = ( IndexInList % 2 == 0 );
 				
-				const float Progress = FMath::Min(Animation.GetLerp(), 1 - Animation.GetLerp());
-				ChangedBrush.TintColor = FMath::Lerp(bEvenEntryIndex ? EvenColor : OddColor, AnimationColor, Progress);
+				const float Progress = FMath::Min( Animation.GetLerp(), 1 - Animation.GetLerp() );
+				ChangedBrush.TintColor = FMath::Lerp( bEvenEntryIndex ? EvenColor : OddColor, AnimationColor, Progress );
 				return &ChangedBrush;
 			}
 
@@ -871,7 +871,7 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 		
 			if ( IsFavorite() == false )
 			{
-				if (IsHovered() == false && bIsSelected == false)
+				if ( IsHovered() == false && bIsSelected == false )
 				{
 					return FLinearColor::Transparent;
 				}
@@ -919,16 +919,15 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 	}
 	else
 	{
-		return SNew(STableRow< TSharedPtr<FString> >, TableViewBase)
+		return SNew( STableRow< TSharedPtr<FString> >, TableViewBase )
 			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("UnknownItemType", "Unknown Item Type"))
+				SNew( STextBlock )
+				.Text( LOCTEXT( "UnknownItemType", "Unknown Item Type" ) )
 			];		
 	}
 }
 
-TSharedRef< ITableRow > SFactsDebugger::HandleGeneratePinnedTreeRow( FFactTreeItemPtr FactTreeItem,
-	const TSharedRef<STableViewBase>& TableViewBase )
+TSharedRef< ITableRow > SFactsDebugger::HandleGeneratePinnedTreeRow( FFactTreeItemPtr FactTreeItem, const TSharedRef< STableViewBase >& TableViewBase )
 {
 	bool bShowFullName = GetDefault< UFactsDebuggerSettingsLocal >()->bShowFullFactNames;
 	
@@ -1051,7 +1050,7 @@ FSlateColor SFactsDebugger::GetFilterStatusTextColor( const TSharedPtr< SFactsTr
 
 TSharedRef<SWidget> SFactsDebugger::HandleGeneratePresetsMenu()
 {
-	FMenuBuilder MenuBuilder{true, nullptr};
+	FMenuBuilder MenuBuilder{ true, nullptr };
 
 	FUIAction PresetNameAction = FUIAction();
 	PresetNameAction.CanExecuteAction = FCanExecuteAction::CreateLambda( []() { return false; } );
@@ -1065,7 +1064,7 @@ TSharedRef<SWidget> SFactsDebugger::HandleGeneratePresetsMenu()
 		EUserInterfaceActionType::None
 	);
 
-	MenuBuilder.AddSeparator(  );
+	MenuBuilder.AddSeparator();
 
 	MenuBuilder.AddMenuEntry(
 		LOCTEXT( "SavePreset_Text", "Save preset" ),
@@ -1076,7 +1075,7 @@ TSharedRef<SWidget> SFactsDebugger::HandleGeneratePresetsMenu()
 
 	MenuBuilder.BeginSection( NAME_None, LOCTEXT( "LoadPreset_MenuSection", "Load preset" ));
 	{
-		TArray<FAssetData> AssetData;
+		TArray< FAssetData > AssetData;
 		IAssetRegistry::Get()->GetAssetsByClass( UFactsPreset::StaticClass()->GetClassPathName(), AssetData );
 
 		TSharedPtr< SFactsPresetPicker > PresetPicker;
@@ -1124,8 +1123,8 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 		);
 
 		MenuBuilder.AddMenuEntry(
-			LOCTEXT("Options_ShowHierarchy", "Stack Hierarchy Headers"),
-			LOCTEXT("Options_ShowHierarchy_Tooltip", "Toggle pinning of the hierarchy of items at the top of the outliner"),
+			LOCTEXT( "Options_ShowHierarchy", "Stack Hierarchy Headers" ),
+			LOCTEXT( "Options_ShowHierarchy_Tooltip", "Toggle pinning of the hierarchy of items at the top of the outliner" ),
 			FSlateIcon(),
 			FUIAction(
 				FExecuteAction::CreateRaw( this, &SFactsDebugger::HandleShouldStackHierarchyHeadersClicked ),
@@ -1230,7 +1229,7 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 
 TSharedPtr< SWidget > SFactsDebugger::HandleGenerateMainContextMenu()
 {
-	FMenuBuilder MenuBuilder{true, nullptr};
+	FMenuBuilder MenuBuilder{ true, nullptr };
 
 	MenuBuilder.BeginSection( "", LOCTEXT( "ContextMenu_TreeSection", "Hierarchy" ) );
 	{
@@ -1399,7 +1398,7 @@ void SFactsDebugger::HandleSearchTextCommitted( const FText& SearchText, ETextCo
 		const FText ToggleText = SearchToggle->GetSearchText();
 		ExistingStrings.Add( ToggleText.ToString() );
 
-		if (SearchText.EqualToCaseIgnored( ToggleText ) )
+		if ( SearchText.EqualToCaseIgnored( ToggleText ) )
 		{
 			SearchToggle->SetIsButtonChecked( true );
 		}
@@ -1440,7 +1439,7 @@ void SFactsDebugger::FilterItems()
 	}
 
 	TArray< FString > Tokens;
-	CurrentSearchText.ToString().ParseIntoArray( Tokens, TEXT( "&" ) );
+	CurrentSearchText.ToString().ParseIntoArray( Tokens, TEXT(  " "  ) );
 
 	// Reset containers
 	FilteredRootItem = MakeShared< FFactTreeItem >();
@@ -1535,7 +1534,7 @@ void SFactsDebugger::RestoreExpansionState()
 	}
 }
 
-void SFactsDebugger::SetDefaultItemsExpansion( TSharedPtr<SFactsTreeView> TreeView, const TArray<FFactTreeItemPtr>& FactItems, const TSet< FFactTag >& ExpandedFacts )
+void SFactsDebugger::SetDefaultItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, const TArray< FFactTreeItemPtr >& FactItems, const TSet< FFactTag >& ExpandedFacts )
 {
 	TGuardValue< bool > PersistExpansionChangeGuard( bPersistExpansionChange, false );
 
@@ -1584,7 +1583,7 @@ FReply SFactsDebugger::HandleRemoveSearchToggle()
 
 void SFactsDebugger::CleanupSearchesMarkedForDelete()
 {
-	CurrentSearchToggles.RemoveAllSwap( [](const SFactsSearchToggleRef& SearchToggle )
+	CurrentSearchToggles.RemoveAllSwap( []( const SFactsSearchToggleRef& SearchToggle )
 	{
 		return SearchToggle->GetIsMarkedForDelete();
 	} );

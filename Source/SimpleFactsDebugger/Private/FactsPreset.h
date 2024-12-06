@@ -15,5 +15,5 @@ class UFactsPreset final : public UPrimaryDataAsset
 
 public:
 	UPROPERTY(EditDefaultsOnly, meta = (ForceInlineRow))
-	TMap<FFactTag, int32> PresetValues;
+	TMap< FFactTag, int32 > PresetValues;
 };
