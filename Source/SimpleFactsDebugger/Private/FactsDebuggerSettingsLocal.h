@@ -25,9 +25,6 @@ class UFactsDebuggerSettingsLocal : public UObject
 	GENERATED_BODY()
 
 public:
-	DECLARE_DELEGATE(FOnChanged);
-	FOnChanged OnChangedDelegate;
-	
 	UPROPERTY(Config, EditAnywhere)
 	bool bShowRootFactTag = true;
 

@@ -20,6 +20,9 @@ void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAss
 	[
 		SNew ( SVerticalBox )
 
+		// -------------------------------------------------------------------------------------------------------------
+		// Search box
+		
 		+ SVerticalBox::Slot()
 		.HAlign( HAlign_Fill )
 		.VAlign( VAlign_Top )
@@ -31,6 +34,9 @@ void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAss
 			.OnTextCommitted( this, &SFactsPresetPicker::HandleSearchTextCommitted )
 			.OnKeyDownHandler( this, &SFactsPresetPicker::HandleKeyDownFromSearchBox )
 		]
+
+		// -------------------------------------------------------------------------------------------------------------
+		// Presets list
 
 		+ SVerticalBox::Slot()
 		[

@@ -56,22 +56,32 @@ public:
 	virtual void Construct( const FArguments& InArgs );
 	virtual ~SFactsDebugger() override;
 
+	// Todo: remove from widget
 	void LoadFactsPreset( UFactsPreset* InPreset );
 	void LoadFactsPresetRecursive( UFactsPreset* InPreset, const FFactTreeItemPtr& FactItem ) const;
 
+	// Todo: maybe move to utils
+	static int32 CountAllFilteredItems( FFactTreeItemPtr ParentNode );
+	static int32 CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool bIsParentFavorite );
+	
 private:
+	// Play started
 	void HandleGameInstanceStarted();
 	void InitItem( FFactTreeItemRef Item );
 	
+	// Create tree widgets
+	TSharedRef< SWidget > CreateTreeLabel( const FText& InLabel ) const;
+	TSharedRef< SWidget > CreateFactsTree( bool bIsFavoritesTree );
+	TSharedRef< SHeaderRow > CreateHeaderRow( bool bIsFavoritesTree ) const;
+	TSharedRef< SWidget > CreateFilterStatusWidget( bool bIsFavoritesTree ) const;
+	
 	TSharedRef< ITableRow > OnGenerateWidgetForFactsTreeView( FFactTreeItemPtr FactTreeItem, const TSharedRef< STableViewBase >& TableViewBase );
-	TSharedRef< ITableRow > HandleGeneratePinnedTreeRow( FFactTreeItemPtr FactTreeItem, const TSharedRef< STableViewBase >& TableViewBase);
+	TSharedRef< ITableRow > HandleGeneratePinnedTreeRow( FFactTreeItemPtr FactTreeItem, const TSharedRef< STableViewBase >& TableViewBase );
 	void OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray< FFactTreeItemPtr >& Children );
-	void HandleMainExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive );
-	void HandleFavoriteExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive );
-
-	FText GetFilterStatusTextFavorites() const;
-	FText GetFilterStatusTextAll() const;
-	FSlateColor GetFilterStatusTextColor( const TSharedPtr< SFactsTreeView > TreeView ) const;
+	void HandleExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive, bool bIsFavoritesTree );
+	
+	FText GetFilterStatusText( bool bIsFavoritesTree ) const;
+	FSlateColor GetFilterStatusTextColor( bool bIsFavoritesTree ) const;
 
 	TSharedRef< SWidget > HandleGeneratePresetsMenu();
 	TSharedRef< SWidget > HandleGenerateOptionsMenu();
@@ -98,36 +108,28 @@ private:
 	static bool FindItemByTagRecursive( const FFactTreeItemPtr& Item, const FFactTag Tag, TArray< FFactTreeItemPtr >& OutPath );
 
 	// Search toggles
+	void CreateDefaultSearchToggles( TArray< FSearchToggleState > SearchToggleStates );
+	TSharedRef< SFactsSearchToggle > ConstructSearchToggle( const FText& InSearchText, bool bInChecked = false );
+	
 	FReply HandleRemoveSearchToggle();
 	void CleanupSearchesMarkedForDelete();
 	void RefreshSearchToggles();
-	void CreateDefaultSearchToggles( TArray< FSearchToggleState > SearchToggleStates );
+	FReply HandleClearTogglesClicked();
+	FReply HandleSearchToggleClicked();
+	
 	TArray< FSearchToggleState > GetSearchToggleStates();
 	bool IsAnySearchToggleActive() const;
-
-	FReply HandleClearTogglesClicked();
-	FReply HandleSearchToggleClicked();	
-
-public:
+	
 	void BuildFactTreeItems();
 	FFactTreeItemPtr BuildFactItem( FFactTreeItemPtr ParentNode, TSharedPtr< FGameplayTagNode > ThisNode );
-
-	int32 CountAllFilteredItems( FFactTreeItemPtr ParentNode ) const;
-	int32 CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool bIsParentFavorite ) const;
-
-private:
-	FString OnItemToStringDebug( FFactTreeItemPtr FactTreeItem ) const;
-
-	// Settings
-	void LoadSettings();
-	void SaveSettings();
+	void RebuildFactTreeItems();
 	
-	void HandleSettingsChanged();
-	void HandleShowRootTagClicked();
-	void HandleShowFullNamesClicked();
-	void HandleRemoveFavoritesClicked();
-	void HandleShouldStackHierarchyHeadersClicked();
-	void HandleCountOnlyLeafsClicked();
+	// Settings
+	void LoadSearchToggles();
+	void SaveSearchToggles();
+	void LoadFavorites();
+	void SaveFavorites();
+	
 	void HandleOrientationChanged( EOrientation Orientation );
 
 public:

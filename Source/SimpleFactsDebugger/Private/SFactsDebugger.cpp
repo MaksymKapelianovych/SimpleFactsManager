@@ -30,6 +30,16 @@ TSet< FFactTag > SFactsDebugger::MainExpandedFacts;
 TSet< FFactTag > SFactsDebugger::FavoritesExpandedFacts;
 TArray< FFactTag > SFactsDebugger::FavoriteFacts;
 
+#define TOGGLE_FACT_SETTING( PropertyName ) \
+	[ this ]() { \
+		UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >(); \
+		Settings->PropertyName = !Settings->PropertyName; \
+		Settings->SaveConfig(); \
+		 \
+		RebuildFactTreeItems(); \
+	}
+
+
 namespace Utils
 {
 	int32 AllFilteredFactsCount = 0;
@@ -249,8 +259,10 @@ BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 void SFactsDebugger::Construct( const FArguments& InArgs )
 {
-	BuildFactTreeItems();
-
+	RootItem = MakeShared< FFactTreeItem >();
+	FilteredRootItem = MakeShared< FFactTreeItem >();
+	FavoritesRootItem = MakeShared< FFactTreeItem >();
+		
 	ChildSlot
 	[
 		SNew( SVerticalBox )
@@ -266,12 +278,11 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			SAssignNew( ComboButton, SComboButton )
 			.ToolTipText( LOCTEXT( "PresetsButton_Toolpit", "Open presets menu" ) )
 			.OnGetMenuContent( this, &SFactsDebugger::HandleGeneratePresetsMenu )
-			.ForegroundColor( FStyleColors::Foreground )
 			.ButtonContent()
 			[
 				SNew( SHorizontalBox )
 
-				// -------------------------------------------------------------------------------------------------------------
+				// -----------------------------------------------------------------------------------------------------
 				// Preset icon
 				+ SHorizontalBox::Slot()
 				.Padding( 0, 1, 4, 0 )
@@ -279,10 +290,9 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 				[
 					SNew( SImage )
 					.Image( FAppStyle::Get().GetBrush( "AssetEditor.SaveAsset" ) )
-					.ColorAndOpacity( FSlateColor::UseForeground() )
 				]
 
-				// -------------------------------------------------------------------------------------------------------------
+				// -----------------------------------------------------------------------------------------------------
 				// Preset text
 				+ SHorizontalBox::Slot()
 				.Padding( 0, 1, 0, 0 )
@@ -303,6 +313,9 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 		[
 			SNew( SHorizontalBox )
 
+			// ---------------------------------------------------------------------------------------------------------
+			// Search box
+			
 			+ SHorizontalBox::Slot()
 			.HAlign( HAlign_Fill )
 			.VAlign( VAlign_Center )
@@ -310,12 +323,15 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			[
 				SAssignNew( SearchBox, SSearchBox )
 				.HintText( LOCTEXT( "FactsDebugger_SearchHintText", "Search..." ) )
-				.ToolTipText( LOCTEXT( "FactsDebugger_TooltipText", "Search facts by tag. You can search by string ('Quest2.Trigger') or by several strings, separated by spaces ('Quest Trigger')\n"
+				.ToolTipText( LOCTEXT( "FactsDebugger_ToolTipText", "Search facts by tag. You can search by string ('Quest2.Trigger') or by several strings, separated by spaces ('Quest Trigger')\n"
 													   "Press Enter to save this text as a toggle" ) )
 				.OnTextChanged( this, &SFactsDebugger::HandleSearchTextChanged )
 				.OnTextCommitted( this, &SFactsDebugger::HandleSearchTextCommitted )
 			]
 
+			// ---------------------------------------------------------------------------------------------------------
+			// Options
+			
 			+ SHorizontalBox::Slot()
 			.HAlign( HAlign_Right )
 			.VAlign( VAlign_Center )
@@ -324,14 +340,13 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			[
 				SAssignNew( OptionsButton, SComboButton )
 				.ContentPadding( 4.f )
-				.ToolTipText( LOCTEXT( "ShowOptions_Tooltip", "Show options to affect the visibility of items in the Facts Debugger" ) )
+				.ToolTipText( LOCTEXT( "ShowOptions_ToolTip", "Show options to affect the visibility of items in the Facts Debugger" ) )
 				.ComboButtonStyle( FAppStyle::Get(), "SimpleComboButtonWithIcon" ) // Use the tool bar item style for this button
 				.OnGetMenuContent( this, &SFactsDebugger::HandleGenerateOptionsMenu )
 				.HasDownArrow( false )
 				.ButtonContent()
 				[
 					SNew( SImage )
-					.ColorAndOpacity( FSlateColor::UseForeground() )
 					.Image( FAppStyle::Get().GetBrush( "Icons.Settings") )
 				]
 			]
@@ -347,11 +362,10 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			SAssignNew( SearchesHBox, SHorizontalBox )
 			.Visibility_Lambda( [ this ]()
 			{
-				const bool bShouldBeVisible = SearchesContainer.IsValid() && SearchesContainer->GetChildren()->Num() > 0;
-				return bShouldBeVisible ? EVisibility::SelfHitTestInvisible : EVisibility::Collapsed;
+				return SearchesContainer->GetChildren()->Num() > 0 ? EVisibility::SelfHitTestInvisible : EVisibility::Collapsed;
 			} )
 
-			// -------------------------------------------------------------------------------------------------------------
+			// ---------------------------------------------------------------------------------------------------------
 			// Search toggles
 
 			+ SHorizontalBox::Slot()
@@ -362,7 +376,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 				.UseAllottedSize( true )
 			]
 
-			// -------------------------------------------------------------------------------------------------------------
+			// ---------------------------------------------------------------------------------------------------------
 			// Clear selected toggles button
 			
 			+ SHorizontalBox::Slot()
@@ -372,24 +386,15 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			.Padding( 8.f, 1.f, 2.f, 1.f )
 			[
 				SNew( SButton )
-				.ToolTipText( LOCTEXT( "ClearSearchesButtonTooltip", "Clear all selected searches") )
-				.ButtonStyle( &FAppStyle::Get(), "Button" )
-				.ForegroundColor( FSlateColor::UseForeground() )
+				.ToolTipText( LOCTEXT( "ClearSearchesButtonToolTip", "Clear all selected searches") )
 				.Visibility_Lambda( [ this ]()
 				{
-					const SFactsSearchToggleRef* FoundElem = CurrentSearchToggles.FindByPredicate( []( const SFactsSearchToggleRef& SearchToggle )
-					{
-						return SearchToggle->GetIsToggleChecked();
-					} );
-
-					return FoundElem ? EVisibility::Visible : EVisibility::Collapsed;
+					return IsAnySearchToggleActive() ? EVisibility::Visible : EVisibility::Collapsed;
 				} )
 				.OnClicked( this, &SFactsDebugger::HandleClearTogglesClicked )
 				[
 					SNew( STextBlock )
 					.Text( LOCTEXT( "ClearSearchesButtonText", "Clear selected" ) )
-					.Visibility( EVisibility::SelfHitTestInvisible )
-					.ColorAndOpacity( FSlateColor::UseForeground() )
 				]
 			]
 
@@ -403,9 +408,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			.Padding( 8.f, 1.f, 2.f, 1.f )
 			[
 				SNew( SButton )
-				.ToolTipText( LOCTEXT( "RemoveSearchesButtonTooltip", "Remove all searches from the facts Debugger") )
-				.ButtonStyle( &FAppStyle::Get(), "Button" )
-				.ForegroundColor( FSlateColor::UseForeground() )
+				.ToolTipText( LOCTEXT( "RemoveSearchesButtonToolTip", "Remove all searches from the facts Debugger") )
 				.OnClicked_Lambda( [ this ]()
 				{
 					SearchesContainer->ClearChildren();
@@ -416,16 +419,14 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 				} )
 				[
 					SNew( SImage )
-					.Visibility( EVisibility::SelfHitTestInvisible )
 					.Image( FAppStyle::Get().GetBrush( "Icons.X" ) )
-					.ColorAndOpacity( FSlateColor::UseForeground() )
 				]
 			]
 		]
 		
 
 		// -------------------------------------------------------------------------------------------------------------
-		// FactsTree
+		// Facts trees
 
 		+ SVerticalBox::Slot()
 		.FillHeight( 1.f )
@@ -436,28 +437,24 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 				SAssignNew( Splitter, SSplitter )
 				.Orientation( GetDefault< UFactsDebuggerSettingsLocal >()->Orientation )
 
+				// -----------------------------------------------------------------------------------------------------
+				// Favorites tree half
+				
 				+ SSplitter::Slot()
 				[
 					SNew( SVerticalBox )
 
+					// -------------------------------------------------------------------------------------------------
+					// Tree label
+					
 					+ SVerticalBox::Slot()
 					.AutoHeight()
 					[
-						SNew( SBorder )
-						.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Background" ) )
-						.Padding( 0.f, 0.f, 0.f, 3.f )
-						[
-							SNew( SBorder )
-							.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
-							.Padding( 10.f, 4.f )
-							[
-								SNew( STextBlock )
-								.Text( LOCTEXT( "FavoritesTree_Label", "Favorites" ) )
-								.TextStyle( FAppStyle::Get(), "ButtonText" )
-								.Font( FAppStyle::Get().GetFontStyle( "NormalFontBold" ) )
-							]	
-						]
+						CreateTreeLabel( LOCTEXT( "FavoritesTree_Label", "Favorites" ) )
 					]
+					
+					// -------------------------------------------------------------------------------------------------
+					// Tree panel
 					
 					+ SVerticalBox::Slot()
 					.FillHeight( 1.f )
@@ -468,47 +465,18 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 							return FavoritesRootItem->Children.Num() ? 0 : 1;
 						} )
 
+						// ---------------------------------------------------------------------------------------------
+						// Favorites tree
+
 						+ SWidgetSwitcher::Slot()
 						.HAlign( HAlign_Fill )
 						[
-							SAssignNew( FavoriteFactsTreeView, SFactsTreeView )
-							.TreeItemsSource( &FavoritesRootItem->Children )
-							.OnGenerateRow( this, &SFactsDebugger::OnGenerateWidgetForFactsTreeView )
-							.OnGetChildren( this, &SFactsDebugger::OnGetChildren )
-							.OnExpansionChanged( this, &SFactsDebugger::HandleFavoriteExpansionChanged, false )
-							.OnSetExpansionRecursive( this, &SFactsDebugger::HandleFavoriteExpansionChanged, true )
-							.OnGeneratePinnedRow( this, &SFactsDebugger::HandleGeneratePinnedTreeRow )
-							.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; } )
-							.OnContextMenuOpening( this, &SFactsDebugger::HandleGenerateFavoritesContextMenu )
-							.SelectionMode( ESelectionMode::Type::Single )
-							.HeaderRow
-							(
-								SNew( SHeaderRow )
-
-								+ SHeaderRow::Column( "Favorites" )
-								.FixedWidth( 24.f )
-								.HAlignHeader(HAlign_Center)
-								.VAlignHeader(VAlign_Center)
-								.HAlignCell(HAlign_Center)
-								.VAlignCell(VAlign_Center)
-								[
-									SNew( SImage )
-									.ColorAndOpacity( FSlateColor::UseForeground() )
-									.Image( FAppStyle::Get().GetBrush( "Icons.Star" ) )
-								]
-								
-								+ SHeaderRow::Column( "FactTag" )
-								.SortPriority( EColumnSortPriority::Secondary )
-								.DefaultLabel( LOCTEXT( "FactTag", "Tag" ) )
-
-								+ SHeaderRow::Column( "FactValue" )
-								.ManualWidth( 90.f )
-								.DefaultLabel( LOCTEXT( "FactValue", "Value" ) )
-								.DefaultTooltip( LOCTEXT( "FactValue_Tooltip", "Current value of this fact. Undefined means that value for this fact was not yet set" ) )
-							)
+							CreateFactsTree( /*bIsFavoritesTree*/true )
 						]
 
-						// For when no rows exist in view
+						// ---------------------------------------------------------------------------------------------
+						// When no rows exist in view
+						
 						+ SWidgetSwitcher::Slot()
 						.HAlign( HAlign_Fill )
 						.Padding( 0.0f, 24.0f, 0.0f, 2.0f )
@@ -530,45 +498,35 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 						]
 					]
 
-					+ SVerticalBox::Slot()
-					.AutoHeight()
-					[
-						SNew( SBorder )
-						.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
-						.VAlign( VAlign_Center )
-						.HAlign( HAlign_Left )
-						.Padding( 10.f, 4.f )
-						[
-							SNew( STextBlock )
-							.Text( this, &SFactsDebugger::GetFilterStatusTextFavorites )
-							.ColorAndOpacity( this, &SFactsDebugger::GetFilterStatusTextColor, FavoriteFactsTreeView )
-						]
-					]
-				]
-
-				+ SSplitter::Slot()
-				[
-					SNew( SVerticalBox )
+					// -------------------------------------------------------------------------------------------------
+					// Tree filter status
 					
 					+ SVerticalBox::Slot()
 					.AutoHeight()
 					[
-						SNew( SBorder )
-						.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Background" ) )
-						.Padding( 0.f, 0.f, 0.f, 3.f )
-						[
-							SNew( SBorder )
-							.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
-							.Padding( 10.f, 4.f )
-							[
-								SNew( STextBlock )
-								.Text( LOCTEXT( "MainTree_Label", "All" ) )
-								.TextStyle( FAppStyle::Get(), "ButtonText" )
-								.Font( FAppStyle::Get().GetFontStyle( "NormalFontBold" ) )
-							]
-						]
+						CreateFilterStatusWidget( /*bIsFavoritesTree*/true )
+					]
+				]
+
+				// -----------------------------------------------------------------------------------------------------
+				// Main tree half
+				
+				+ SSplitter::Slot()
+				[
+					SNew( SVerticalBox )
+
+					// -------------------------------------------------------------------------------------------------
+					// Tree label
+					
+					+ SVerticalBox::Slot()
+					.AutoHeight()
+					[
+						CreateTreeLabel( LOCTEXT( "MainTree_Label", "All" ) )
 					]
 
+					// -------------------------------------------------------------------------------------------------
+					// Tree panel
+					
 					+ SVerticalBox::Slot()
 					.FillHeight( 1.f )
 					[
@@ -578,53 +536,18 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 							return FilteredRootItem->Children.Num() ? 0 : 1;
 						} )
 
+						// ---------------------------------------------------------------------------------------------
+						// Main tree
+						
 						+ SWidgetSwitcher::Slot()
 						.HAlign( HAlign_Fill )
 						[
-							SAssignNew( FactsTreeView, SFactsTreeView )
-							.TreeItemsSource( &FilteredRootItem->Children )
-							.OnItemToString_Debug( this, &SFactsDebugger::OnItemToStringDebug )
-							.OnGenerateRow( this, &SFactsDebugger::OnGenerateWidgetForFactsTreeView )
-							.OnGetChildren( this, &SFactsDebugger::OnGetChildren)
-							.OnExpansionChanged( this, &SFactsDebugger::HandleMainExpansionChanged, false )
-							.OnSetExpansionRecursive( this, &SFactsDebugger::HandleMainExpansionChanged, true )
-							.OnGeneratePinnedRow( this, &SFactsDebugger::HandleGeneratePinnedTreeRow )
-							.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; } )
-							.OnContextMenuOpening( this, &SFactsDebugger::HandleGenerateMainContextMenu )
-							.SelectionMode( ESelectionMode::Type::Single )
-							.HeaderRow
-							(
-								SNew( SHeaderRow )
-
-								+ SHeaderRow::Column( "Favorites" )
-								.FixedWidth( 24.f )
-								.HAlignHeader( HAlign_Center )
-								.VAlignHeader( VAlign_Center )
-								.HAlignCell( HAlign_Center )
-								.VAlignCell( VAlign_Center )
-								[
-									SNew( SImage )
-									.ColorAndOpacity( FSlateColor::UseForeground() )
-									.Image_Lambda( []()
-									{
-										return GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree
-											? FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.Outline" )
-											: FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.OutlineFilled" );
-									} )
-								]
-								
-								+ SHeaderRow::Column( "FactTag" )
-								.SortPriority( EColumnSortPriority::Secondary )
-								.DefaultLabel( LOCTEXT( "FactTag", "Tag" ) )
-
-								+ SHeaderRow::Column( "FactValue" )
-								.ManualWidth( 90.f )
-								.DefaultLabel( LOCTEXT( "FactValue", "Value" ) )
-								.DefaultTooltip( LOCTEXT( "FactValue_Tooltip", "Current value of this fact. Undefined means that value for this fact was not yet set" ) )
-							)
+							CreateFactsTree( /*bIsFavoritesTree*/false )
 						]
 
-						// For when no rows exist in view
+						// ---------------------------------------------------------------------------------------------
+						// When no rows exist in view
+						
 						+ SWidgetSwitcher::Slot()
 						.HAlign( HAlign_Fill )
 						.Padding( 0.0f, 24.0f, 0.0f, 2.0f )
@@ -643,65 +566,39 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 							} )
 						]
 					]
+
+					// -------------------------------------------------------------------------------------------------
+					// Tree filter status
 					
 					+ SVerticalBox::Slot()
 					.AutoHeight()
 					[
-						SNew( SBorder )
-						.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
-						.VAlign( VAlign_Center )
-						.HAlign( HAlign_Left )
-						.Padding( 10.f, 4.f )
-						[
-							SNew( STextBlock )
-							.Text( this, &SFactsDebugger::GetFilterStatusTextAll )
-							.ColorAndOpacity( this, &SFactsDebugger::GetFilterStatusTextColor, FactsTreeView )
-						]
+						CreateFilterStatusWidget( /*bIsFavoritesTree*/false )
 					]
 				]
 			]
 		]
 	];
 
-	TagChangedHandle = UGameplayTagsManager::OnEditorRefreshGameplayTagTree.AddSP( this, &SFactsDebugger::HandleSettingsChanged );
+	TagChangedHandle = UGameplayTagsManager::OnEditorRefreshGameplayTagTree.AddSP( this, &SFactsDebugger::RebuildFactTreeItems );
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceStarted.BindRaw( this, &SFactsDebugger::HandleGameInstanceStarted );
 	if ( InArgs._bIsGameStarted )
 	{
 		HandleGameInstanceStarted();
 	}
 
-	LoadSettings();
+	LoadFavorites();
+	LoadSearchToggles();
+	BuildFactTreeItems();
 	FilterItems();
 }
+
+END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 SFactsDebugger::~SFactsDebugger()
 {
 	UGameplayTagsManager::OnEditorRefreshGameplayTagTree.Remove( TagChangedHandle );
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceStarted.Unbind();
-}
-
-TArray<FSearchToggleState> SFactsDebugger::GetSearchToggleStates()
-{
-	TArray< FSearchToggleState > SearchToggleStates;
-	for ( const SFactsSearchToggleRef SearchToggle : CurrentSearchToggles )
-	{
-		SearchToggleStates.Emplace( SearchToggle->GetIsToggleChecked(), SearchToggle->GetSearchText() );
-	}
-
-	return SearchToggleStates;
-}
-
-bool SFactsDebugger::IsAnySearchToggleActive() const
-{
-	for ( const SFactsSearchToggleRef SearchToggle : CurrentSearchToggles )
-	{
-		if ( SearchToggle->GetIsToggleChecked() )
-		{
-			return true;
-		}
-	}
-
-	return false;
 }
 
 void SFactsDebugger::LoadFactsPreset( UFactsPreset* InPreset )
@@ -724,6 +621,68 @@ void SFactsDebugger::LoadFactsPresetRecursive( UFactsPreset* InPreset, const FFa
 	}
 }
 
+int32 SFactsDebugger::CountAllFilteredItems( FFactTreeItemPtr ParentNode )
+{
+	int32 Result = 0;
+	
+	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree && SFactsDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
+	{
+		return Result;
+	}
+
+	for ( FFactTreeItemPtr Child : ParentNode->Children )
+	{
+		if ( int32 Temp = CountAllFilteredItems( Child ) )
+		{
+			Result += Temp;
+		}
+	}
+
+	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bCountOnlyLeafFacts && ParentNode->Children.Num() > 0 )
+	{
+		return Result;
+	}
+
+	if ( ParentNode->Tag.IsValid() )
+	{
+		Result++;
+	}
+
+	return Result;
+}
+
+int32 SFactsDebugger::CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool bIsParentFavorite )
+{
+	int32 Result = 0;
+	
+	if ( bIsParentFavorite == false && SFactsDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
+	{
+		bIsParentFavorite = true;
+	}
+
+	bool bHasFavoriteChild = false;
+	for ( FFactTreeItemPtr Child : ParentNode->Children )
+	{
+		if ( int32 Temp = CountAllFavoriteItems( Child, bIsParentFavorite ) )
+		{
+			bHasFavoriteChild = true;
+			Result += Temp;
+		}
+	}
+
+	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bCountOnlyLeafFacts && ParentNode->Children.Num() > 0 )
+	{
+		return Result;
+	}
+	
+	if ( ParentNode->Tag.IsValid() && ( bIsParentFavorite || bHasFavoriteChild ) )
+	{
+		Result++;
+	}
+
+	return Result;
+}
+
 void SFactsDebugger::HandleGameInstanceStarted()
 {
 	InitItem( FilteredRootItem.ToSharedRef() );
@@ -738,6 +697,91 @@ void SFactsDebugger::InitItem( FFactTreeItemRef Item )
 	{
 		InitItem( ChildItem->AsShared() );
 	}
+}
+
+TSharedRef< SWidget > SFactsDebugger::CreateTreeLabel( const FText& InLabel ) const
+{
+	return SNew( SBorder )
+		.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Background" ) )
+		.Padding( 0.f, 0.f, 0.f, 3.f )
+		[
+			SNew( SBorder )
+			.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
+			.Padding( 10.f, 4.f )
+			[
+				SNew( STextBlock )
+				.Text( InLabel )
+				.TextStyle( FAppStyle::Get(), "ButtonText" )
+				.Font( FAppStyle::Get().GetFontStyle( "NormalFontBold" ) )
+			]	
+		];
+}
+
+TSharedRef< SWidget > SFactsDebugger::CreateFactsTree( bool bIsFavoritesTree )
+{
+	TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
+	FFactTreeItemPtr& ItemsSource = bIsFavoritesTree ? FavoritesRootItem : FilteredRootItem;
+	
+	return SAssignNew( TreeView, SFactsTreeView )
+		.TreeItemsSource( &ItemsSource->Children )
+		.OnGenerateRow( this, &SFactsDebugger::OnGenerateWidgetForFactsTreeView )
+		.OnGetChildren( this, &SFactsDebugger::OnGetChildren)
+		.OnExpansionChanged( this, &SFactsDebugger::HandleExpansionChanged, false, bIsFavoritesTree )
+		.OnSetExpansionRecursive( this, &SFactsDebugger::HandleExpansionChanged, true, bIsFavoritesTree )
+		.OnGeneratePinnedRow( this, &SFactsDebugger::HandleGeneratePinnedTreeRow )
+		.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; } )
+		.OnContextMenuOpening( this, &SFactsDebugger::HandleGenerateMainContextMenu )
+		.SelectionMode( ESelectionMode::Type::Single )
+		.HeaderRow
+		(
+			CreateHeaderRow( bIsFavoritesTree )
+		);
+}
+
+TSharedRef< SHeaderRow > SFactsDebugger::CreateHeaderRow( bool bIsFavoritesTree ) const
+{
+	return SNew( SHeaderRow )
+
+		+ SHeaderRow::Column( "Favorites" )
+		.FixedWidth( 24.f )
+		.HAlignHeader( HAlign_Center )
+		.VAlignHeader( VAlign_Center )
+		.HAlignCell( HAlign_Center )
+		.VAlignCell( VAlign_Center )
+		[
+			SNew( SImage )
+			.Image_Lambda( [ bIsFavoritesTree ]()
+			{
+				return bIsFavoritesTree
+					? FAppStyle::Get().GetBrush( "Icons.Star" )
+					: GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree
+						? FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.Outline" )
+						: FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.OutlineFilled" );
+			} )
+		]
+		
+		+ SHeaderRow::Column( "Tag" )
+		.SortPriority( EColumnSortPriority::Secondary )
+		.DefaultLabel( LOCTEXT( "TagColumn", "Tag" ) )
+
+		+ SHeaderRow::Column( "Value" )
+		.ManualWidth( 90.f )
+		.DefaultLabel( LOCTEXT( "ValueColumn", "Value" ) )
+		.DefaultTooltip( LOCTEXT( "ValueColumn_ToolTip", "Current value of this fact. Undefined means that value for this fact was not yet set" ) );
+}
+
+TSharedRef< SWidget > SFactsDebugger::CreateFilterStatusWidget( bool bIsFavoritesTree ) const
+{
+	return SNew( SBorder )
+		.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
+		.VAlign( VAlign_Center )
+		.HAlign( HAlign_Left )
+		.Padding( 10.f, 4.f )
+		[
+			SNew( STextBlock )
+			.Text( this, &SFactsDebugger::GetFilterStatusText, bIsFavoritesTree )
+			.ColorAndOpacity( this, &SFactsDebugger::GetFilterStatusTextColor, bIsFavoritesTree )
+		];
 }
 
 TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTreeItemPtr InItem, const TSharedRef<STableViewBase>& TableViewBase )
@@ -757,7 +801,7 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 			, AnimationColor( FFactsDebuggerStyle::Get().GetColor( "Colors.FactChanged" ) )
 		{ }
 
-		void Construct( const FArguments& InArgs, const TSharedRef< STableViewBase > InOwnerTable, SFactsDebugger* InFactsDebugger, FFactTreeItemPtr InItem )
+		void Construct( const FArguments& InArgs, const TSharedRef< STableViewBase > InOwnerTable, TSharedPtr< SFactsDebugger > InFactsDebugger, FFactTreeItemPtr InItem )
 		{
 			Item = InItem;
 			bShowFullName = GetDefault< UFactsDebuggerSettingsLocal >()->bShowFullFactNames;
@@ -787,14 +831,16 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 						.Image( this, &SFactTreeItem::GetItemBrush )
 					];
 			}
-			else if ( InColumnName == "FactTag" )
+			else if ( InColumnName == "Tag" )
 			{
 				return SNew( SHorizontalBox )
+					
 					+ SHorizontalBox::Slot()
 					.AutoWidth()
 					[
 						SNew( SFactsExpanderArrow, SharedThis( this ) )
 					]
+					
 					+SHorizontalBox::Slot()
 					.FillWidth( 1.f )
 					.VAlign( VAlign_Center )
@@ -805,7 +851,7 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 						.HighlightText_Lambda( [ this ](){ return FactsDebugger->CurrentSearchText; } )
 					];
 			}
-			else if ( InColumnName == "FactValue" )
+			else if ( InColumnName == "Value" )
 			{
 				return SNew( SBox )
 					.Padding( 1.f )
@@ -836,7 +882,7 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 			Utils::AllFilteredFactsCount = FactsDebugger->CountAllFilteredItems( FactsDebugger->RootItem );
 			Utils::AllFavoriteFactsCount = FactsDebugger->CountAllFavoriteItems( FactsDebugger->RootItem, false );
 
-			FactsDebugger->SaveSettings();
+			FactsDebugger->SaveFavorites();
 			FactsDebugger->FilterItems();
 			return FReply::Handled();
 		}
@@ -899,7 +945,7 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 
 		FFactTreeItemPtr Item;
 		bool bShowFullName = false;
-		SFactsDebugger* FactsDebugger;
+		TSharedPtr< SFactsDebugger > FactsDebugger;
 
 		const FSlateBrush* FavoriteBrush = nullptr;
 		const FSlateBrush* NormalBrush = nullptr;
@@ -915,11 +961,11 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 
 	if ( InItem.IsValid() )
 	{
-		return SNew( SFactTreeItem, TableViewBase, this, InItem );
+		return SNew( SFactTreeItem, TableViewBase, SharedThis( this ), InItem );
 	}
 	else
 	{
-		return SNew( STableRow< TSharedPtr<FString> >, TableViewBase )
+		return SNew( STableRow< TSharedPtr< FString > >, TableViewBase )
 			[
 				SNew( STextBlock )
 				.Text( LOCTEXT( "UnknownItemType", "Unknown Item Type" ) )
@@ -951,90 +997,59 @@ void SFactsDebugger::OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray<FFactT
 	}
 }
 
-void SFactsDebugger::HandleMainExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive  )
+void SFactsDebugger::HandleExpansionChanged(FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive, bool bIsFavoritesTree)
 {
+	TSet< FFactTag >& ExpandedFacts = bIsFavoritesTree ? FavoritesExpandedFacts : MainExpandedFacts;
+	
 	if ( bPersistExpansionChange && FactTreeItem->Children.Num() )
-	{
-		if ( bInExpanded )
-		{
-			MainExpandedFacts.Add( FactTreeItem->Tag );
-		}
-		else
-		{
-			MainExpandedFacts.Remove( FactTreeItem->Tag );
-		}
-		
-		if ( bRecursive )
-		{
-			// if it is not recursive, then it is already expanded
-			FactsTreeView->SetItemExpansion( FactTreeItem, bInExpanded );
-			
-			for ( FFactTreeItemPtr Child : FactTreeItem->Children )
-			{
-				HandleMainExpansionChanged( Child, bInExpanded, bRecursive );
-			}
-		}
-	}
+    {
+    	if ( bInExpanded )
+    	{
+    		ExpandedFacts.Add( FactTreeItem->Tag );
+    	}
+    	else
+    	{
+    		ExpandedFacts.Remove( FactTreeItem->Tag );
+    	}
+
+    	if ( bRecursive )
+    	{
+    		// if it is not recursive, then it is already expanded
+    		TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
+    		TreeView->SetItemExpansion( FactTreeItem, bInExpanded );
+    		
+    		for ( FFactTreeItemPtr Child : FactTreeItem->Children )
+    		{
+    			HandleExpansionChanged( Child, bInExpanded, bRecursive, bIsFavoritesTree );
+    		}
+    	}
+    }
 }
 
-void SFactsDebugger::HandleFavoriteExpansionChanged(FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive )
+FText SFactsDebugger::GetFilterStatusText( bool bIsFavoritesTree ) const
 {
-	if ( bPersistExpansionChange && FactTreeItem->Children.Num() )
-	{
-		if ( bInExpanded )
-		{
-			FavoritesExpandedFacts.Add( FactTreeItem->Tag );
-		}
-		else
-		{
-			FavoritesExpandedFacts.Remove( FactTreeItem->Tag );
-		}
+	int32 AllFactsCount = bIsFavoritesTree ? Utils::AllFavoriteFactsCount : Utils::AllFilteredFactsCount;
+	int32 CurrentFactCount = bIsFavoritesTree ? Utils::CurrentFavoriteFactsCount : Utils::CurrentFilteredFactsCount;
+	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
 
-		if ( bRecursive )
-		{
-			// if it is not recursive, then it is already expanded
-			FavoriteFactsTreeView->SetItemExpansion( FactTreeItem, bInExpanded );
-			
-			for ( FFactTreeItemPtr Child : FactTreeItem->Children )
-			{
-				HandleFavoriteExpansionChanged( Child, bInExpanded, bRecursive );
-			}
-		}
-	}
-}
-
-FText SFactsDebugger::GetFilterStatusTextFavorites() const
-{
 	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false )
 	{
-		return FText::Format( LOCTEXT( "ShowingAllFavoriteFacts", "{0} facts" ), FText::AsNumber( Utils::AllFavoriteFactsCount ) );
+		return FText::Format( LOCTEXT( "ShowingAllFacts", "{0} facts" ), FText::AsNumber( AllFactsCount ) );
 	}
 
-	if ( FavoriteFactsTreeView->GetRootItems().IsEmpty() )
+	if ( TreeView->GetRootItems().IsEmpty() )
 	{
-		return FText::Format( LOCTEXT( "NoMatchingFavoriteFacts", "No matching facts ({0} total)" ), FText::AsNumber( Utils::AllFavoriteFactsCount ) );
+		return FText::Format( LOCTEXT( "NoMatchingFacts", "No matching facts ({0} total)" ), FText::AsNumber( AllFactsCount ) );
 	}
 	
-	return FText::Format( LOCTEXT( "ShowingFilteredFavoriteFacts", "{0} facts ({1} total)" ), FText::AsNumber( Utils::CurrentFavoriteFactsCount ), FText::AsNumber( Utils::AllFavoriteFactsCount ) );
+	return FText::Format( LOCTEXT( "ShowingFilteredFacts", "{0} facts ({1} total)" ), FText::AsNumber( CurrentFactCount ), FText::AsNumber( AllFactsCount ) );
+
 }
 
-FText SFactsDebugger::GetFilterStatusTextAll() const
+FSlateColor SFactsDebugger::GetFilterStatusTextColor( bool bIsFavoritesTree ) const
 {
-	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false )
-	{
-		return FText::Format( LOCTEXT( "ShowingAllFavoriteFacts", "{0} facts" ), FText::AsNumber( Utils::AllFilteredFactsCount ) );
-	}
+	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
 
-	if ( FactsTreeView->GetRootItems().IsEmpty() )
-	{
-		return FText::Format( LOCTEXT( "NoMatchingFavoriteFacts", "No matching facts ({0} total)" ), FText::AsNumber( Utils::AllFilteredFactsCount ) );
-	}
-	
-	return FText::Format( LOCTEXT( "ShowingFilteredFavoriteFacts", "{0} facts ({1} total)" ), FText::AsNumber( Utils::CurrentFilteredFactsCount ), FText::AsNumber( Utils::AllFilteredFactsCount ) );
-}
-
-FSlateColor SFactsDebugger::GetFilterStatusTextColor( const TSharedPtr< SFactsTreeView > TreeView ) const
-{
 	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false )
 	{
 		return FSlateColor::UseForeground();
@@ -1056,8 +1071,8 @@ TSharedRef<SWidget> SFactsDebugger::HandleGeneratePresetsMenu()
 	PresetNameAction.CanExecuteAction = FCanExecuteAction::CreateLambda( []() { return false; } );
 
 	MenuBuilder.AddMenuEntry(
-		LOCTEXT( "CurrentPreset_Text", "Current preset:"),
-		LOCTEXT( "CurrentPreset_Tooltip", "Current"),
+		LOCTEXT( "CurrentPreset", "Current preset:"),
+		LOCTEXT( "CurrentPreset_ToolTip", "Current"),
 		FSlateIcon(),
 		PresetNameAction,
 		NAME_None,
@@ -1067,8 +1082,8 @@ TSharedRef<SWidget> SFactsDebugger::HandleGeneratePresetsMenu()
 	MenuBuilder.AddSeparator();
 
 	MenuBuilder.AddMenuEntry(
-		LOCTEXT( "SavePreset_Text", "Save preset" ),
-		LOCTEXT( "SavePreset_Tooltip", "Save the current preset" ),
+		LOCTEXT( "SavePreset", "Save preset" ),
+		LOCTEXT( "SavePreset_ToolTip", "Save the current preset" ),
 		FSlateIcon(FAppStyle::Get().GetStyleSetName(), "AssetEditor.SaveAsset" ),
 		FUIAction(FExecuteAction::CreateLambda( [ this ]() { } ) )
 	);
@@ -1124,10 +1139,10 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "Options_ShowHierarchy", "Stack Hierarchy Headers" ),
-			LOCTEXT( "Options_ShowHierarchy_Tooltip", "Toggle pinning of the hierarchy of items at the top of the outliner" ),
+			LOCTEXT( "Options_ShowHierarchy_ToolTip", "Toggle pinning of the hierarchy of items at the top of the outliner" ),
 			FSlateIcon(),
 			FUIAction(
-				FExecuteAction::CreateRaw( this, &SFactsDebugger::HandleShouldStackHierarchyHeadersClicked ),
+				FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bShouldStackHierarchyHeaders ) ),
 				FCanExecuteAction(),
 				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; })
 				),
@@ -1142,10 +1157,10 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 	{
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "Options_ShowRootTag", "Show Root Fact Tag" ),
-			LOCTEXT( "Options_ShowRootTag_Tooltip", "Show Root Fact Tag" ),
+			LOCTEXT( "Options_ShowRootTag_ToolTip", "Show Root Fact Tag" ),
 			FSlateIcon(),
 			FUIAction(
-				FExecuteAction::CreateRaw(this, &SFactsDebugger::HandleShowRootTagClicked ),
+				FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bShowRootFactTag ) ),
 				FCanExecuteAction(),
 				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShowRootFactTag; })
 				),
@@ -1155,10 +1170,10 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "Options_ShowFullNames", "Show Full Fact Names" ),
-			LOCTEXT( "Options_ShowFullNames_Tooltip", "Show Full Fact Names" ),
+			LOCTEXT( "Options_ShowFullNames_ToolTip", "Show Full Fact Names" ),
 			FSlateIcon(),
 			FUIAction(
-				FExecuteAction::CreateRaw(this, &SFactsDebugger::HandleShowFullNamesClicked ),
+				FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bShowFullFactNames ) ),
 				FCanExecuteAction(),
 				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShowFullFactNames; })
 				),
@@ -1168,10 +1183,10 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "Options_RemoveFavorites", "Remove Favorites from Main Tree" ),
-			LOCTEXT( "Options_RemoveFavorites_Tooltip", "Remove Favorites from Main Tree" ),
+			LOCTEXT( "Options_RemoveFavorites_ToolTip", "Remove Favorites from Main Tree" ),
 			FSlateIcon(),
 			FUIAction(
-				FExecuteAction::CreateRaw(this, &SFactsDebugger::HandleRemoveFavoritesClicked ),
+				FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bRemoveFavoritesFromMainTree ) ),
 				FCanExecuteAction(),
 				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree; })
 				),
@@ -1181,10 +1196,10 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "Options_CountLeafs", "Count Only Leaf Facts" ),
-			LOCTEXT( "Options_CountLeafs_Tooltip", "Count only leaf Facts for numbers displayed below the trees" ),
+			LOCTEXT( "Options_CountLeafs_ToolTip", "Count only leaf Facts for numbers displayed below the trees" ),
 			FSlateIcon(),
 			FUIAction(
-				FExecuteAction::CreateRaw(this, &SFactsDebugger::HandleCountOnlyLeafsClicked ),
+				FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bCountOnlyLeafFacts ) ),
 				FCanExecuteAction(),
 				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bCountOnlyLeafFacts; })
 				),
@@ -1288,7 +1303,7 @@ TSharedPtr<SWidget> SFactsDebugger::HandleGenerateFavoritesContextMenu()
 					Utils::AllFilteredFactsCount = 0;
 					Utils::AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
 
-					SaveSettings();
+					SaveFavorites();
 					FilterItems();
 				} ),
 				FCanExecuteAction::CreateLambda( [ this ]()
@@ -1318,7 +1333,7 @@ TSharedPtr<SWidget> SFactsDebugger::HandleGenerateFavoritesContextMenu()
 					Utils::AllFilteredFactsCount = CountAllFilteredItems( RootItem );
 					Utils::AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
 
-					SaveSettings();
+					SaveFavorites();
 					FilterItems();
 				} ),
 				FCanExecuteAction::CreateLambda( [ this ]()
@@ -1409,18 +1424,13 @@ void SFactsDebugger::HandleSearchTextCommitted( const FText& SearchText, ETextCo
 		return;
 	}
 
-	SFactsSearchToggleRef NewSearchToggle =
-		SNew( SFactsSearchToggle, SearchText )
-		.OnClickedOnce( this, &SFactsDebugger::HandleSearchToggleClicked )
-		.OnRightButtonClicked( this, &SFactsDebugger::HandleRemoveSearchToggle )
-		.OnAltClicked( this, &SFactsDebugger::HandleRemoveSearchToggle );
-
+	SFactsSearchToggleRef NewSearchToggle = ConstructSearchToggle( SearchText );
 	CurrentSearchToggles.Add( NewSearchToggle );
 
 	RefreshSearchToggles();
 	SearchBox->SetText( FText::GetEmpty() );
 
-	SaveSettings();
+	SaveSearchToggles();
 }
 
 void SFactsDebugger::FilterItems()
@@ -1509,18 +1519,9 @@ void SFactsDebugger::RestoreExpansionState()
 	for ( const FFactTag& FactTag : MainExpandedFacts )
 	{
 		Path.Reset();
-		// bool bFoundItemInFavorites = FindItemByTagRecursive( FavoritesRootItem, FactTag, Path );
-		// if ( bFoundItemInFavorites )
-		// {
-		// 	FavoriteFactsTreeView->SetItemExpansion( Path.Last(), true );
-		// }
-
-		// if ( bFoundItemInFavorites == false || ( bFoundItemInFavorites && Settings->bRemoveFavoritesFromMainTree == false ) )
+		if ( FindItemByTagRecursive( FilteredRootItem, FactTag, Path) )
 		{
-			if ( FindItemByTagRecursive( FilteredRootItem, FactTag, Path) )
-			{
-				FactsTreeView->SetItemExpansion( Path.Last(), true );
-			}
+			FactsTreeView->SetItemExpansion( Path.Last(), true );
 		}
 	}
 
@@ -1571,12 +1572,32 @@ bool SFactsDebugger::FindItemByTagRecursive( const FFactTreeItemPtr& Item, const
 	return false;
 }
 
+void SFactsDebugger::CreateDefaultSearchToggles( TArray< FSearchToggleState > SearchToggleStates )
+{
+	for ( FSearchToggleState& ToggleState : SearchToggleStates )
+	{
+		SFactsSearchToggleRef NewSearchToggle = ConstructSearchToggle( ToggleState.SearchText, ToggleState.bIsToggleChecked );
+		CurrentSearchToggles.Add( NewSearchToggle );
+	}
+
+	RefreshSearchToggles();
+}
+
+SFactsSearchToggleRef SFactsDebugger::ConstructSearchToggle( const FText& InSearchText, bool bInChecked )
+{
+	return SNew( SFactsSearchToggle, InSearchText )
+			.OnClickedOnce( this, &SFactsDebugger::HandleSearchToggleClicked )
+			.OnRightButtonClicked( this, &SFactsDebugger::HandleRemoveSearchToggle )
+			.OnAltClicked( this, &SFactsDebugger::HandleRemoveSearchToggle )
+			.IsToggleChecked( bInChecked );
+}
+
 FReply SFactsDebugger::HandleRemoveSearchToggle()
 {
 	CleanupSearchesMarkedForDelete();
 	RefreshSearchToggles();
 	FilterItems();
-	SaveSettings();
+	SaveSearchToggles();
 
 	return FReply::Handled();
 }
@@ -1602,24 +1623,6 @@ void SFactsDebugger::RefreshSearchToggles()
 	}
 }
 
-void SFactsDebugger::CreateDefaultSearchToggles( TArray< FSearchToggleState > SearchToggleStates )
-{
-	for ( FSearchToggleState& ToggleState : SearchToggleStates )
-	{
-		SFactsSearchToggleRef NewSearchToggle =
-			SNew( SFactsSearchToggle, ToggleState.SearchText )
-			.OnClickedOnce( this, &SFactsDebugger::HandleSearchToggleClicked )
-			.OnRightButtonClicked( this, &SFactsDebugger::HandleRemoveSearchToggle )
-			.OnAltClicked( this, &SFactsDebugger::HandleRemoveSearchToggle );
-
-		NewSearchToggle->SetIsButtonChecked( ToggleState.bIsToggleChecked );
-
-		CurrentSearchToggles.Add( NewSearchToggle );
-	}
-
-	RefreshSearchToggles();
-}
-
 FReply SFactsDebugger::HandleClearTogglesClicked()
 {
 	for ( const SFactsSearchToggleRef& SearchToggle : CurrentSearchToggles )
@@ -1628,7 +1631,7 @@ FReply SFactsDebugger::HandleClearTogglesClicked()
 	}
 
 	FilterItems();
-	SaveSettings();
+	SaveSearchToggles();
 
 	return FReply::Handled();
 }
@@ -1636,8 +1639,33 @@ FReply SFactsDebugger::HandleClearTogglesClicked()
 FReply SFactsDebugger::HandleSearchToggleClicked()
 {
 	FilterItems();
-	SaveSettings();
+	SaveSearchToggles();
+
 	return FReply::Handled();
+}
+
+TArray<FSearchToggleState> SFactsDebugger::GetSearchToggleStates()
+{
+	TArray< FSearchToggleState > SearchToggleStates;
+	for ( const SFactsSearchToggleRef SearchToggle : CurrentSearchToggles )
+	{
+		SearchToggleStates.Emplace( SearchToggle->GetIsToggleChecked(), SearchToggle->GetSearchText() );
+	}
+
+	return SearchToggleStates;
+}
+
+bool SFactsDebugger::IsAnySearchToggleActive() const
+{
+	for ( const SFactsSearchToggleRef SearchToggle : CurrentSearchToggles )
+	{
+		if ( SearchToggle->GetIsToggleChecked() )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void SFactsDebugger::BuildFactTreeItems()
@@ -1682,146 +1710,36 @@ FFactTreeItemPtr SFactsDebugger::BuildFactItem( FFactTreeItemPtr ParentNode, TSh
 	return NewItem;
 }
 
-int32 SFactsDebugger::CountAllFilteredItems( FFactTreeItemPtr ParentNode ) const
+void SFactsDebugger::RebuildFactTreeItems()
 {
-	int32 Result = 0;
-	
-	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree && SFactsDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
-	{
-		return Result;
-	}
-
-	for ( FFactTreeItemPtr Child : ParentNode->Children )
-	{
-		if ( int32 Temp = CountAllFilteredItems( Child ) )
-		{
-			Result += Temp;
-		}
-	}
-
-	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bCountOnlyLeafFacts && ParentNode->Children.Num() > 0 )
-	{
-		return Result;
-	}
-
-	if ( ParentNode->Tag.IsValid() )
-	{
-		Result++;
-	}
-
-	return Result;
-}
-
-int32 SFactsDebugger::CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool bIsParentFavorite ) const
-{
-	int32 Result = 0;
-	
-	if ( bIsParentFavorite == false && SFactsDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
-	{
-		bIsParentFavorite = true;
-	}
-
-	bool bHasFavoriteChild = false;
-	for ( FFactTreeItemPtr Child : ParentNode->Children )
-	{
-		if ( int32 Temp = CountAllFavoriteItems( Child, bIsParentFavorite ) )
-		{
-			bHasFavoriteChild = true;
-			Result += Temp;
-		}
-	}
-
-	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bCountOnlyLeafFacts && ParentNode->Children.Num() > 0 )
-	{
-		return Result;
-	}
-	
-	if ( ParentNode->Tag.IsValid() && ( bIsParentFavorite || bHasFavoriteChild ) )
-	{
-		Result++;
-	}
-
-	return Result;
-}
-
-FString SFactsDebugger::OnItemToStringDebug( FFactTreeItemPtr FactTreeItem ) const
-{
-	FStringFormatOrderedArguments Args;
-	Args.Add( FactTreeItem->Tag.ToString() );
-	Args.Add( FactTreeItem->Value.IsSet() ? FString::FromInt( FactTreeItem->Value.GetValue() ) : "Undefined" );
-	return FString::Format( TEXT("{0} {1]"), Args );
-}
-
-void SFactsDebugger::LoadSettings()
-{
-	UFactsDebuggerSettingsLocal* FactsDebuggerSettings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
-	FactsDebuggerSettings->OnChangedDelegate.BindSP( this , &SFactsDebugger::HandleSettingsChanged );
-
-	CreateDefaultSearchToggles( FactsDebuggerSettings->ToggleStates );
-	SFactsDebugger::FavoriteFacts = FactsDebuggerSettings->FavoriteFacts;
-	
-}
-
-void SFactsDebugger::SaveSettings()
-{
-	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
-	// just copy now, it shouldn't be much elements in array. It it will be a problem - optimize
-	Settings->ToggleStates = GetSearchToggleStates();
-	Settings->FavoriteFacts = SFactsDebugger::FavoriteFacts;
-	Settings->SaveConfig();
-}
-
-void SFactsDebugger::HandleSettingsChanged()
-{
-	// just rebuild the tree
 	BuildFactTreeItems();
 	FilterItems();
 }
 
-// todo: refactor it somehow, to avoid duplicating the same code for changing just one property
-void SFactsDebugger::HandleShowRootTagClicked()
+void SFactsDebugger::LoadSearchToggles()
 {
 	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
-	Settings->bShowRootFactTag = !Settings->bShowRootFactTag;
-	Settings->SaveConfig();
-	
-	HandleSettingsChanged();
+	CreateDefaultSearchToggles( Settings->ToggleStates );
 }
 
-void SFactsDebugger::HandleShowFullNamesClicked()
+void SFactsDebugger::SaveSearchToggles()
 {
 	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
-	Settings->bShowFullFactNames = !Settings->bShowFullFactNames;
+	Settings->ToggleStates = GetSearchToggleStates();
 	Settings->SaveConfig();
-	
-	HandleSettingsChanged();
 }
 
-void SFactsDebugger::HandleRemoveFavoritesClicked()
+void SFactsDebugger::LoadFavorites()
 {
 	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
-	Settings->bRemoveFavoritesFromMainTree = !Settings->bRemoveFavoritesFromMainTree;
-	Settings->SaveConfig();
-	
-	HandleSettingsChanged();
+	SFactsDebugger::FavoriteFacts = Settings->FavoriteFacts;
 }
 
-void SFactsDebugger::HandleShouldStackHierarchyHeadersClicked()
+void SFactsDebugger::SaveFavorites()
 {
 	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
-	Settings->bShouldStackHierarchyHeaders = !Settings->bShouldStackHierarchyHeaders;
+	Settings->FavoriteFacts = SFactsDebugger::FavoriteFacts;
 	Settings->SaveConfig();
-	
-	HandleSettingsChanged();
-}
-
-void SFactsDebugger::HandleCountOnlyLeafsClicked()
-{
-	UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
-	Settings->bCountOnlyLeafFacts = !Settings->bCountOnlyLeafFacts;
-	Settings->SaveConfig();
-	
-	HandleSettingsChanged();
 }
 
 void SFactsDebugger::HandleOrientationChanged( EOrientation Orientation )
@@ -1832,8 +1750,5 @@ void SFactsDebugger::HandleOrientationChanged( EOrientation Orientation )
 	
 	Splitter->SetOrientation( Orientation );
 }
-
-END_SLATE_FUNCTION_BUILD_OPTIMIZATION
-
 
 #undef LOCTEXT_NAMESPACE

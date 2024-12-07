@@ -14,6 +14,7 @@ void SFactsSearchToggle::Construct( const FArguments& InArgs, const FText& InBut
 	OnAltClicked = InArgs._OnAltClicked;
 	OnRightButtonClicked = InArgs._OnRightButtonClicked;
 	OnClickedOnce = InArgs._OnClickedOnce;
+	bIsToggleChecked = InArgs._IsToggleChecked;
 	
 	SearchText = InButtonText;
 	CheckedColor = USlateThemeManager::Get().GetColor( EStyleColor::Primary );

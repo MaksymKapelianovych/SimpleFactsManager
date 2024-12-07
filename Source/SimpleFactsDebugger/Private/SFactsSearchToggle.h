@@ -11,10 +11,14 @@
 class SFactsSearchToggle : public SCompoundWidget
 {
 public:
-	SLATE_BEGIN_ARGS( SFactsSearchToggle ) {}
-			SLATE_EVENT( FOnClicked, OnAltClicked )
-			SLATE_EVENT( FOnClicked, OnRightButtonClicked )
-			SLATE_EVENT( FOnClicked, OnClickedOnce )
+	SLATE_BEGIN_ARGS( SFactsSearchToggle )
+		: _IsToggleChecked( false )
+		{}
+		SLATE_EVENT( FOnClicked, OnAltClicked )
+		SLATE_EVENT( FOnClicked, OnRightButtonClicked )
+		SLATE_EVENT( FOnClicked, OnClickedOnce )
+
+		SLATE_ARGUMENT( bool, IsToggleChecked )
 	SLATE_END_ARGS()
 	
 	void Construct( const FArguments& InArgs, const FText& InButtonText );
