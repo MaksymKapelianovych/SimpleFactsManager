@@ -38,8 +38,6 @@ struct FFactTreeItem : public TSharedFromThis< FFactTreeItem >
 
 	DECLARE_DELEGATE_OneParam( FOnFactItemValueChanged, int32 )
 	FOnFactItemValueChanged OnFactItemValueChanged;
-
-	bool bFactManualChanging = false;
 };
 
 

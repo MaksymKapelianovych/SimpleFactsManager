@@ -233,10 +233,7 @@ void FFactTreeItem::InitItem()
 void FFactTreeItem::HandleValueChanged( int32 NewValue )
 {
 	Value = NewValue;
-	if ( bFactManualChanging == false )
-	{
-		OnFactItemValueChanged.ExecuteIfBound( NewValue );
-	}
+	OnFactItemValueChanged.ExecuteIfBound( NewValue );
 }
 
 void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type )
@@ -246,9 +243,6 @@ void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Ty
 		return;
 	}
 
-	TGuardValue< bool > FactManualChangingGuard{ bFactManualChanging, true };
-	
-	Value = NewValue;
 	if ( UFactSubsystem* FactSubsystem = FSimpleFactsDebuggerModule::Get().TryGetFactSubsystem() )
 	{
 		FactSubsystem->ChangeFactValue( Tag, NewValue, EFactValueChangeType::Set );
