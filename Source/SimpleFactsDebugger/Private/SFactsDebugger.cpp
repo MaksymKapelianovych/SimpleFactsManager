@@ -1398,7 +1398,7 @@ void SFactsDebugger::HandleSearchTextCommitted( const FText& SearchText, ETextCo
 		return;
 	}
 
-	SFactsSearchToggleRef NewSearchToggle = ConstructSearchToggle( SearchText );
+	SFactsSearchToggleRef NewSearchToggle = ConstructSearchToggle( SearchText, true );
 	CurrentSearchToggles.Add( NewSearchToggle );
 
 	RefreshSearchToggles();
