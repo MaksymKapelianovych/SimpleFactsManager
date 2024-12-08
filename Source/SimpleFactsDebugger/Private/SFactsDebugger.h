@@ -83,6 +83,7 @@ private:
 
 	TSharedRef< SWidget > HandleGeneratePresetsMenu();
 	TSharedRef< SWidget > HandleGenerateOptionsMenu();
+	void GenerateCommonContextMenu( FMenuBuilder& MenuBuilder, bool bIsFavoritesTree );
 	TSharedPtr< SWidget > HandleGenerateMainContextMenu();
 	TSharedPtr< SWidget > HandleGenerateFavoritesContextMenu();
 	

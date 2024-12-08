@@ -392,7 +392,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 				]
 			]
 
-			// -------------------------------------------------------------------------------------------------------------
+			// ---------------------------------------------------------------------------------------------------------
 			// Remove toggles button
 			
 			+ SHorizontalBox::Slot()
@@ -724,7 +724,10 @@ TSharedRef< SWidget > SFactsDebugger::CreateFactsTree( bool bIsFavoritesTree )
 		.OnSetExpansionRecursive( this, &SFactsDebugger::HandleExpansionChanged, true, bIsFavoritesTree )
 		.OnGeneratePinnedRow( this, &SFactsDebugger::HandleGeneratePinnedTreeRow )
 		.ShouldStackHierarchyHeaders_Lambda( []() { return GetDefault< UFactsDebuggerSettingsLocal >()->bShouldStackHierarchyHeaders; } )
-		.OnContextMenuOpening( this, &SFactsDebugger::HandleGenerateMainContextMenu )
+		.OnContextMenuOpening_Lambda( [ this, bIsFavoritesTree ]()
+		{
+			return bIsFavoritesTree ? HandleGenerateFavoritesContextMenu() : HandleGenerateMainContextMenu();
+		} )
 		.SelectionMode( ESelectionMode::Type::Single )
 		.HeaderRow
 		(
@@ -1236,27 +1239,35 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 	return MenuBuilder.MakeWidget();
 }
 
-TSharedPtr< SWidget > SFactsDebugger::HandleGenerateMainContextMenu()
+void SFactsDebugger::GenerateCommonContextMenu( FMenuBuilder& MenuBuilder, bool bIsFavoritesTree )
 {
-	FMenuBuilder MenuBuilder{ true, nullptr };
-
+	TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
+	TArray< FFactTreeItemPtr >& FactItems = bIsFavoritesTree ? FavoritesRootItem->Children : FilteredRootItem->Children;
+	
 	MenuBuilder.BeginSection( "", LOCTEXT( "ContextMenu_TreeSection", "Hierarchy" ) );
 	{
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "ContextMenu_ExpandTree", "Expand Tree" ),
 			FText::GetEmpty(),
 			FSlateIcon(),
-			FUIAction( FExecuteAction::CreateRaw( this, &SFactsDebugger::SetItemsExpansion, FactsTreeView, FilteredRootItem->Children, true, true ) )
+			FUIAction( FExecuteAction::CreateRaw( this, &SFactsDebugger::SetItemsExpansion, TreeView, FactItems, true, true ) )
 		);
 	
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "ContextMenu_CollapseTree", "Collapse Tree" ),
 			FText::GetEmpty(),
 			FSlateIcon(),
-			FUIAction( FExecuteAction::CreateRaw( this, &SFactsDebugger::SetItemsExpansion, FactsTreeView, FilteredRootItem->Children, false, true ) )
+			FUIAction( FExecuteAction::CreateRaw( this, &SFactsDebugger::SetItemsExpansion, TreeView, FactItems, false, true ) )
 		);
 	}
 	MenuBuilder.EndSection();
+}
+
+TSharedPtr< SWidget > SFactsDebugger::HandleGenerateMainContextMenu()
+{
+	FMenuBuilder MenuBuilder{ true, nullptr };
+
+	GenerateCommonContextMenu( MenuBuilder, false );
 
 	return MenuBuilder.MakeWidget();
 }
@@ -1265,23 +1276,7 @@ TSharedPtr<SWidget> SFactsDebugger::HandleGenerateFavoritesContextMenu()
 {
 	FMenuBuilder MenuBuilder{ true, nullptr };
 
-	MenuBuilder.BeginSection( "", LOCTEXT( "ContextMenu_TreeSection", "Hierarchy" ) );
-	{
-		MenuBuilder.AddMenuEntry(
-			LOCTEXT( "ContextMenu_ExpandTree", "Expand Tree" ),
-			FText::GetEmpty(),
-			FSlateIcon(),
-			FUIAction( FExecuteAction::CreateRaw( this, &SFactsDebugger::SetItemsExpansion, FavoriteFactsTreeView, FavoritesRootItem->Children, true, true ) )
-		);
-	
-		MenuBuilder.AddMenuEntry(
-			LOCTEXT( "ContextMenu_CollapseTree", "Collapse Tree" ),
-			FText::GetEmpty(),
-			FSlateIcon(),
-			FUIAction( FExecuteAction::CreateRaw( this, &SFactsDebugger::SetItemsExpansion, FavoriteFactsTreeView, FavoritesRootItem->Children, false, true ) )
-		);
-	}
-	MenuBuilder.EndSection();
+	GenerateCommonContextMenu( MenuBuilder, true );
 
 	MenuBuilder.BeginSection( "", LOCTEXT( "ContextMenu_FavoritesSection", "Favorites" ) );
 	{
@@ -1306,44 +1301,29 @@ TSharedPtr<SWidget> SFactsDebugger::HandleGenerateFavoritesContextMenu()
 				} )
 			)
 		);
-		
-		MenuBuilder.AddMenuEntry(
-			LOCTEXT( "ContextMenu_RemoveItemFavorites", "Remove All Favorites for Item" ),
-			LOCTEXT( "ContextMenu_RemoveItemFavorites_ToolTip", "Remove all children facts that are Favorites (including this item)" ),
-			FSlateIcon(),
-			FUIAction(
-				FExecuteAction::CreateLambda( [ this ]()
-				{
-					TArray< FFactTreeItemPtr > SelectedItems = FavoriteFactsTreeView->GetSelectedItems();
-					checkf( SelectedItems.Num() <= 1, TEXT( "SelectionMode for Favorites tree should be ESelectionMode::Type::Single" ) );
 
-					if ( SelectedItems.IsEmpty() )
+		TArray< FFactTreeItemPtr > SelectedItems = FavoriteFactsTreeView->GetSelectedItems();
+		if ( SelectedItems.Num() == 1 && HasFavoritesRecursive( SelectedItems[ 0 ] ) )
+		{
+			MenuBuilder.AddMenuEntry(
+				LOCTEXT( "ContextMenu_RemoveItemFavorites", "Remove All Favorites for Item" ),
+				LOCTEXT( "ContextMenu_RemoveItemFavorites_ToolTip", "Remove all children facts that are Favorites (including this item)" ),
+				FSlateIcon(),
+				FUIAction(
+					FExecuteAction::CreateLambda( [ this ]()
 					{
-						return;
-					}
-					
-					ClearFavoritesRecursive( SelectedItems[0] );
+						TArray< FFactTreeItemPtr > SelectedItems = FavoriteFactsTreeView->GetSelectedItems();
+						ClearFavoritesRecursive( SelectedItems[ 0 ] );
 
-					Utils::AllFilteredFactsCount = CountAllFilteredItems( RootItem );
-					Utils::AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
+						Utils::AllFilteredFactsCount = CountAllFilteredItems( RootItem );
+						Utils::AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
 
-					SaveFavorites();
-					FilterItems();
-				} ),
-				FCanExecuteAction::CreateLambda( [ this ]()
-				{
-					TArray< FFactTreeItemPtr > SelectedItems = FavoriteFactsTreeView->GetSelectedItems();
-					checkf( SelectedItems.Num() <= 1, TEXT( "SelectionMode for Favorites tree should be ESelectionMode::Type::Single" ) );
-
-					if ( SelectedItems.IsEmpty() )
-					{
-						return false;
-					}
-
-					return HasFavoritesRecursive( SelectedItems[0] );
-				} )
-			)
-		);
+						SaveFavorites();
+						FilterItems();
+					} )
+				)
+			);
+		}
 	}
 	MenuBuilder.EndSection();
 
