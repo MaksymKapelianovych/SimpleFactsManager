@@ -9,6 +9,8 @@ class UFactSubsystem;
 
 class SIMPLEFACTSDEBUGGER_API FSimpleFactsDebuggerModule : public IModuleInterface
 {
+    friend class UFactRuntimeDebugSubsystem;
+    
 public:
     static FORCEINLINE FSimpleFactsDebuggerModule& Get()
     {
@@ -19,10 +21,10 @@ public:
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;
 
-    void LoadPresetIntoDebugger( UFactsPreset* InPresetToLoad );
-
-    void HandleGameInstanceStarted( UGameInstance* GameInstance );
-    void HandleGameInstanceEnded();
+    void LoadFactPreset( const UFactsPreset* InPreset );
+    void LoadFactPresets( const TArray< UFactsPreset*>& InPresets );
+    
+    bool IsGameInstanceStarted() const;
     
     DECLARE_DELEGATE(FGameInstanceStarted)
     FGameInstanceStarted OnGameInstanceStarted;
@@ -30,9 +32,10 @@ public:
     UFactSubsystem* TryGetFactSubsystem() const;
 
 private:
-    void HandlePIEStarted( const bool bIsSimulating );
-    void HandlePIEEnded( const bool bIsSimulating );
-    
+    void HandleGameInstanceStarted( UGameInstance* GameInstance );
+    void HandleGameInstanceEnded();
+
+private:
     TSharedRef< SDockTab > SpawnFactsDebuggerTab( const FSpawnTabArgs& SpawnTabArgs );
     TSharedPtr< SWidget > SummonFactsDebuggerUI();
     
@@ -40,5 +43,4 @@ private:
     TWeakPtr< SFactsDebugger > FactsDebugger;
 
     TWeakObjectPtr< UGameInstance > WeakGameInstance;
-    bool bPIEActive = false;;
 };

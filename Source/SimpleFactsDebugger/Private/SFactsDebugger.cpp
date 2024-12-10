@@ -5,6 +5,8 @@
 
 #include "FactsDebuggerSettingsLocal.h"
 #include "FactsDebuggerStyle.h"
+#include "Styling/StyleColors.h"
+
 #include "FactsPreset.h"
 #include "FactSubsystem.h"
 #include "GameplayTagsManager.h"
@@ -271,6 +273,10 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			SAssignNew( ComboButton, SComboButton )
 			.ToolTipText( LOCTEXT( "PresetsButton_Toolpit", "Open presets menu" ) )
 			.OnGetMenuContent( this, &SFactsDebugger::HandleGeneratePresetsMenu )
+			.IsEnabled_Lambda( [ this ]()
+			{
+				return FSimpleFactsDebuggerModule::Get().IsGameInstanceStarted();
+			} )
 			.ButtonContent()
 			[
 				SNew( SHorizontalBox )
@@ -1100,9 +1106,9 @@ TSharedRef<SWidget> SFactsDebugger::HandleGeneratePresetsMenu()
 			.Padding( 2.f )
 			[
 				SAssignNew( PresetPicker, SFactsPresetPicker, AssetData )
-				.OnPresetSelected_Lambda( [ this ]( UFactsPreset* Preset )
+				.OnPresetSelected_Lambda( [ this ]( const UFactsPreset* Preset )
 				{
-					LoadFactsPreset( Preset );
+					FSimpleFactsDebuggerModule::Get().LoadFactPreset( Preset );
 					check( ComboButton );
 					ComboButton->SetIsOpen( false );
 				})

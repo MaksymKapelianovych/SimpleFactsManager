@@ -9,7 +9,7 @@
 
 
 UCLASS()
-class SIMPLEFACTSDEBUGGER_API UFactsPreset final : public UPrimaryDataAsset
+class SIMPLEFACTS_API UFactsPreset final : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 

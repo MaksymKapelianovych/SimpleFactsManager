@@ -4,6 +4,7 @@
 #include "FactStatics.h"
 
 #include "FactLogChannels.h"
+#include "FactsPreset.h"
 #include "FactSubsystem.h"
 
 void UFactStatics::ChangeFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32 NewValue, EFactValueChangeType ChangeType)
@@ -77,4 +78,43 @@ bool UFactStatics::CheckFactSimpleCondition(const UObject* WorldContextObject, F
 
 	UE_LOG( LogFact, Error, TEXT( "UFactStatics::CheckFactValue: WorldContextObject is null" ) );
 	return false;
+}
+
+void UFactStatics::LoadFactsPreset( const UObject* WorldContextObject, const UFactsPreset* Preset )
+{
+#if !UE_BUILD_SHIPPING
+	if ( WorldContextObject == nullptr )
+	{
+		UE_LOG( LogFact, Error, TEXT( "UFactStatics::LoadFactsPreset: WorldContextObject is null" ) );
+		return;
+	}
+
+	if ( Preset == nullptr )
+	{
+		UE_LOG( LogFact, Error, TEXT( "UFactStatics::LoadFactsPreset: Preset is null" ) );
+		return;
+	}
+
+	UFactSubsystem& FactSubsystem = UFactSubsystem::Get( WorldContextObject );
+	for ( auto [ Tag, Value ] : Preset->PresetValues )
+	{
+		FactSubsystem.ChangeFactValue( Tag, Value, EFactValueChangeType::Set );
+	}
+#endif
+}
+
+void UFactStatics::LoadFactsPresets( const UObject* WorldContextObject, const TArray< UFactsPreset* >& Presets )
+{
+#if !UE_BUILD_SHIPPING
+	for ( const UFactsPreset* Preset : Presets )
+	{
+		if ( Preset == nullptr )
+		{
+			UE_LOG( LogFact, Error, TEXT( "UFactStatics::LoadFactsPresets: Null preset in TArray" ) );
+			continue;
+		}
+		
+		LoadFactsPreset( WorldContextObject, Preset );
+	}
+#endif
 }

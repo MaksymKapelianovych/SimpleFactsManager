@@ -152,8 +152,6 @@ private:
 	TArray< TSharedRef< SFactsSearchToggle > > CurrentSearchToggles;
 	FText CurrentSearchText;
 
-	TObjectPtr< UFactsPreset > LoadedPreset;
-
 	// Save expansion state for tag item. The expansion state does not persist between editor sessions. 
 	static TSet< FFactTag > MainExpandedFacts;
 	static TSet< FFactTag > FavoritesExpandedFacts;

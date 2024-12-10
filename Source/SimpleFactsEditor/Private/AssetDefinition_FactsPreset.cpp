@@ -12,26 +12,6 @@
 
 namespace MenuExtentions_FactsPreset
 {
-	void OpenPresetInFactsDebugger( const FToolMenuContext& MenuContext )
-	{
-		if ( const UContentBrowserAssetContextMenuContext* Context = UContentBrowserAssetContextMenuContext::FindContextWithAssets( MenuContext ) )
-		{
-			TArray< UFactsPreset* > FactsPresets = Context->LoadSelectedObjects< UFactsPreset >(  );
-			check( FactsPresets.Num() == 1 );
-			FSimpleFactsDebuggerModule::Get().LoadPresetIntoDebugger( FactsPresets[ 0 ] );
-		}
-	}
-	
-	bool CanOpenPresetInFactsDebugger( const FToolMenuContext& MenuContext )
-	{
-		if ( const UContentBrowserAssetContextMenuContext* Context = UContentBrowserAssetContextMenuContext::FindContextWithAssets( MenuContext ) )
-		{
-			return Context->GetSelectedItems().Num() == 1;
-		}
-
-		return false;
-	}
-	
 	static FDelayedAutoRegisterHelper DelayedAutoRegister(EDelayedRegisterRunPhase::EndOfEngineInit, []
 	{
 		UToolMenus::RegisterStartupCallback( FSimpleMulticastDelegate::FDelegate::CreateLambda( []
@@ -43,13 +23,23 @@ namespace MenuExtentions_FactsPreset
 
 			{
 				FToolUIAction UIAction;
-				UIAction.ExecuteAction = FToolMenuExecuteAction::CreateStatic( &OpenPresetInFactsDebugger );
-				UIAction.IsActionVisibleDelegate = FToolMenuCanExecuteAction::CreateStatic( &CanOpenPresetInFactsDebugger );
+				UIAction.ExecuteAction = FToolMenuExecuteAction::CreateLambda( []( const FToolMenuContext& MenuContext )
+				{
+					if ( const UContentBrowserAssetContextMenuContext* Context = UContentBrowserAssetContextMenuContext::FindContextWithAssets( MenuContext ) )
+					{
+						TArray< UFactsPreset* > Presets = Context->LoadSelectedObjects< UFactsPreset >();
+						FSimpleFactsDebuggerModule::Get().LoadFactPresets( Presets );
+					}
+				} );
+				UIAction.CanExecuteAction = FToolMenuCanExecuteAction::CreateLambda( []( const FToolMenuContext& MenuContext )
+				{
+					return FSimpleFactsDebuggerModule::Get().IsGameInstanceStarted();
+				} );
 			
 				Section.AddMenuEntry(
-					"FactsPreset_OpenInFactsDebugger",
-					LOCTEXT( "FactsPreset_OpenInFactsDebugger", "Open this Preset in FactsDebugger" ),
-					LOCTEXT( "FactsPreset_OpenInFactsDebuggerTooltip", "Open this Preset in FactsDebugger" ),
+					"FactsPreset_Load",
+					LOCTEXT( "FactsPreset_Load", "Load preset(s)" ),
+					LOCTEXT( "FactsPreset_LoadTooltip", "Load all facts from preset(s) (only in PIE)" ),
 					FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "ClassIcon.FactsPreset" ),
 					UIAction
 				);

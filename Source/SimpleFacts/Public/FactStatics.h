@@ -52,4 +52,11 @@ public:
 	 */ 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Facts, meta = (WorldContext = "WorldContextObject"))
 	static bool IsFactDefined(const UObject* WorldContextObject, const FFactTag Tag);
+
+	// Todo: maybe make it not DevelopmentOnly
+	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject", DevelopmentOnly), Category = "Facts")
+	static void LoadFactsPreset( const UObject* WorldContextObject, const UFactsPreset* Preset );
+
+	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject", DevelopmentOnly), Category = "Facts")
+	static void LoadFactsPresets( const UObject* WorldContextObject, const TArray< UFactsPreset* >& Presets );
 };

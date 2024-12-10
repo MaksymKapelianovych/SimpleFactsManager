@@ -1,6 +1,7 @@
 #include "SimpleFactsDebugger.h"
 
 #include "FactsDebuggerStyle.h"
+#include "FactStatics.h"
 #include "FactSubsystem.h"
 #include "SFactsDebugger.h"
 
@@ -54,18 +55,19 @@ void FSimpleFactsDebuggerModule::ShutdownModule()
 }
 
 // todo: change implementation to allow loading presets from C++/BP
-void FSimpleFactsDebuggerModule::LoadPresetIntoDebugger( UFactsPreset* InPresetToLoad )
+void FSimpleFactsDebuggerModule::LoadFactPreset( const UFactsPreset* InPreset )
 {
-	if ( FactsDebugger.IsValid() )
+	if ( WeakGameInstance.IsValid() )
 	{
-		FactsDebugger.Pin()->LoadFactsPreset( InPresetToLoad );
+		UFactStatics::LoadFactsPreset( WeakGameInstance.Pin()->GetWorld(), InPreset );
 	}
-	else
+}
+
+void FSimpleFactsDebuggerModule::LoadFactPresets( const TArray< UFactsPreset* >& InPresets )
+{
+	if ( WeakGameInstance.IsValid() )
 	{
-		if ( FGlobalTabmanager::Get()->TryInvokeTab( FactsDebuggerTabName ).IsValid() )
-		{
-			FactsDebugger.Pin()->LoadFactsPreset( InPresetToLoad );
-		}
+		UFactStatics::LoadFactsPresets( WeakGameInstance.Pin()->GetWorld(), InPresets );
 	}
 }
 
@@ -80,6 +82,11 @@ void FSimpleFactsDebuggerModule::HandleGameInstanceEnded()
 	WeakGameInstance = nullptr;
 }
 
+bool FSimpleFactsDebuggerModule::IsGameInstanceStarted() const
+{
+	return WeakGameInstance.IsValid();
+}
+
 UFactSubsystem* FSimpleFactsDebuggerModule::TryGetFactSubsystem() const
 {
 	if ( WeakGameInstance.IsValid() )
@@ -89,16 +96,6 @@ UFactSubsystem* FSimpleFactsDebuggerModule::TryGetFactSubsystem() const
 	}
 
 	return nullptr;
-}
-
-void FSimpleFactsDebuggerModule::HandlePIEStarted( const bool bIsSimulating )
-{
-	bPIEActive = true;
-}
-
-void FSimpleFactsDebuggerModule::HandlePIEEnded( const bool bIsSimulating )
-{
-	bPIEActive = false;
 }
 
 TSharedRef< SDockTab > FSimpleFactsDebuggerModule::SpawnFactsDebuggerTab( const FSpawnTabArgs& SpawnTabArgs )

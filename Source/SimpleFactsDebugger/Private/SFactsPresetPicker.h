@@ -10,7 +10,7 @@ class UFactsPreset;
 class SFactsPresetPicker : public SCompoundWidget
 {
 public:
-	DECLARE_DELEGATE_OneParam( FOnSelectionChanged, UFactsPreset* )
+	DECLARE_DELEGATE_OneParam( FOnSelectionChanged, const UFactsPreset* )
 	
 	SLATE_BEGIN_ARGS( SFactsPresetPicker ) {}
 
