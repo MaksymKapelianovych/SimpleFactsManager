@@ -3,9 +3,11 @@
 #include "FactsDebuggerStyle.h"
 #include "FactSubsystem.h"
 #include "SFactsDebugger.h"
+
+#if WITH_EDITOR
 #include "WorkspaceMenuStructure.h"
 #include "WorkspaceMenuStructureModule.h"
-#include "Styling/SlateStyleRegistry.h"
+#endif
 
 static const FName FactsDebuggerTabName( "FactsDebugger" );
 
@@ -26,12 +28,14 @@ void FSimpleFactsDebuggerModule::StartupModule()
 	FFactsDebuggerStyle::Register();
 	
 	// Facts Debugger
-	FGlobalTabmanager::Get()->RegisterNomadTabSpawner( FactsDebuggerTabName, FOnSpawnTab::CreateRaw(this, &FSimpleFactsDebuggerModule::SpawnFactsDebuggerTab ) )
+	FTabSpawnerEntry& Tab = FGlobalTabmanager::Get()->RegisterNomadTabSpawner( FactsDebuggerTabName, FOnSpawnTab::CreateRaw( this, &FSimpleFactsDebuggerModule::SpawnFactsDebuggerTab ) )
 		.SetDisplayName( LOCTEXT( "FactsDebuggerTabTitle", "Facts Debugger" ) )
 		.SetTooltipText( LOCTEXT( "FactsDebuggerTooltipText", "Open Facts Debugger tab." ) )
-		.SetIcon( FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "ClassIcon.FactsPreset" ) )
-		.SetGroup( WorkspaceMenu::GetMenuStructure().GetToolsCategory() );
-
+		.SetIcon( FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "ClassIcon.FactsPreset" ) );
+	
+#if WITH_EDITOR
+	Tab.SetGroup( WorkspaceMenu::GetMenuStructure().GetToolsCategory() );
+#endif
 }
 
 void FSimpleFactsDebuggerModule::ShutdownModule()

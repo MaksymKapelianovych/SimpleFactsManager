@@ -161,5 +161,7 @@ private:
 
 	bool bDisplayOnlyPinnedItems = false;
 
+#if WITH_EDITOR
 	FDelegateHandle TagChangedHandle;
+#endif
 };

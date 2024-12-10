@@ -3,6 +3,7 @@
 
 #include "SFactsSearchToggle.h"
 
+#include "Styling/StyleColors.h"
 #include "SlateOptMacros.h"
 
 #define LOCTEXT_NAMESPACE "FactsDebugger"
@@ -24,7 +25,7 @@ void SFactsSearchToggle::Construct( const FArguments& InArgs, const FText& InBut
 	[
 		SNew( SBorder )
 		.Padding( 1.0f )
-		.BorderImage( FAppStyle::Get().GetBrush( "FilterBar.FilterBackground" ) )
+		.BorderImage( FAppStyle::GetBrush( "FilterBar.FilterBackground" ) )
 		[
 			SAssignNew( ToggleButtonPtr, SCheckBox )
 			.Style( FAppStyle::Get(), "FilterBar.FilterButton" )

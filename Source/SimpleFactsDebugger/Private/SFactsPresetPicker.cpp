@@ -42,7 +42,7 @@ void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAss
 		[
 			SNew( SBorder )
 			.Padding( 6.f )
-			.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Panel" ) )
+			.BorderImage( FAppStyle::GetBrush( "Brushes.Panel" ) )
 			[
 				SAssignNew( PresetsListView, SListView< TSharedPtr< FAssetData > > )
 				.SelectionMode( ESelectionMode::Type::Single )
@@ -94,7 +94,7 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 	}
 
 	return SNew( STableRow< TSharedPtr< FAssetData > >, OwnerTable )
-		.Style( &FAppStyle::Get().GetWidgetStyle< FTableRowStyle >( "ContentBrowser.AssetListView.ColumnListTableRow" ) )
+		.Style( FAppStyle::Get(), "TableView.AlternatingRow" )
 		[
 			SNew( SHorizontalBox )
 
@@ -109,7 +109,7 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 				.HAlign( HAlign_Center )
 				[
 					SNew( SBorder )
-					.BorderImage( FAppStyle::GetBrush( "AssetThumbnail.AssetBackground" ) )
+					.BorderImage( FAppStyle::GetBrush( "Brushes.Recessed" ) )
 					[
 						SNew( SImage )
 						.Image( FFactsDebuggerStyle::Get().GetBrush( "ClassThumbnail.FactsPreset" ) )
@@ -124,7 +124,7 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 					SNew( SBorder )
 					.BorderImage( FAppStyle::GetBrush( "WhiteBrush" ) )
 					.BorderBackgroundColor( FFactsDebuggerStyle::Get().GetColor( "Colors.FactsPreset" ) )
-					.Padding( FMargin{ 0.f, 2.f, 0.f, 0.f } )
+					.Padding( 0.f, 2.f, 0.f, 0.f )
 				]
 				
 			]
@@ -142,9 +142,8 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 				[
 					SNew( STextBlock )
 					.Text( FText::FromName( AssetData->AssetName ) )
-					.Font( FAppStyle::Get().GetFontStyle( "ContentBrowser.AssetTileViewNameFont" ) )
+					.Font( FFactsDebuggerStyle::Get().GetFontStyle( "NameFont" ) )
 					.HighlightText( SearchBox.Get(), &SSearchBox::GetText )
-					.ColorAndOpacity( FSlateColor::UseForeground() )
 				]
 				
 				+ SVerticalBox::Slot()
@@ -153,8 +152,7 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 				[
 					SNew( STextBlock )
 					.Text( FText::FromName( AssetData->PackagePath ) )
-					.Font( FAppStyle::Get().GetFontStyle("ContentBrowser.AssetListViewClassFont") )
-					.ColorAndOpacity( FSlateColor::UseForeground() )
+					.Font( FFactsDebuggerStyle::Get().GetFontStyle( "PathFont" ) )
 				]
 			]
 		];

@@ -3,12 +3,11 @@
 
 #include "SFactsDebugger.h"
 
-#include "ContentBrowserModule.h"
 #include "FactsDebuggerSettingsLocal.h"
 #include "FactsDebuggerStyle.h"
 #include "FactsPreset.h"
 #include "FactSubsystem.h"
-#include "IDocumentation.h"
+#include "GameplayTagsManager.h"
 #include "SFactsSearchToggle.h"
 #include "SFactsExpanderArrow.h"
 #include "SFactsPresetPicker.h"
@@ -283,7 +282,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 				.AutoWidth()
 				[
 					SNew( SImage )
-					.Image( FAppStyle::Get().GetBrush( "AssetEditor.SaveAsset" ) )
+					.Image( FFactsDebuggerStyle::Get().GetBrush( "ClassIcon.FactsPreset" ) )
 				]
 
 				// -----------------------------------------------------------------------------------------------------
@@ -341,7 +340,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 				.ButtonContent()
 				[
 					SNew( SImage )
-					.Image( FAppStyle::Get().GetBrush( "Icons.Settings") )
+					.Image( FAppStyle::GetBrush( "Icons.Settings") )
 				]
 			]
 		]
@@ -413,7 +412,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 				} )
 				[
 					SNew( SImage )
-					.Image( FAppStyle::Get().GetBrush( "Icons.X" ) )
+					.Image( FAppStyle::GetBrush( "Icons.X" ) )
 				]
 			]
 		]
@@ -426,7 +425,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 		.FillHeight( 1.f )
 		[
 			SNew( SBorder )
-			.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Panel" ) )
+			.BorderImage( FAppStyle::GetBrush( "Brushes.Panel" ) )
 			[
 				SAssignNew( Splitter, SSplitter )
 				.Orientation( GetDefault< UFactsDebuggerSettingsLocal >()->Orientation )
@@ -574,7 +573,9 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 		]
 	];
 
+#if WITH_EDITOR
 	TagChangedHandle = UGameplayTagsManager::OnEditorRefreshGameplayTagTree.AddSP( this, &SFactsDebugger::RebuildFactTreeItems );
+#endif
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceStarted.BindRaw( this, &SFactsDebugger::HandleGameInstanceStarted );
 	if ( InArgs._bIsGameStarted )
 	{
@@ -591,7 +592,9 @@ END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 SFactsDebugger::~SFactsDebugger()
 {
+#if WITH_EDITOR
 	UGameplayTagsManager::OnEditorRefreshGameplayTagTree.Remove( TagChangedHandle );
+#endif
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceStarted.Unbind();
 }
 
@@ -696,17 +699,17 @@ void SFactsDebugger::InitItem( FFactTreeItemRef Item )
 TSharedRef< SWidget > SFactsDebugger::CreateTreeLabel( const FText& InLabel ) const
 {
 	return SNew( SBorder )
-		.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Background" ) )
+		.BorderImage( FAppStyle::GetBrush( "Brushes.Background" ) )
 		.Padding( 0.f, 0.f, 0.f, 3.f )
 		[
 			SNew( SBorder )
-			.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
+			.BorderImage( FAppStyle::GetBrush( "Brushes.Header" ) )
 			.Padding( 10.f, 4.f )
 			[
 				SNew( STextBlock )
 				.Text( InLabel )
 				.TextStyle( FAppStyle::Get(), "ButtonText" )
-				.Font( FAppStyle::Get().GetFontStyle( "NormalFontBold" ) )
+				.Font( FAppStyle::GetFontStyle( "NormalFontBold" ) )
 			]	
 		];
 }
@@ -750,7 +753,7 @@ TSharedRef< SHeaderRow > SFactsDebugger::CreateHeaderRow( bool bIsFavoritesTree 
 			.Image_Lambda( [ bIsFavoritesTree ]()
 			{
 				return bIsFavoritesTree
-					? FAppStyle::Get().GetBrush( "Icons.Star" )
+					? FAppStyle::GetBrush( "Icons.Star" )
 					: GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree
 						? FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.Outline" )
 						: FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.OutlineFilled" );
@@ -770,7 +773,7 @@ TSharedRef< SHeaderRow > SFactsDebugger::CreateHeaderRow( bool bIsFavoritesTree 
 TSharedRef< SWidget > SFactsDebugger::CreateFilterStatusWidget( bool bIsFavoritesTree ) const
 {
 	return SNew( SBorder )
-		.BorderImage( FAppStyle::Get().GetBrush( "Brushes.Header" ) )
+		.BorderImage( FAppStyle::GetBrush( "Brushes.Header" ) )
 		.VAlign( VAlign_Center )
 		.HAlign( HAlign_Left )
 		.Padding( 10.f, 4.f )
@@ -781,7 +784,7 @@ TSharedRef< SWidget > SFactsDebugger::CreateFilterStatusWidget( bool bIsFavorite
 		];
 }
 
-TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTreeItemPtr InItem, const TSharedRef<STableViewBase>& TableViewBase )
+TSharedRef< ITableRow > SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTreeItemPtr InItem, const TSharedRef< STableViewBase >& TableViewBase )
 {
 	class SFactTreeItem : public SMultiColumnTableRow< FFactTreeItemPtr >
 	{
@@ -790,7 +793,7 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 		SLATE_END_ARGS()
 
 		SFactTreeItem()
-			: FavoriteBrush( FAppStyle::Get().GetBrush( "Icons.Star" ) )
+			: FavoriteBrush( FAppStyle::GetBrush( "Icons.Star" ) )
 			, NormalBrush( FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.Outline" ) )
 			, EvenColor( USlateThemeManager::Get().GetColor( EStyleColor::Recessed ) )
 			, OddColor( USlateThemeManager::Get().GetColor( EStyleColor::Background ) )
@@ -805,7 +808,7 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 			FactsDebugger = InFactsDebugger;
 
 			SMultiColumnTableRow::Construct( FSuperRowType::FArguments()
-				.Style( &FAppStyle::Get().GetWidgetStyle<FTableRowStyle>( "ContentBrowser.AssetListView.ColumnListTableRow" ) ), InOwnerTable );
+				.Style( FAppStyle::Get(), "TableView.AlternatingRow" ), InOwnerTable );
 
 			Item->OnFactItemValueChanged.BindRaw( this, &SFactTreeItem::HandleItemValueChanged );
 		}
@@ -815,12 +818,12 @@ TSharedRef<ITableRow> SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactTre
 			Item->OnFactItemValueChanged.Unbind();
 		}
 		
-		virtual TSharedRef<SWidget> GenerateWidgetForColumn( const FName& InColumnName ) override
+		virtual TSharedRef< SWidget > GenerateWidgetForColumn( const FName& InColumnName ) override
 		{
 			if ( InColumnName == "Favorites" )
 			{
 				return SNew( SButton )
-					.ButtonStyle( &FAppStyle::Get(), "NoBorder" )
+					.ButtonStyle( FAppStyle::Get(), "NoBorder" )
 					.OnClicked( this, &SFactTreeItem::HandleFavoriteClicked )
 					[
 						SNew( SImage )
@@ -994,7 +997,7 @@ void SFactsDebugger::OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray<FFactT
 	}
 }
 
-void SFactsDebugger::HandleExpansionChanged(FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive, bool bIsFavoritesTree)
+void SFactsDebugger::HandleExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive, bool bIsFavoritesTree )
 {
 	TSet< FFactTag >& ExpandedFacts = bIsFavoritesTree ? FavoritesExpandedFacts : MainExpandedFacts;
 	
