@@ -54,10 +54,6 @@ public:
 	virtual void Construct( const FArguments& InArgs );
 	virtual ~SFactsDebugger() override;
 
-	// Todo: remove from widget
-	void LoadFactsPreset( UFactsPreset* InPreset );
-	void LoadFactsPresetRecursive( UFactsPreset* InPreset, const FFactTreeItemPtr& FactItem ) const;
-
 	// Todo: maybe move to utils
 	static int32 CountAllFilteredItems( FFactTreeItemPtr ParentNode );
 	static int32 CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool bIsParentFavorite );
