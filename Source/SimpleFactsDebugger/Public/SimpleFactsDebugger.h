@@ -7,7 +7,7 @@ class SFactsDebugger;
 class UFactsPreset;
 class UFactSubsystem;
 
-class FSimpleFactsDebuggerModule : public IModuleInterface
+class SIMPLEFACTSDEBUGGER_API FSimpleFactsDebuggerModule : public IModuleInterface
 {
 public:
     static FORCEINLINE FSimpleFactsDebuggerModule& Get()

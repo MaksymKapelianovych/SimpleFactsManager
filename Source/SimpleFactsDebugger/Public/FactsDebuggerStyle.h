@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-struct FFactsDebuggerStyle final : public FSlateStyleSet
+struct SIMPLEFACTSDEBUGGER_API FFactsDebuggerStyle final : public FSlateStyleSet
 {
 	/** Register style set */
 	static void Register();

@@ -21,7 +21,12 @@
 		},
 		{
 			"Name": "SimpleFactsDebugger",
-			"Type": "UncookedOnly",
+			"Type": "DeveloperTool",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "SimpleFactsEditor",
+			"Type": "Editor",
 			"LoadingPhase": "Default"
 		}
 	],

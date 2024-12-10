@@ -8,8 +8,8 @@
 #include "FactsPreset.generated.h"
 
 
-UCLASS(MinimalAPI)
-class UFactsPreset final : public UPrimaryDataAsset
+UCLASS()
+class SIMPLEFACTSDEBUGGER_API UFactsPreset final : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 

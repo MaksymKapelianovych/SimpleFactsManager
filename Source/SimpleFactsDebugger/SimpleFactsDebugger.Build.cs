@@ -21,18 +21,22 @@ public class SimpleFactsDebugger : ModuleRules
                 "Slate",
                 "SlateCore", 
                 "InputCore",
-                "WorkspaceMenuStructure",
                 "GameplayTags",
-                "UnrealEd",
-                "EditorStyle", 
-                "AssetTools",
-                "ToolMenus",
-                "ContentBrowser",
-                "AssetDefinition",
                 "Projects",
-                "DetailCustomizations",
-                "DeveloperSettings"
+                "DeveloperSettings",
+                "ToolWidgets",
+                "ToolMenus",
             }
         );
+
+        if (Target.bCompileAgainstEditor)
+        {
+            PrivateDependencyModuleNames.AddRange(
+                new string[]
+                {
+                    "WorkspaceMenuStructure",
+                }
+            );
+        }
     }
 }
