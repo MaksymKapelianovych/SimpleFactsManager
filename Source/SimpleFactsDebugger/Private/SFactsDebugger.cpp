@@ -649,26 +649,6 @@ SFactsDebugger::~SFactsDebugger()
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceStarted.Unbind();
 }
 
-void SFactsDebugger::LoadFactsPreset( UFactsPreset* InPreset )
-{
-	LoadedPreset = InPreset;
-	LoadFactsPresetRecursive( InPreset, RootItem );
-}
-
-void SFactsDebugger::LoadFactsPresetRecursive( UFactsPreset* InPreset, const FFactTreeItemPtr& FactItem ) const
-{
-	if ( int32* PresetValue = InPreset->PresetValues.Find( FactItem->Tag ) )
-	{
-		FactItem->HandleNewValueCommited( *PresetValue, ETextCommit::Type::Default );
-		FactItem->HandleValueChanged( *PresetValue );
-	}
-
-	for ( const FFactTreeItemPtr& ChildItem : FactItem->Children )
-	{
-		LoadFactsPresetRecursive( InPreset, ChildItem );
-	}
-}
-
 int32 SFactsDebugger::CountAllFilteredItems( FFactTreeItemPtr ParentNode )
 {
 	int32 Result = 0;
