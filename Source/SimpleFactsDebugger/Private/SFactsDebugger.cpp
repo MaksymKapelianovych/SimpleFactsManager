@@ -49,36 +49,7 @@ namespace Utils
 	int32 CurrentFilteredFactsCount = 0;
 	int32 CurrentFavoriteFactsCount = 0;
 	
-	struct FFilterOptions
-	{
-		TArray< FString > SearchToggleStrings;
-		TArray< FString > SearchBarStrings;
-		bool bFilteringFavorites;
-		
-	};
-	void FilterFactItemChildren( TArray< FFactTreeItemPtr>& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
-
-	void CopyMatchedItem( FFactTreeItemPtr SourceItem, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options, bool bShouldFilterChildren )
-	{
-		if ( bShouldFilterChildren )
-		{
-			TArray< FFactTreeItemPtr > FilteredChildren;
-			FilterFactItemChildren( SourceItem->Children, FilteredChildren, Options );
-			if ( FilteredChildren.Num() )
-			{
-				FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
-				*NewItem = *SourceItem;
-				NewItem->InitItem();
-				NewItem->Children = FilteredChildren;
-			}
-		}
-		else
-		{
-			FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
-			*NewItem = *SourceItem;
-			NewItem->InitItem();			}
-	}
-
+	
 	bool MatchSearchToggle( const TArray< FString >& SearchStrings, const FString& TagString )
 	{
 		if ( SearchStrings.IsEmpty() )
@@ -119,38 +90,76 @@ namespace Utils
 		return true;
 	}
 
-	enum class ETagMatchResult
+	enum class ETagMatchType
 	{
 		None,
-		Partial,
+		Parent,
+		Child,
 		Full
 	};
-		
-	ETagMatchResult MatchFavorites( FFactTag CheckedTag )
+	ETagMatchType MatchFavorites( FFactTag CheckedTag )
 	{
-		bool bPartialMatch = false;
+		bool bParentMatch = false;
+		bool bChildMatch = false;
+			
 		for ( FFactTag FavoriteFact : SFactsDebugger::FavoriteFacts )
 		{
-			if ( CheckedTag == FavoriteFact )
-			{
-				return ETagMatchResult::Full;
-			}
+			if ( CheckedTag == FavoriteFact ) {	return ETagMatchType::Full; }
 
-			if ( CheckedTag.MatchesTag( FavoriteFact ) || FavoriteFact.MatchesTag( CheckedTag ) )
-			{
-				bPartialMatch = true;
-			}
+			if ( CheckedTag.MatchesTag( FavoriteFact ) ) { bParentMatch = true; }
+			else if ( FavoriteFact.MatchesTag( CheckedTag ) ) { bChildMatch = true; }
 		}
 
-		if ( bPartialMatch )
-		{
-			return ETagMatchResult::Partial;
-		}
+		if ( bParentMatch ) { return ETagMatchType::Parent; }
+		else if ( bChildMatch ) { return ETagMatchType::Child; }
 
-		return ETagMatchResult::None;
+		return ETagMatchType::None;
 	};
+
+	struct FFilterOptions
+	{
+		TArray< FString > SearchToggleStrings;
+		TArray< FString > SearchBarStrings;
+		
+	};
+
+	void FilterFavoritesFactItemChildren( TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
+	void FilterMainFactItemChildren( TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
+
+	void CopyItem( FFactTreeItemPtr SourceItem, TArray< FFactTreeItemPtr >& OutDestArray )
+	{
+		FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+		*NewItem = *SourceItem;
+		NewItem->InitItem();
+	}
+
+	void CopyItemIfMainChildrenMatch( FFactTreeItemPtr SourceItem, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
+	{
+		TArray< FFactTreeItemPtr > FilteredChildren;
+		FilterMainFactItemChildren( SourceItem->Children, FilteredChildren, Options );
+		if ( FilteredChildren.Num() )
+		{
+			FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+			*NewItem = *SourceItem;
+			NewItem->InitItem();
+			NewItem->Children = FilteredChildren;
+		}
+	}
+
+	void CopyItemIfFavoritesChildrenMatch( FFactTreeItemPtr SourceItem, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
+	{
+		TArray< FFactTreeItemPtr > FilteredChildren;
+		FilterFavoritesFactItemChildren( SourceItem->Children, FilteredChildren, Options );
+		if ( FilteredChildren.Num() )
+		{
+			FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
+			*NewItem = *SourceItem;
+			NewItem->InitItem();
+			NewItem->Children = FilteredChildren;
+		}
+	}
 	
-	void FilterFactItemChildren( TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
+	void FilterFavoritesFactItemChildren( TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
 	{
 		const UFactsDebuggerSettingsLocal* Settings = GetDefault< UFactsDebuggerSettingsLocal >();
 		auto MatchText = [ &Options ]( const FString& TagString )
@@ -160,42 +169,78 @@ namespace Utils
 
 		for ( const FFactTreeItemPtr& SourceItem : SourceArray )
 		{
-			ETagMatchResult Result = MatchFavorites( SourceItem->Tag );
+			bool bNeedsFilteringByText = false;
 
+			ETagMatchType Result = MatchFavorites( SourceItem->Tag );
 			switch ( Result ) {
-			case ETagMatchResult::None: // Fact and it's parent tags is not in favorites
+			case ETagMatchType::None: // early return
+				continue;
+			case ETagMatchType::Parent: // we shouldn't even get here
+				checkNoEntry();
+				continue;
+			case ETagMatchType::Child: // straight to filtering children, even if this item matched - it is not favorite by itself
 				{
-					if ( Options.bFilteringFavorites == false )
-					{
-						bool bShouldFilterChildren = MatchText( SourceItem->Tag.ToString() ) == false;
-						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, bShouldFilterChildren );
-					}
+					CopyItemIfFavoritesChildrenMatch( SourceItem, OutDestArray, Options );
 				}
 				break;
-			case ETagMatchResult::Partial: // Fact is not in favorites, but one of the parent/children tags is 
-				{
-					if ( Options.bFilteringFavorites )
-					{
-						bool bShouldFilterChildren = ( Options.SearchBarStrings.IsEmpty() && Options.SearchToggleStrings.IsEmpty() ) || MatchText( SourceItem->Tag.ToString() ) == false;
-						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, bShouldFilterChildren );
+			case ETagMatchType::Full:
+				bNeedsFilteringByText = true;
+				break;
+			}
 
-					}
-					else
-					{
-						bool bShouldFilterChildren = Settings->bRemoveFavoritesFromMainTree || MatchText( SourceItem->Tag.ToString() ) == false;
-						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, bShouldFilterChildren );
-					}
-				}
-				break;
-			case ETagMatchResult::Full: // Fact is favorite
+			if ( bNeedsFilteringByText )
+			{
+				if ( MatchText( SourceItem->Tag.ToString() ) ) // full match by favorites and by search texts
 				{
-					if ( Options.bFilteringFavorites || Settings->bRemoveFavoritesFromMainTree == false )
-					{
-						bool bShouldFilterChildren = MatchText( SourceItem->Tag.ToString() ) == false;
-						Utils::CopyMatchedItem( SourceItem, OutDestArray, Options, bShouldFilterChildren );
-					}
+					CopyItem( SourceItem, OutDestArray );
+				}
+			}
+		}
+	}
+
+	void FilterMainFactItemChildren( TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
+	{
+		const UFactsDebuggerSettingsLocal* Settings = GetDefault< UFactsDebuggerSettingsLocal >();
+		auto MatchText = [ &Options ]( const FString& TagString )
+		{
+			return MatchSearchBox( Options.SearchBarStrings, TagString ) && MatchSearchToggle( Options.SearchToggleStrings, TagString );
+		};
+			
+		for ( const FFactTreeItemPtr& SourceItem : SourceArray )
+		{
+			bool bNeedsFilteringByText = false;
+
+			ETagMatchType Result = MatchFavorites( SourceItem->Tag );
+			switch ( Result )
+			{
+			case ETagMatchType::None:
+				bNeedsFilteringByText = true;
+				break;
+			case ETagMatchType::Parent:
+				if ( Settings->bRemoveFavoritesFromMainTree == false ){	bNeedsFilteringByText = true; }
+				else { continue; }
+				break;
+			case ETagMatchType::Child:
+				{
+					CopyItemIfMainChildrenMatch( SourceItem, OutDestArray, Options );
 				}
 				break;
+			case ETagMatchType::Full:
+				if ( Settings->bRemoveFavoritesFromMainTree == false ){	bNeedsFilteringByText = true; }
+				else { continue; }
+				break;
+			}
+
+			if ( bNeedsFilteringByText )
+			{
+				if ( MatchText( SourceItem->Tag.ToString() ) )
+				{
+					CopyItem( SourceItem, OutDestArray );
+				}
+				else
+				{
+					CopyItemIfMainChildrenMatch( SourceItem, OutDestArray, Options );
+				}
 			}
 		}
 	}
@@ -1439,11 +1484,9 @@ void SFactsDebugger::FilterItems()
 	FavoritesRootItem = MakeShared< FFactTreeItem >();
 
 	// Filtering
-	Utils::FFilterOptions Options{ ActiveTogglesText, Tokens, false };
-	Utils::FilterFactItemChildren( RootItem->Children,  FilteredRootItem->Children, Options );
-
-	Utils::FFilterOptions FavoritesOptions{ ActiveTogglesText, Tokens, true };
-	Utils::FilterFactItemChildren( RootItem->Children,  FavoritesRootItem->Children, FavoritesOptions );
+	Utils::FFilterOptions Options{ ActiveTogglesText, Tokens };
+	Utils::FilterMainFactItemChildren( RootItem->Children, FilteredRootItem->Children, Options );
+	Utils::FilterFavoritesFactItemChildren( RootItem->Children, FavoritesRootItem->Children,Options );
 
 	Utils::CurrentFilteredFactsCount = CountAllFilteredItems( FilteredRootItem );
 	Utils::CurrentFavoriteFactsCount = CountAllFavoriteItems( FavoritesRootItem, false );
