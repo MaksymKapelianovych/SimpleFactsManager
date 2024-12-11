@@ -256,7 +256,7 @@ FFactTreeItem::~FFactTreeItem()
 	}
 }
 
-void FFactTreeItem::InitPIE()
+void FFactTreeItem::StartPlay()
 {
 	Value.Reset();
 	InitItem();
@@ -719,7 +719,7 @@ void SFactsDebugger::HandleGameInstanceStarted()
 
 void SFactsDebugger::InitItem( FFactTreeItemRef Item )
 {
-	Item->InitPIE();
+	Item->StartPlay();
 
 	for ( FFactTreeItemPtr& ChildItem : Item->Children )
 	{
@@ -753,7 +753,7 @@ TSharedRef< SWidget > SFactsDebugger::CreateFactsTree( bool bIsFavoritesTree )
 	return SAssignNew( TreeView, SFactsTreeView )
 		.TreeItemsSource( &ItemsSource->Children )
 		.OnGenerateRow( this, &SFactsDebugger::OnGenerateWidgetForFactsTreeView )
-		.OnGetChildren( this, &SFactsDebugger::OnGetChildren)
+		.OnGetChildren( this, &SFactsDebugger::OnGetChildren )
 		.OnExpansionChanged( this, &SFactsDebugger::HandleExpansionChanged, false, bIsFavoritesTree )
 		.OnSetExpansionRecursive( this, &SFactsDebugger::HandleExpansionChanged, true, bIsFavoritesTree )
 		.OnGeneratePinnedRow( this, &SFactsDebugger::HandleGeneratePinnedTreeRow )

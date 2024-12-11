@@ -26,7 +26,7 @@ struct FFactTreeItem : public TSharedFromThis< FFactTreeItem >
 
 	~FFactTreeItem();
 
-	void InitPIE();
+	void StartPlay();
 	void InitItem();
 	void HandleValueChanged( int32 NewValue );
 	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type );
