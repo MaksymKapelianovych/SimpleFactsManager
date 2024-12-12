@@ -85,6 +85,7 @@ private:
 	
 	void ClearFavoritesRecursive( FFactTreeItemPtr Item );
 	bool HasFavoritesRecursive( FFactTreeItemPtr Item );
+	void PostFavoritesChanged();
 
 	// Searching and filtering
 	void HandleSearchTextChanged( const FText& SearchText );
