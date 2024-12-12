@@ -1702,6 +1702,7 @@ FFactTreeItemPtr SFactsDebugger::BuildFactItem( FFactTreeItemPtr ParentNode, TSh
 	NewItem->Tag = FFactTag::ConvertChecked( ThisNode->GetCompleteTag() );
 	NewItem->TagNode = ThisNode;
 	NewItem->Children.Reserve( ThisNode->GetChildTagNodes().Num() );
+	NewItem->InitItem();
 	ParentNode->Children.Add( NewItem );
 	
 	for ( TSharedPtr< FGameplayTagNode > Node : ThisNode->GetChildTagNodes() )
