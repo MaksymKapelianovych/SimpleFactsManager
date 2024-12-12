@@ -299,10 +299,8 @@ BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 void SFactsDebugger::Construct( const FArguments& InArgs )
 {
-	RootItem = MakeShared< FFactTreeItem >();
-	FilteredRootItem = MakeShared< FFactTreeItem >();
-	FavoritesRootItem = MakeShared< FFactTreeItem >();
-		
+	BuildFactTreeItems();
+	
 	ChildSlot
 	[
 		SNew( SVerticalBox )
@@ -635,8 +633,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 	LoadFavorites();
 	LoadSearchToggles();
-	BuildFactTreeItems();
-	FilterItems();
+	PostFavoritesChanged();
 }
 
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
@@ -681,6 +678,11 @@ int32 SFactsDebugger::CountAllFilteredItems( FFactTreeItemPtr ParentNode )
 
 int32 SFactsDebugger::CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool bIsParentFavorite )
 {
+	if ( SFactsDebugger::FavoriteFacts.IsEmpty() )
+	{
+		return 0;
+	}
+	
 	int32 Result = 0;
 	
 	if ( bIsParentFavorite == false && SFactsDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
@@ -910,11 +912,8 @@ TSharedRef< ITableRow > SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactT
 				SFactsDebugger::FavoriteFacts.Add( Item->Tag );
 			}
 			
-			Utils::AllFilteredFactsCount = FactsDebugger->CountAllFilteredItems( FactsDebugger->RootItem );
-			Utils::AllFavoriteFactsCount = FactsDebugger->CountAllFavoriteItems( FactsDebugger->RootItem, false );
-
 			FactsDebugger->SaveFavorites();
-			FactsDebugger->FilterItems();
+			FactsDebugger->PostFavoritesChanged();
 			return FReply::Handled();
 		}
 
@@ -1322,12 +1321,8 @@ TSharedPtr<SWidget> SFactsDebugger::HandleGenerateFavoritesContextMenu()
 				FExecuteAction::CreateLambda( [ this ]()
 				{
 					ClearFavoritesRecursive( FavoritesRootItem );
-
-					Utils::AllFilteredFactsCount = 0;
-					Utils::AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
-
 					SaveFavorites();
-					FilterItems();
+					PostFavoritesChanged();
 				} ),
 				FCanExecuteAction::CreateLambda( [ this ]()
 				{
@@ -1348,12 +1343,8 @@ TSharedPtr<SWidget> SFactsDebugger::HandleGenerateFavoritesContextMenu()
 					{
 						TArray< FFactTreeItemPtr > SelectedItems = FavoriteFactsTreeView->GetSelectedItems();
 						ClearFavoritesRecursive( SelectedItems[ 0 ] );
-
-						Utils::AllFilteredFactsCount = CountAllFilteredItems( RootItem );
-						Utils::AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
-
 						SaveFavorites();
-						FilterItems();
+						PostFavoritesChanged();
 					} )
 				)
 			);
@@ -1393,6 +1384,14 @@ bool SFactsDebugger::HasFavoritesRecursive( FFactTreeItemPtr Item )
 	}
 
 	return false;
+}
+
+void SFactsDebugger::PostFavoritesChanged()
+{
+	Utils::AllFilteredFactsCount = CountAllFilteredItems( RootItem );
+	Utils::AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
+
+	FilterItems();
 }
 
 void SFactsDebugger::HandleSearchTextChanged( const FText& SearchText )
@@ -1692,9 +1691,6 @@ void SFactsDebugger::BuildFactTreeItems()
 			BuildFactItem( RootItem, ChildNode );
 		}
 	}
-
-	Utils::AllFilteredFactsCount = CountAllFilteredItems( RootItem );
-	Utils::AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
 
 	FilteredRootItem = RootItem;
 	FavoritesRootItem = MakeShared< FFactTreeItem >();
