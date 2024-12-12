@@ -39,6 +39,12 @@ public:
 
 	UPROPERTY(Config, EditAnywhere)
 	bool bCountOnlyLeafFacts = false;
+
+	UPROPERTY(Config, EditAnywhere)
+	bool bShowOnlyLeafTags = false;
+
+	UPROPERTY(Config, EditAnywhere)
+	bool bShowOnlyDefinedFacts = false;
 	
 	UPROPERTY(Config, EditAnywhere)
 	TEnumAsByte< EOrientation > Orientation = Orient_Horizontal;

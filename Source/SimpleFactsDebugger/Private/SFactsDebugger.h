@@ -115,7 +115,8 @@ private:
 	
 	TArray< FSearchToggleState > GetSearchToggleStates();
 	bool IsAnySearchToggleActive() const;
-	
+
+	// Build items
 	void BuildFactTreeItems();
 	FFactTreeItemPtr BuildFactItem( FFactTreeItemPtr ParentNode, TSharedPtr< FGameplayTagNode > ThisNode );
 	void RebuildFactTreeItems();

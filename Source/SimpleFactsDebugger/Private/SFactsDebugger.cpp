@@ -171,6 +171,15 @@ namespace Utils
 		{
 			bool bNeedsFilteringByText = false;
 
+			if ( Settings->bShowOnlyDefinedFacts )
+			{
+				if ( SourceItem->Value.IsSet() == false )
+				{
+					CopyItemIfFavoritesChildrenMatch( SourceItem, OutDestArray, Options );
+					continue;
+				}
+			}
+
 			ETagMatchType Result = MatchFavorites( SourceItem->Tag );
 			switch ( Result ) {
 			case ETagMatchType::None: // early return
@@ -209,6 +218,15 @@ namespace Utils
 		for ( const FFactTreeItemPtr& SourceItem : SourceArray )
 		{
 			bool bNeedsFilteringByText = false;
+
+			if ( Settings->bShowOnlyDefinedFacts )
+			{
+				if ( SourceItem->Value.IsSet() == false )
+				{
+					CopyItemIfMainChildrenMatch( SourceItem, OutDestArray, Options );
+					continue;
+				}
+			}
 
 			ETagMatchType Result = MatchFavorites( SourceItem->Tag );
 			switch ( Result )
@@ -1232,6 +1250,19 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 				FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bCountOnlyLeafFacts ) ),
 				FCanExecuteAction(),
 				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bCountOnlyLeafFacts; })
+				),
+		   NAME_None,
+		   EUserInterfaceActionType::ToggleButton
+		);
+
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT( "Options_ShowDefined", "Show only Defined Facts" ),
+			LOCTEXT( "Options_ShowDefined_ToolTip", "Show only defined Facts for numbers displayed below the trees" ),
+			FSlateIcon(),
+			FUIAction(
+				FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bShowOnlyDefinedFacts ) ),
+				FCanExecuteAction(),
+				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts; })
 				),
 		   NAME_None,
 		   EUserInterfaceActionType::ToggleButton
