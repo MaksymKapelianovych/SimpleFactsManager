@@ -189,7 +189,7 @@ namespace Utils
 			case ETagMatchType::None: // early return
 				continue;
 			case ETagMatchType::Parent: // we only get here if option "Show only Defined Facts" is checked
-				CopyItem( SourceItem, OutDestArray );
+				bNeedsFilteringByText = true;
 				continue;
 			case ETagMatchType::Child: // straight to filtering children, even if this item matched - it is not favorite by itself
 				{
