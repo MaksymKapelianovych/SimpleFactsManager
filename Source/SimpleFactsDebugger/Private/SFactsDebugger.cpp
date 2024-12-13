@@ -173,9 +173,13 @@ namespace Utils
 
 			if ( Settings->bShowOnlyDefinedFacts )
 			{
-				if ( SourceItem->Value.IsSet() == false )
+				if ( SourceItem->Children.Num() > 0 )
 				{
 					CopyItemIfFavoritesChildrenMatch( SourceItem, OutDestArray, Options );
+					continue;
+				}
+				else if ( SourceItem->Value.IsSet() == false )
+				{
 					continue;
 				}
 			}
@@ -184,8 +188,8 @@ namespace Utils
 			switch ( Result ) {
 			case ETagMatchType::None: // early return
 				continue;
-			case ETagMatchType::Parent: // we shouldn't even get here
-				checkNoEntry();
+			case ETagMatchType::Parent: // we only get here if option "Show only Defined Facts" is checked
+				CopyItem( SourceItem, OutDestArray );
 				continue;
 			case ETagMatchType::Child: // straight to filtering children, even if this item matched - it is not favorite by itself
 				{
@@ -221,9 +225,13 @@ namespace Utils
 
 			if ( Settings->bShowOnlyDefinedFacts )
 			{
-				if ( SourceItem->Value.IsSet() == false )
+				if ( SourceItem->Children.Num() > 0 ) // even if this item has value - children can be without value and therefore shoundn't be visible
 				{
 					CopyItemIfMainChildrenMatch( SourceItem, OutDestArray, Options );
+					continue;
+				}
+				else if ( SourceItem->Value.IsSet() == false )
+				{
 					continue;
 				}
 			}
@@ -297,7 +305,7 @@ void FFactTreeItem::InitItem()
 void FFactTreeItem::HandleValueChanged( int32 NewValue )
 {
 	Value = NewValue;
-	OnFactItemValueChanged.ExecuteIfBound( NewValue );
+	(void)OnFactItemValueChanged.ExecuteIfBound( Tag, NewValue );
 }
 
 void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type )
@@ -733,6 +741,7 @@ int32 SFactsDebugger::CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool b
 
 void SFactsDebugger::HandleGameInstanceStarted()
 {
+	InitItem( RootItem.ToSharedRef() );
 	InitItem( FilteredRootItem.ToSharedRef() );
 	InitItem( FavoritesRootItem.ToSharedRef() );
 }
@@ -862,6 +871,7 @@ TSharedRef< ITableRow > SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactT
 				.Style( FAppStyle::Get(), "TableView.AlternatingRow" ), InOwnerTable );
 
 			Item->OnFactItemValueChanged.BindRaw( this, &SFactTreeItem::HandleItemValueChanged );
+			TryPlayAnimation();
 		}
 
 		virtual void ResetRow() override
@@ -935,9 +945,24 @@ TSharedRef< ITableRow > SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactT
 			return FReply::Handled();
 		}
 
-		void HandleItemValueChanged( int32 NewValue )
+		void HandleItemValueChanged( FFactTag FactTag, int32 NewValue )
 		{
 			Animation.Play( AsShared() );
+		}
+
+		void TryPlayAnimation()
+		{
+			if ( Animation.IsPlaying() )
+			{
+				return;
+			}
+			
+			float CurrentTime = FSlateApplication::Get().GetCurrentTime();
+			float AnimStartTime = CurrentTime - Item->ValueChangedTime;
+			if ( AnimStartTime < AnimationDuration )
+			{
+				Animation.Play( AsShared(), false, AnimStartTime );
+			}
 		}
 
 		const virtual FSlateBrush* GetBorder() const override
@@ -946,8 +971,7 @@ TSharedRef< ITableRow > SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactT
 			{
 				const bool bEvenEntryIndex = ( IndexInList % 2 == 0 );
 				
-				const float Progress = FMath::Min( Animation.GetLerp(), 1 - Animation.GetLerp() );
-				ChangedBrush.TintColor = FMath::Lerp( bEvenEntryIndex ? EvenColor : OddColor, AnimationColor, Progress );
+				ChangedBrush.TintColor = FMath::Lerp( bEvenEntryIndex ? EvenColor : OddColor, AnimationColor, 1 - Animation.GetLerp() );
 				return &ChangedBrush;
 			}
 
@@ -1002,7 +1026,7 @@ TSharedRef< ITableRow > SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactT
 		FLinearColor EvenColor;
 		FLinearColor OddColor;
 
-		const float AnimationDuration = 1.f;
+		const float AnimationDuration = .8f;
 		FCurveSequence Animation;
 		FLinearColor AnimationColor;
 	};
@@ -1504,7 +1528,7 @@ void SFactsDebugger::FilterItems()
 	FactsTreeView->SetTreeItemsSource( &FilteredRootItem->Children );
 	FavoriteFactsTreeView->SetTreeItemsSource( &FavoritesRootItem->Children );
 
-	if ( ActiveTogglesText.Num() || Tokens.Num() )
+	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts || ActiveTogglesText.Num() || Tokens.Num() )
 	{
 		SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, true, false );
 		SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, true, false );
@@ -1729,24 +1753,54 @@ void SFactsDebugger::BuildFactTreeItems()
 
 FFactTreeItemPtr SFactsDebugger::BuildFactItem( FFactTreeItemPtr ParentNode, TSharedPtr< FGameplayTagNode > ThisNode )
 {
-	FFactTreeItemPtr NewItem = MakeShared< FFactTreeItem >(  );
-	NewItem->Tag = FFactTag::ConvertChecked( ThisNode->GetCompleteTag() );
-	NewItem->TagNode = ThisNode;
-	NewItem->Children.Reserve( ThisNode->GetChildTagNodes().Num() );
-	NewItem->InitItem();
-	ParentNode->Children.Add( NewItem );
+	FFactTreeItemPtr ThisItem = MakeShared< FFactTreeItem >(  );
+	ThisItem->Tag = FFactTag::ConvertChecked( ThisNode->GetCompleteTag() );
+	ThisItem->TagNode = ThisNode;
+	ThisItem->Children.Reserve( ThisNode->GetChildTagNodes().Num() );
+	ThisItem->InitItem();
+	ThisItem->OnFactItemValueChanged.BindSP( this, &SFactsDebugger::HandleFactValueChanged );
+	
+	ParentNode->Children.Add( ThisItem );
 	
 	for ( TSharedPtr< FGameplayTagNode > Node : ThisNode->GetChildTagNodes() )
 	{
-		BuildFactItem( NewItem, Node );
+		BuildFactItem( ThisItem, Node );
 	}
 
-	return NewItem;
+	return ThisItem;
 }
 
 void SFactsDebugger::RebuildFactTreeItems()
 {
 	BuildFactTreeItems();
+	FilterItems();
+}
+
+void SFactsDebugger::HandleFactValueChanged( FFactTag FactTag, int32 NewValue )
+{
+	const UFactsDebuggerSettingsLocal* Settings = GetDefault< UFactsDebuggerSettingsLocal >();
+	// only do this if trees are displaying only defined facts, otherwise changed items already somewhere in trees (or explicitly filtered out)
+	if ( Settings->bShowOnlyDefinedFacts == false ) 
+	{
+		return;
+	}
+
+	// if item is in some tree - skip
+	TArray< FFactTreeItemPtr > Path;
+	if ( FindItemByTagRecursive( FavoritesRootItem, FactTag, Path ) )
+	{
+		return;
+	}
+	if ( FindItemByTagRecursive( FilteredRootItem, FactTag, Path ) )
+	{
+		return;
+	}
+
+	FindItemByTagRecursive( RootItem, FactTag, Path );
+	check( Path.Num() );
+	Path.Last()->ValueChangedTime = FSlateApplication::Get().GetCurrentTime();
+
+	// we need to filter items, in order for element to appear in trees (or not, if it will not pass filters)
 	FilterItems();
 }
 

@@ -36,8 +36,10 @@ struct FFactTreeItem : public TSharedFromThis< FFactTreeItem >
 		return Value;
 	}
 
-	DECLARE_DELEGATE_OneParam( FOnFactItemValueChanged, int32 )
+	DECLARE_DELEGATE_TwoParams( FOnFactItemValueChanged, FFactTag, int32 )
 	FOnFactItemValueChanged OnFactItemValueChanged;
+
+	float ValueChangedTime = 0;
 };
 
 
@@ -120,6 +122,7 @@ private:
 	void BuildFactTreeItems();
 	FFactTreeItemPtr BuildFactItem( FFactTreeItemPtr ParentNode, TSharedPtr< FGameplayTagNode > ThisNode );
 	void RebuildFactTreeItems();
+	void HandleFactValueChanged( FFactTag FactTag, int32 NewValue );
 	
 	// Settings
 	void LoadSearchToggles();
