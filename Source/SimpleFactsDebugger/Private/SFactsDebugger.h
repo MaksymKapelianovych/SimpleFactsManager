@@ -17,10 +17,11 @@ using FFactTreeItemPtr = TSharedPtr< struct FFactTreeItem >;
 struct FFactTreeItem : public TSharedFromThis< FFactTreeItem >
 {
 	FFactTag Tag;
+	FName SimpleTagName;
+	TArray< FFactTreeItemPtr > Children;
+
 	TOptional< int32 > Value;
 
-	TSharedPtr< FGameplayTagNode > TagNode;
-	TArray< FFactTreeItemPtr > Children;
 
 	FDelegateHandle Handle;
 

@@ -908,7 +908,7 @@ TSharedRef< ITableRow > SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactT
 					[
 						SNew( STextBlock )
 						.ColorAndOpacity( Item->Tag.IsValid() ? FSlateColor::UseForeground() : FSlateColor::UseSubduedForeground() )
-						.Text( FText::FromString( bShowFullName ? Item->Tag.ToString() : Item->TagNode->GetSimpleTagName().ToString() ) )
+						.Text( FText::FromString( bShowFullName ? Item->Tag.ToString() : Item->SimpleTagName.ToString() ) )
 						.HighlightText_Lambda( [ this ](){ return FactsDebugger->CurrentSearchText; } )
 					];
 			}
@@ -1056,7 +1056,7 @@ TSharedRef< ITableRow > SFactsDebugger::HandleGeneratePinnedTreeRow( FFactTreeIt
 			.VAlign( VAlign_Center )
 			[
 				SNew( STextBlock )
-				.Text( FText::FromString( bShowFullName ? FactTreeItem->Tag.ToString() : FactTreeItem->TagNode->GetSimpleTagName().ToString() ) )
+				.Text( FText::FromString( bShowFullName ? FactTreeItem->Tag.ToString() : FactTreeItem->SimpleTagName.ToString() ) )
 			]
 		];
 }
@@ -1755,7 +1755,7 @@ FFactTreeItemPtr SFactsDebugger::BuildFactItem( FFactTreeItemPtr ParentNode, TSh
 {
 	FFactTreeItemPtr ThisItem = MakeShared< FFactTreeItem >(  );
 	ThisItem->Tag = FFactTag::ConvertChecked( ThisNode->GetCompleteTag() );
-	ThisItem->TagNode = ThisNode;
+	ThisItem->SimpleTagName = ThisNode->GetSimpleTagName();
 	ThisItem->Children.Reserve( ThisNode->GetChildTagNodes().Num() );
 	ThisItem->InitItem();
 	ThisItem->OnFactItemValueChanged.BindSP( this, &SFactsDebugger::HandleFactValueChanged );
