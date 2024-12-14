@@ -38,10 +38,7 @@ public:
 	bool bRemoveFavoritesFromMainTree = true;
 
 	UPROPERTY(Config, EditAnywhere)
-	bool bCountOnlyLeafFacts = false;
-
-	UPROPERTY(Config, EditAnywhere)
-	bool bShowOnlyLeafTags = false;
+	bool bShowOnlyLeafFacts = false;
 
 	UPROPERTY(Config, EditAnywhere)
 	bool bShowOnlyDefinedFacts = false;

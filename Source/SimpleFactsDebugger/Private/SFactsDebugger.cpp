@@ -271,6 +271,20 @@ namespace Utils
 		}
 	}
 
+
+	void GetLeafTags( TSharedPtr< FGameplayTagNode > Node, TArray< TSharedPtr< FGameplayTagNode > >& OutLeafTagNodes )
+	{
+		if ( Node->GetChildTagNodes().IsEmpty() )
+		{
+			OutLeafTagNodes.Add( Node );
+			return;
+		}
+
+		for ( TSharedPtr< FGameplayTagNode > Child : Node->GetChildTagNodes() )
+		{
+			GetLeafTags( Child, OutLeafTagNodes );
+		}
+	};
 }
 
 
@@ -681,9 +695,10 @@ SFactsDebugger::~SFactsDebugger()
 
 int32 SFactsDebugger::CountAllFilteredItems( FFactTreeItemPtr ParentNode )
 {
+	const UFactsDebuggerSettingsLocal* Settings = GetDefault< UFactsDebuggerSettingsLocal >();
 	int32 Result = 0;
 	
-	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree && SFactsDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
+	if ( Settings->bRemoveFavoritesFromMainTree && SFactsDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
 	{
 		return Result;
 	}
@@ -696,7 +711,7 @@ int32 SFactsDebugger::CountAllFilteredItems( FFactTreeItemPtr ParentNode )
 		}
 	}
 
-	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bCountOnlyLeafFacts && ParentNode->Children.Num() > 0 )
+	if ( Settings->bShowOnlyLeafFacts && ParentNode->Children.Num() > 0 )
 	{
 		return Result;
 	}
@@ -715,7 +730,8 @@ int32 SFactsDebugger::CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool b
 	{
 		return 0;
 	}
-	
+
+	const UFactsDebuggerSettingsLocal* Settings = GetDefault< UFactsDebuggerSettingsLocal >();
 	int32 Result = 0;
 	
 	if ( bIsParentFavorite == false && SFactsDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
@@ -733,7 +749,7 @@ int32 SFactsDebugger::CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool b
 		}
 	}
 
-	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bCountOnlyLeafFacts && ParentNode->Children.Num() > 0 )
+	if ( Settings->bShowOnlyLeafFacts && ParentNode->Children.Num() > 0 )
 	{
 		return Result;
 	}
@@ -1137,7 +1153,7 @@ FText SFactsDebugger::GetFilterStatusText( bool bIsFavoritesTree ) const
 	int32 CurrentFactCount = bIsFavoritesTree ? Utils::CurrentFavoriteFactsCount : Utils::CurrentFilteredFactsCount;
 	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
 
-	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false )
+	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyLeafFacts == false )
 	{
 		return FText::Format( LOCTEXT( "ShowingAllFacts", "{0} facts" ), FText::AsNumber( AllFactsCount ) );
 	}
@@ -1155,7 +1171,7 @@ FSlateColor SFactsDebugger::GetFilterStatusTextColor( bool bIsFavoritesTree ) co
 {
 	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
 
-	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false )
+	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyLeafFacts == false )
 	{
 		return FSlateColor::UseForeground();
 	}
@@ -1300,13 +1316,21 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 		);
 
 		MenuBuilder.AddMenuEntry(
-			LOCTEXT( "Options_CountLeafs", "Count Only Leaf Facts" ),
-			LOCTEXT( "Options_CountLeafs_ToolTip", "Count only leaf Facts for numbers displayed below the trees" ),
+			LOCTEXT( "Options_ShowLeafs", "Show Only Leaf Facts" ),
+			LOCTEXT( "Options_ShowLeafs_ToolTip", "Show only leaf Facts in each tree.\nNote: if some of defined Facts have child tags, they will not be shown in the trees." ),
 			FSlateIcon(),
 			FUIAction(
-				FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bCountOnlyLeafFacts ) ),
+			FExecuteAction::CreateLambda( [ this ]()
+				{
+					UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
+						Settings->bShowOnlyLeafFacts = !Settings->bShowOnlyLeafFacts;
+					Settings->SaveConfig();
+
+					BuildFactTreeItems();
+					PostFavoritesChanged();
+				} ),
 				FCanExecuteAction(),
-				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bCountOnlyLeafFacts; })
+				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyLeafFacts; })
 				),
 		   NAME_None,
 		   EUserInterfaceActionType::ToggleButton
@@ -1766,17 +1790,31 @@ void SFactsDebugger::BuildFactTreeItems()
 	RootItem = MakeShared< FFactTreeItem >();
 
 	UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
-	TSharedPtr< FGameplayTagNode > Node = Manager.FindTagNode( FFactTag::GetRootTag() );
-
-	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bShowRootFactTag )
+	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyLeafFacts )
 	{
-		BuildFactItem( RootItem, Node );
+		TArray < TSharedPtr< FGameplayTagNode > > LeafTagNodes;
+		TSharedPtr< FGameplayTagNode > Node = Manager.FindTagNode( FFactTag::GetRootTag() );
+		Utils::GetLeafTags( Node, LeafTagNodes );
+		
+		for ( TSharedPtr< FGameplayTagNode >& ChildNode : LeafTagNodes )
+		{
+			BuildFactItem( RootItem, ChildNode );
+		}
 	}
 	else
 	{
-		for ( TSharedPtr< FGameplayTagNode >& ChildNode : Node->GetChildTagNodes())
+		TSharedPtr< FGameplayTagNode > Node = Manager.FindTagNode( FFactTag::GetRootTag() );
+
+		if ( GetDefault< UFactsDebuggerSettingsLocal >()->bShowRootFactTag )
 		{
-			BuildFactItem( RootItem, ChildNode );
+			BuildFactItem( RootItem, Node );
+		}
+		else
+		{
+			for ( TSharedPtr< FGameplayTagNode >& ChildNode : Node->GetChildTagNodes() )
+			{
+				BuildFactItem( RootItem, ChildNode );
+			}
 		}
 	}
 
