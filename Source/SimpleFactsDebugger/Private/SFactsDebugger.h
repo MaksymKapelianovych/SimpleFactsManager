@@ -21,26 +21,20 @@ struct FFactTreeItem : public TSharedFromThis< FFactTreeItem >
 	TArray< FFactTreeItemPtr > Children;
 
 	TOptional< int32 > Value;
-
-
-	FDelegateHandle Handle;
+	float ValueChangedTime = 0;
 
 	~FFactTreeItem();
 
 	void StartPlay();
+	void EndPlay();
 	void InitItem();
+	
 	void HandleValueChanged( int32 NewValue );
 	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type );
 
-	TOptional< int32 > GetValue() const
-	{
-		return Value;
-	}
-
 	DECLARE_DELEGATE_TwoParams( FOnFactItemValueChanged, FFactTag, int32 )
 	FOnFactItemValueChanged OnFactItemValueChanged;
-
-	float ValueChangedTime = 0;
+	FDelegateHandle Handle;
 };
 
 
@@ -64,7 +58,9 @@ public:
 private:
 	// Play started
 	void HandleGameInstanceStarted();
-	void InitItem( FFactTreeItemRef Item );
+	void HandleGameInstanceEnded();
+	void InitItem( FFactTreeItemPtr Item );
+	void ResetItem( FFactTreeItemPtr Item );
 	
 	// Create tree widgets
 	TSharedRef< SWidget > CreateTreeLabel( const FText& InLabel ) const;
@@ -164,4 +160,6 @@ private:
 #if WITH_EDITOR
 	FDelegateHandle TagChangedHandle;
 #endif
+
+	bool bIsPlaying = false;
 };

@@ -80,6 +80,7 @@ void FSimpleFactsDebuggerModule::HandleGameInstanceStarted( UGameInstance* GameI
 void FSimpleFactsDebuggerModule::HandleGameInstanceEnded()
 {
 	WeakGameInstance = nullptr;
+	(void)OnGameInstanceEnded.ExecuteIfBound();
 }
 
 bool FSimpleFactsDebuggerModule::IsGameInstanceStarted() const

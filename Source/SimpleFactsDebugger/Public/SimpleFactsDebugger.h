@@ -26,8 +26,9 @@ public:
     
     bool IsGameInstanceStarted() const;
     
-    DECLARE_DELEGATE(FGameInstanceStarted)
-    FGameInstanceStarted OnGameInstanceStarted;
+    DECLARE_DELEGATE( FGameInstanceStateChanged )
+    FGameInstanceStateChanged OnGameInstanceStarted;
+    FGameInstanceStateChanged OnGameInstanceEnded;
 
     UFactSubsystem* TryGetFactSubsystem() const;
 

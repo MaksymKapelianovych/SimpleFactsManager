@@ -288,6 +288,11 @@ void FFactTreeItem::StartPlay()
 	InitItem();
 }
 
+void FFactTreeItem::EndPlay()
+{
+	Value.Reset();
+}
+
 void FFactTreeItem::InitItem()
 {
 	if ( UFactSubsystem* FactSubsystem = FSimpleFactsDebuggerModule::Get().TryGetFactSubsystem() )
@@ -652,6 +657,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 	TagChangedHandle = UGameplayTagsManager::OnEditorRefreshGameplayTagTree.AddSP( this, &SFactsDebugger::RebuildFactTreeItems );
 #endif
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceStarted.BindRaw( this, &SFactsDebugger::HandleGameInstanceStarted );
+	FSimpleFactsDebuggerModule::Get().OnGameInstanceEnded.BindRaw( this, &SFactsDebugger::HandleGameInstanceEnded );
 	if ( InArgs._bIsGameStarted )
 	{
 		HandleGameInstanceStarted();
@@ -670,6 +676,7 @@ SFactsDebugger::~SFactsDebugger()
 	UGameplayTagsManager::OnEditorRefreshGameplayTagTree.Remove( TagChangedHandle );
 #endif
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceStarted.Unbind();
+	FSimpleFactsDebuggerModule::Get().OnGameInstanceEnded.Unbind();
 }
 
 int32 SFactsDebugger::CountAllFilteredItems( FFactTreeItemPtr ParentNode )
@@ -741,18 +748,35 @@ int32 SFactsDebugger::CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool b
 
 void SFactsDebugger::HandleGameInstanceStarted()
 {
-	InitItem( RootItem.ToSharedRef() );
-	InitItem( FilteredRootItem.ToSharedRef() );
-	InitItem( FavoritesRootItem.ToSharedRef() );
+	bIsPlaying = true;
+	InitItem( RootItem );
+	InitItem( FilteredRootItem );
+	InitItem( FavoritesRootItem );
 }
 
-void SFactsDebugger::InitItem( FFactTreeItemRef Item )
+void SFactsDebugger::HandleGameInstanceEnded()
+{
+	bIsPlaying = false;
+	ResetItem( RootItem );
+	ResetItem( FilteredRootItem );
+	ResetItem( FavoritesRootItem );
+}
+
+void SFactsDebugger::InitItem( FFactTreeItemPtr Item )
 {
 	Item->StartPlay();
-
 	for ( FFactTreeItemPtr& ChildItem : Item->Children )
 	{
-		InitItem( ChildItem->AsShared() );
+		InitItem( ChildItem );
+	}
+}
+
+void SFactsDebugger::ResetItem( FFactTreeItemPtr Item )
+{
+	Item->EndPlay();
+	for ( FFactTreeItemPtr& ChildItem : Item->Children )
+	{
+		ResetItem( ChildItem );
 	}
 }
 
@@ -918,9 +942,10 @@ TSharedRef< ITableRow > SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactT
 					.Padding( 1.f )
 					[
 						SNew( SNumericEntryBox< int32 > )
-						.Value_Raw( Item.Get(), &FFactTreeItem::GetValue )
+						.Value( TAttribute< TOptional< int32 > >::CreateSP( this, &SFactTreeItem::GetItemValue ) )
 						.OnValueCommitted( FOnInt32ValueCommitted::CreateRaw( Item.Get(), &FFactTreeItem::HandleNewValueCommited ) )
 						.UndeterminedString( LOCTEXT( "FactUndefinedValue", "undefined" ) )
+						.IsEnabled_Lambda( [ this ]() { return FactsDebugger->bIsPlaying; } )
 					];
 			}
 			else
@@ -931,6 +956,7 @@ TSharedRef< ITableRow > SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactT
 		
 		FReply HandleFavoriteClicked()
 		{
+			check( Item.IsValid() );
 			if ( SFactsDebugger::FavoriteFacts.Contains( Item->Tag ) )
 			{
 				SFactsDebugger::FavoriteFacts.Remove( Item->Tag );
@@ -985,6 +1011,7 @@ TSharedRef< ITableRow > SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactT
 
 		FSlateColor GetItemColor() const
 		{
+			check( Item.IsValid() );
 			const bool bIsSelected = FactsDebugger->FactsTreeView->IsItemSelected( Item.ToSharedRef() );
 		
 			if ( IsFavorite() == false )
@@ -1000,17 +1027,23 @@ TSharedRef< ITableRow > SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactT
 
 		bool IsFavorite() const
 		{
-			if ( Item.IsValid() == false )
+			check( Item.IsValid() );
+
+			for ( FFactTag& FavoriteFact : SFactsDebugger::FavoriteFacts )
 			{
-				return false;
+				if ( FavoriteFact == Item->Tag )
+				{
+					return true;
+				}
 			}
 
-			auto MatchFavorites = [ Tag = Item->Tag ]( FFactTag FavoriteTag )
-			{
-				return Tag == FavoriteTag;
-			};
-			
-			return Algo::AnyOf( SFactsDebugger::FavoriteFacts, MatchFavorites );
+			return false;
+		}
+
+		TOptional< int32 > GetItemValue() const
+		{
+			check( Item.IsValid() );
+			return Item->Value;
 		}
 
 	private:
