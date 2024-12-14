@@ -37,16 +37,19 @@ FName FFactsDebuggerStyle::GetStyleSetName()
 
 FFactsDebuggerStyle::FFactsDebuggerStyle() : FSlateStyleSet( GetStyleSetName() )
 {
+	SetParentStyleName( FAppStyle::GetAppStyleSetName() );
+	FAppStyle::SetAppStyleSetName( GetStyleSetName() );
+
+	FSlateStyleSet::SetContentRoot( FPaths::EngineContentDir() / TEXT("Editor/Slate") );
+	
+	Set("Icons.LeafFacts", new IMAGE_BRUSH_SVG("Starship/ContentBrowser/file-tree-open", CoreStyleConstants::Icon16x16));
+	Set("Icons.DefinedFacts", new IMAGE_BRUSH_SVG("Starship/Common/Tasks", CoreStyleConstants::Icon16x16));
+	
 	// This block exists purely because of this brush "ListView.PinnedItemShadow".
 	// This brush is used in SListRow::SListViewPinnedRowWidget::Construct as a shadow to indicate parent/child relationship.
 	// The problem is, that this brush is set in FStarshipEditorStyle, which is obviously only initialized in Editor.
 	// Code below was added to make mentioned brush work in Non-editor builds also
 #if WITH_EDITOR == 0
-	SetParentStyleName( FAppStyle::GetAppStyleSetName() );
-	FAppStyle::SetAppStyleSetName( GetStyleSetName() );
-
-	SetContentRoot( FPaths::EngineContentDir() / TEXT("Editor/Slate") );
-	
 	Set("ListView.PinnedItemShadow", new IMAGE_BRUSH("Starship/ListView/PinnedItemShadow", FVector2D(16.f, 8.f)));
 #endif
 	

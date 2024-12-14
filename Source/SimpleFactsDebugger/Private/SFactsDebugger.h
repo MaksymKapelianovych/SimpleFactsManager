@@ -61,6 +61,9 @@ private:
 	void HandleGameInstanceEnded();
 	void InitItem( FFactTreeItemPtr Item );
 	void ResetItem( FFactTreeItemPtr Item );
+
+	TSharedRef< SWidget > CreateLeftToolBar();
+	TSharedRef< SWidget > CreateRightToolBar();
 	
 	// Create tree widgets
 	TSharedRef< SWidget > CreateTreeLabel( const FText& InLabel ) const;
@@ -142,7 +145,6 @@ private:
 	FFactTreeItemPtr FavoritesRootItem;
 	
 	TSharedPtr< SSearchBox > SearchBox; 
-	TSharedPtr< SComboButton > ComboButton;
 	TSharedPtr< SComboButton > OptionsButton;
 
 	TSharedPtr< SHorizontalBox > SearchesHBox;

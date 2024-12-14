@@ -354,48 +354,38 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 		// Presets menu
 
 		+ SVerticalBox::Slot()
-		.Padding( 2.f )
-		.HAlign( HAlign_Right )
+		.HAlign( HAlign_Fill )
 		.AutoHeight()
 		[
-			SAssignNew( ComboButton, SComboButton )
-			.ToolTipText( LOCTEXT( "PresetsButton_Toolpit", "Open presets menu" ) )
-			.OnGetMenuContent( this, &SFactsDebugger::HandleGeneratePresetsMenu )
-			.IsEnabled_Lambda( [ this ]()
-			{
-				return FSimpleFactsDebuggerModule::Get().IsGameInstanceStarted();
-			} )
-			.ButtonContent()
+			SNew(SHorizontalBox)
+			
+			+ SHorizontalBox::Slot()
+			.HAlign( HAlign_Left )
+			.FillContentWidth(1.f)
 			[
-				SNew( SHorizontalBox )
-
-				// -----------------------------------------------------------------------------------------------------
-				// Preset icon
-				+ SHorizontalBox::Slot()
-				.Padding( 0, 1, 4, 0 )
-				.AutoWidth()
-				[
-					SNew( SImage )
-					.Image( FFactsDebuggerStyle::Get().GetBrush( "ClassIcon.FactsPreset" ) )
-				]
-
-				// -----------------------------------------------------------------------------------------------------
-				// Preset text
-				+ SHorizontalBox::Slot()
-				.Padding( 0, 1, 0, 0 )
-				.AutoWidth()
-				[
-					SNew( STextBlock )
-					.Text( LOCTEXT( "PresetsButton", "Presets" ) )
-				]
+				CreateLeftToolBar()
 			]
+
+			+ SHorizontalBox::Slot()
+			.HAlign( HAlign_Right )
+			.VAlign( VAlign_Center )
+			.FillContentWidth( 1.f )
+			[
+				CreateRightToolBar()
+			]
+		]
+
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		[
+			SNew( SSeparator )
 		]
 		
 		// -------------------------------------------------------------------------------------------------------------
 		// SearchBar
 		
 		+ SVerticalBox::Slot()
-		.Padding( 2.f )
+		.Padding( 2.f, 0.f )
 		.AutoHeight()
 		[
 			SNew( SHorizontalBox )
@@ -423,7 +413,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			.HAlign( HAlign_Right )
 			.VAlign( VAlign_Center )
 			.AutoWidth()
-			.Padding( 4.f, 1.f, 0.f, 1.f )
+			.Padding( 0.f, 1.f, 0.f, 1.f )
 			[
 				SAssignNew( OptionsButton, SComboButton )
 				.ContentPadding( 4.f )
@@ -796,6 +786,86 @@ void SFactsDebugger::ResetItem( FFactTreeItemPtr Item )
 	}
 }
 
+TSharedRef< SWidget > SFactsDebugger::CreateLeftToolBar()
+{
+	FSlimHorizontalToolBarBuilder Toolbar(nullptr, FMultiBoxCustomization::None, nullptr, true);
+	Toolbar.BeginSection( "Options" );
+	{
+		Toolbar.AddToolBarButton(
+		FUIAction(
+		FExecuteAction::CreateLambda( [ this ]()
+			{
+				UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
+					Settings->bShowOnlyLeafFacts = !Settings->bShowOnlyLeafFacts;
+				Settings->SaveConfig();
+
+				BuildFactTreeItems();
+				PostFavoritesChanged();
+			} ),
+			FCanExecuteAction(),
+			FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyLeafFacts; })
+			),
+			NAME_None,
+			TAttribute< FText >(),
+			LOCTEXT( "Options_ShowLeafs_ToolTip", "Show only leaf Facts in each tree.\nNote: if some of defined Facts have child tags, they will not be shown in the trees." ),
+			FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "Icons.LeafFacts" ),
+			EUserInterfaceActionType::ToggleButton
+		);
+
+		Toolbar.AddToolBarButton(
+		FUIAction(
+		FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bRemoveFavoritesFromMainTree ) ),
+			FCanExecuteAction(),
+			FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree; })
+			),
+			NAME_None,
+			TAttribute< FText >(),
+			LOCTEXT( "Options_RemoveFavorites_ToolTip", "Remove Favorites from Main Tree" ),
+			FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "Icons.Star.OutlineFilled" ),
+			EUserInterfaceActionType::ToggleButton
+		);
+
+		Toolbar.AddToolBarButton(
+		FUIAction(
+			FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bShowOnlyDefinedFacts ) ),
+			FCanExecuteAction(),
+			FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts; })
+			),
+			NAME_None,
+			TAttribute< FText >(),
+			LOCTEXT( "Options_ShowDefined_ToolTip", "Show only Facts that have values" ),
+			FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "Icons.DefinedFacts" ),
+			EUserInterfaceActionType::ToggleButton,
+			NAME_None,
+			TAttribute< EVisibility >::CreateLambda( [ this ]() { return bIsPlaying ? EVisibility::Visible : EVisibility::Hidden; } )
+		);
+	}
+	Toolbar.EndSection();
+
+	return Toolbar.MakeWidget();
+}
+
+TSharedRef<SWidget> SFactsDebugger::CreateRightToolBar()
+{
+	FSlimHorizontalToolBarBuilder Toolbar( nullptr, FMultiBoxCustomization::None );
+	Toolbar.BeginSection( "Options" );
+	{
+		Toolbar.AddComboButton(
+			FUIAction(),
+			FOnGetContent::CreateSP( this, &SFactsDebugger::HandleGeneratePresetsMenu ),
+			LOCTEXT( "PresetsButton", "Presets" ),
+			LOCTEXT( "PresetsButton_Toolpit", "Open menu to load FactPresets" ),
+			FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "ClassIcon.FactsPreset" ),
+			false,
+			NAME_None,
+			TAttribute< EVisibility >::CreateLambda( [ this ]() { return bIsPlaying ? EVisibility::Visible : EVisibility::Hidden; } )
+		);
+	}
+	Toolbar.EndSection();
+
+	return Toolbar.MakeWidget();
+}
+
 TSharedRef< SWidget > SFactsDebugger::CreateTreeLabel( const FText& InLabel ) const
 {
 	return SNew( SBorder )
@@ -1153,7 +1223,7 @@ FText SFactsDebugger::GetFilterStatusText( bool bIsFavoritesTree ) const
 	int32 CurrentFactCount = bIsFavoritesTree ? Utils::CurrentFavoriteFactsCount : Utils::CurrentFilteredFactsCount;
 	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
 
-	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyLeafFacts == false )
+	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts == false )
 	{
 		return FText::Format( LOCTEXT( "ShowingAllFacts", "{0} facts" ), FText::AsNumber( AllFactsCount ) );
 	}
@@ -1171,7 +1241,7 @@ FSlateColor SFactsDebugger::GetFilterStatusTextColor( bool bIsFavoritesTree ) co
 {
 	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
 
-	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyLeafFacts == false )
+	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts == false )
 	{
 		return FSlateColor::UseForeground();
 	}
@@ -1224,12 +1294,13 @@ TSharedRef<SWidget> SFactsDebugger::HandleGeneratePresetsMenu()
 				.OnPresetSelected_Lambda( [ this ]( const UFactsPreset* Preset )
 				{
 					FSimpleFactsDebuggerModule::Get().LoadFactPreset( Preset );
-					check( ComboButton );
-					ComboButton->SetIsOpen( false );
+					FSlateApplication::Get().DismissAllMenus();
 				})
 			];
 
-		ComboButton->SetMenuContentWidgetToFocus( PresetPicker->GetWidgetToFocusOnOpen() );
+		// Set focus to the search box on creation
+		FSlateApplication::Get().SetKeyboardFocus( PresetPicker->GetWidgetToFocusOnOpen() );
+		FSlateApplication::Get().SetUserFocus( 0, PresetPicker->GetWidgetToFocusOnOpen() );
 
 		MenuBuilder.AddWidget( MenuWidget, FText(), true, false );
 	}
@@ -1338,7 +1409,7 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "Options_ShowDefined", "Show only Defined Facts" ),
-			LOCTEXT( "Options_ShowDefined_ToolTip", "Show only defined Facts for numbers displayed below the trees" ),
+			LOCTEXT( "Options_ShowDefined_ToolTip", "Show only Facts that have values" ),
 			FSlateIcon(),
 			FUIAction(
 				FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bShowOnlyDefinedFacts ) ),
