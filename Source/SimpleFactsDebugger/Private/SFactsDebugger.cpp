@@ -10,6 +10,7 @@
 #include "FactsPreset.h"
 #include "FactSubsystem.h"
 #include "GameplayTagsManager.h"
+#include "SFactSearchBox.h"
 #include "SFactsSearchToggle.h"
 #include "SFactsExpanderArrow.h"
 #include "SFactsPresetPicker.h"
@@ -18,7 +19,6 @@
 #include "Algo/AllOf.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Widgets/Input/SNumericEntryBox.h"
-#include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Layout/SWidgetSwitcher.h"
 #include "Widgets/Layout/SWrapBox.h"
 #include "Widgets/Text/SRichTextBlock.h"
@@ -399,14 +399,14 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			+ SHorizontalBox::Slot()
 			.HAlign( HAlign_Fill )
 			.VAlign( VAlign_Center )
-			.Padding(0.f, 1.f, 0.f, 1.f)
+			.Padding( 0.f, 1.f, 0.f, 1.f )
 			[
-				SAssignNew( SearchBox, SSearchBox )
+				SAssignNew( SearchBox, SFactSearchBox )
 				.HintText( LOCTEXT( "FactsDebugger_SearchHintText", "Search..." ) )
 				.ToolTipText( LOCTEXT( "FactsDebugger_ToolTipText", "Search facts by tag. You can search by string ('Quest2.Trigger') or by several strings, separated by spaces ('Quest Trigger')\n"
 													   "Press Enter to save this text as a toggle" ) )
 				.OnTextChanged( this, &SFactsDebugger::HandleSearchTextChanged )
-				.OnTextCommitted( this, &SFactsDebugger::HandleSearchTextCommitted )
+				.OnSaveSearchClicked( this, &SFactsDebugger::HandleSearchTextCommitted )
 			]
 
 			// ---------------------------------------------------------------------------------------------------------
@@ -957,7 +957,7 @@ TSharedRef< ITableRow > SFactsDebugger::OnGenerateWidgetForFactsTreeView( FFactT
 			, NormalBrush( FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.Outline" ) )
 			, EvenColor( USlateThemeManager::Get().GetColor( EStyleColor::Recessed ) )
 			, OddColor( USlateThemeManager::Get().GetColor( EStyleColor::Background ) )
-			, Animation( FCurveSequence(0.f, AnimationDuration, ECurveEaseFunction::Linear ) )
+			, Animation( FCurveSequence(0.f, AnimationDuration ) )
 			, AnimationColor( FFactsDebuggerStyle::Get().GetColor( "Colors.FactChanged" ) )
 		{ }
 
@@ -1557,12 +1557,12 @@ void SFactsDebugger::HandleSearchTextChanged( const FText& SearchText )
 	FilterItems();
 }
 
-void SFactsDebugger::HandleSearchTextCommitted( const FText& SearchText, ETextCommit::Type Type )
+void SFactsDebugger::HandleSearchTextCommitted( const FText& SearchText/*, ETextCommit::Type Type*/ )
 {
-	if ( Type != ETextCommit::Type::OnEnter )
-	{
-		return;
-	}
+	// if ( Type != ETextCommit::Type::OnEnter )
+	// {
+	// 	return;
+	// }
 	
 	if ( SearchText.IsEmpty() )
 	{

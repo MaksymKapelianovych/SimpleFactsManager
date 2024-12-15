@@ -10,6 +10,7 @@
 class UFactsPreset;
 class SFactsSearchToggle;
 class SWrapBox;
+class SFactSearchBox;
 
 using FFactTreeItemRef = TSharedRef< struct FFactTreeItem >;
 using FFactTreeItemPtr = TSharedPtr< struct FFactTreeItem >;
@@ -91,7 +92,7 @@ private:
 
 	// Searching and filtering
 	void HandleSearchTextChanged( const FText& SearchText );
-	void HandleSearchTextCommitted( const FText& SearchText, ETextCommit::Type Type );
+	void HandleSearchTextCommitted( const FText& SearchText/*, ETextCommit::Type Type*/ );
 	void FilterItems();
 
 	// Options menu
@@ -142,7 +143,7 @@ private:
 	FFactTreeItemPtr FilteredRootItem;
 	FFactTreeItemPtr FavoritesRootItem;
 	
-	TSharedPtr< SSearchBox > SearchBox; 
+	TSharedPtr< SFactSearchBox > SearchBox; 
 	TSharedPtr< SComboButton > OptionsButton;
 
 	TSharedPtr< SHorizontalBox > SearchesHBox;
