@@ -125,10 +125,8 @@ private:
 	void HandleFactValueChanged( FFactTag FactTag, int32 NewValue );
 	
 	// Settings
-	void LoadSearchToggles();
-	void SaveSearchToggles();
-	void LoadFavorites();
-	void SaveFavorites();
+	void LoadSettings();
+	void SaveSettings();
 	
 	void HandleOrientationChanged( EOrientation Orientation );
 
