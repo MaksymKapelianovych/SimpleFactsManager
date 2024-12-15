@@ -1503,7 +1503,7 @@ TSharedPtr<SWidget> SFactsDebugger::HandleGenerateFavoritesContextMenu()
 			FUIAction(
 				FExecuteAction::CreateLambda( [ this ]()
 				{
-					ClearFavoritesRecursive( FavoritesRootItem );
+					SFactsDebugger::FavoriteFacts.Reset();
 					SaveFavorites();
 					PostFavoritesChanged();
 				} ),
