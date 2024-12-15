@@ -406,7 +406,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 				.ToolTipText( LOCTEXT( "FactsDebugger_ToolTipText", "Search facts by tag. You can search by string ('Quest2.Trigger') or by several strings, separated by spaces ('Quest Trigger')\n"
 													   "Press Enter to save this text as a toggle" ) )
 				.OnTextChanged( this, &SFactsDebugger::HandleSearchTextChanged )
-				.OnSaveSearchClicked( this, &SFactsDebugger::HandleSearchTextCommitted )
+				.OnSaveSearchClicked( this, &SFactsDebugger::HandleSaveSearchClicked )
 			]
 
 			// ---------------------------------------------------------------------------------------------------------
@@ -1557,13 +1557,8 @@ void SFactsDebugger::HandleSearchTextChanged( const FText& SearchText )
 	FilterItems();
 }
 
-void SFactsDebugger::HandleSearchTextCommitted( const FText& SearchText/*, ETextCommit::Type Type*/ )
+void SFactsDebugger::HandleSaveSearchClicked( const FText& SearchText )
 {
-	// if ( Type != ETextCommit::Type::OnEnter )
-	// {
-	// 	return;
-	// }
-	
 	if ( SearchText.IsEmpty() )
 	{
 		return;

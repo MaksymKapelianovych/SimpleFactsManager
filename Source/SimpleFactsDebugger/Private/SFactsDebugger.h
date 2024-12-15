@@ -92,7 +92,7 @@ private:
 
 	// Searching and filtering
 	void HandleSearchTextChanged( const FText& SearchText );
-	void HandleSearchTextCommitted( const FText& SearchText/*, ETextCommit::Type Type*/ );
+	void HandleSaveSearchClicked( const FText& SearchText );
 	void FilterItems();
 
 	// Options menu

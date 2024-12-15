@@ -20,14 +20,14 @@ public:
 
 	void Construct( const FArguments& InArgs, const TArray< FAssetData >& PresetsData );
 
-	TSharedPtr<SWidget> GetWidgetToFocusOnOpen();
+	TSharedPtr< SWidget > GetWidgetToFocusOnOpen();
 
 private:
-	void CachePresetsData(const TArray<FAssetData>& PresetsData);
+	void CachePresetsData(const TArray< FAssetData >& PresetsData);
 	
 	// List view
 	TSharedRef< ITableRow > HandleGeneratePresetWidget( TSharedPtr< FAssetData > AssetData, const TSharedRef< STableViewBase >& OwnerTable );
-	void HandleSelectionChanged( TSharedPtr<FAssetData> AssetData, ESelectInfo::Type Type );
+	void HandleSelectionChanged( TSharedPtr< FAssetData > AssetData, ESelectInfo::Type Type );
 	void HandleSortListView( EColumnSortPriority::Type SortPriority, const FName& ColumnName, EColumnSortMode::Type SortMode );
 	EColumnSortMode::Type GetColumnSortMode() const;
 
@@ -43,7 +43,7 @@ private:
 	TArray< TSharedPtr< FAssetData > > AllPresetAssets;
 	TArray< TSharedPtr< FAssetData > > FilteredPresetAssets;
 	
-	TSharedPtr<SSearchBox> SearchBox;
+	TSharedPtr< SSearchBox > SearchBox;
 
 	FOnSelectionChanged OnPresetSelected;
 
