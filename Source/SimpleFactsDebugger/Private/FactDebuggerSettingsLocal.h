@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "FactTypes.h"
 #include "Engine/DeveloperSettings.h"
-#include "FactsDebuggerSettingsLocal.generated.h"
+#include "FactDebuggerSettingsLocal.generated.h"
 
 USTRUCT()
 struct FSearchToggleState
@@ -20,7 +20,7 @@ struct FSearchToggleState
 
 
 UCLASS( Config = EditorPerProjectUserSettings, DefaultConfig )
-class UFactsDebuggerSettingsLocal : public UObject
+class UFactDebuggerSettingsLocal : public UObject
 {
 	GENERATED_BODY()
 
@@ -35,7 +35,7 @@ public:
 	bool bShouldStackHierarchyHeaders = true;
 
 	UPROPERTY(Config, EditAnywhere)
-	bool bShowFavoritesInMainTree = true;
+	bool bShowFavoritesInMainTree = false;
 
 	UPROPERTY(Config, EditAnywhere)
 	bool bShowOnlyLeafFacts = false;

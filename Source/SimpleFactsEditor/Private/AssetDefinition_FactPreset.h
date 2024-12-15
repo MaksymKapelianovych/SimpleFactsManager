@@ -3,10 +3,10 @@
 #pragma once
 
 #include "AssetDefinitionDefault.h"
-#include "AssetDefinition_FactsPreset.generated.h"
+#include "AssetDefinition_FactPreset.generated.h"
 
 UCLASS()
-class UAssetDefinition_FactsPreset : public UAssetDefinitionDefault
+class UAssetDefinition_FactPreset : public UAssetDefinitionDefault
 {
 	GENERATED_BODY()
 

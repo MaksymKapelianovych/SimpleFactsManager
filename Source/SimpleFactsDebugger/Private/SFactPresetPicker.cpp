@@ -1,15 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SFactsPresetPicker.h"
-#include "FactsDebuggerStyle.h"
-#include "FactsPreset.h"
+#include "SFactPresetPicker.h"
+#include "FactDebuggerStyle.h"
+#include "FactPreset.h"
 #include "SlateOptMacros.h"
 #include "Widgets/Input/SSearchBox.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAssetData >& PresetsData  )
+void SFactPresetPicker::Construct( const FArguments& InArgs, const TArray< FAssetData >& PresetsData  )
 {
 	OnPresetSelected = InArgs._OnPresetSelected;
 	
@@ -28,9 +28,9 @@ void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAss
 		.AutoHeight()
 		[
 			SAssignNew ( SearchBox, SSearchBox )
-			.OnTextChanged( this, &SFactsPresetPicker::HandleSearchTextChanged )
-			.OnTextCommitted( this, &SFactsPresetPicker::HandleSearchTextCommitted )
-			.OnKeyDownHandler( this, &SFactsPresetPicker::HandleKeyDownFromSearchBox )
+			.OnTextChanged( this, &SFactPresetPicker::HandleSearchTextChanged )
+			.OnTextCommitted( this, &SFactPresetPicker::HandleSearchTextCommitted )
+			.OnKeyDownHandler( this, &SFactPresetPicker::HandleKeyDownFromSearchBox )
 		]
 
 		// -------------------------------------------------------------------------------------------------------------
@@ -44,16 +44,16 @@ void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAss
 				SAssignNew( PresetsListView, SListView< TSharedPtr< FAssetData > > )
 				.SelectionMode( ESelectionMode::Type::Single )
 				.ListItemsSource( &FilteredPresetAssets )
-				.OnGenerateRow( this, &SFactsPresetPicker::HandleGeneratePresetWidget )
-				.OnSelectionChanged( this, &SFactsPresetPicker::HandleSelectionChanged )
+				.OnGenerateRow( this, &SFactPresetPicker::HandleGeneratePresetWidget )
+				.OnSelectionChanged( this, &SFactPresetPicker::HandleSelectionChanged )
 				.HeaderRow
 				(
 					SNew( SHeaderRow )
 					+ SHeaderRow::Column( "Name" )
-					.DefaultLabel( NSLOCTEXT( "FactsDebugger", "ProfilerListColName", "Name" ) )
+					.DefaultLabel( NSLOCTEXT( "FactDebugger", "ProfilerListColName", "Name" ) )
 					.SortPriority( EColumnSortPriority::Primary )
-					.SortMode( this, &SFactsPresetPicker::GetColumnSortMode )
-					.OnSort( this, &SFactsPresetPicker::HandleSortListView )
+					.SortMode( this, &SFactPresetPicker::GetColumnSortMode )
+					.OnSort( this, &SFactPresetPicker::HandleSortListView )
 				)
 			]
 		]
@@ -64,12 +64,12 @@ void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAss
 
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-TSharedPtr<SWidget> SFactsPresetPicker::GetWidgetToFocusOnOpen()
+TSharedPtr<SWidget> SFactPresetPicker::GetWidgetToFocusOnOpen()
 {
 	return SearchBox;
 }
 
-void SFactsPresetPicker::CachePresetsData( const TArray< FAssetData >& PresetsData )
+void SFactPresetPicker::CachePresetsData( const TArray< FAssetData >& PresetsData )
 {
 	AllPresetAssets.Reserve( PresetsData.Num() );
 	for ( const FAssetData& AssetData : PresetsData )
@@ -83,7 +83,7 @@ void SFactsPresetPicker::CachePresetsData( const TArray< FAssetData >& PresetsDa
 	} );
 }
 
-TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedPtr< FAssetData > AssetData, const TSharedRef< STableViewBase >& OwnerTable )
+TSharedRef< ITableRow > SFactPresetPicker::HandleGeneratePresetWidget( TSharedPtr< FAssetData > AssetData, const TSharedRef< STableViewBase >& OwnerTable )
 {
 	if ( !ensure( AssetData.IsValid() ) )
 	{
@@ -109,7 +109,7 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 					.BorderImage( FAppStyle::GetBrush( "Brushes.Recessed" ) )
 					[
 						SNew( SImage )
-						.Image( FFactsDebuggerStyle::Get().GetBrush( "ClassThumbnail.FactsPreset" ) )
+						.Image( FFactDebuggerStyle::Get().GetBrush( "ClassThumbnail.FactPreset" ) )
 						.DesiredSizeOverride( FVector2d{ 36.f } )
 					]
 				]
@@ -120,7 +120,7 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 				[
 					SNew( SBorder )
 					.BorderImage( FAppStyle::GetBrush( "WhiteBrush" ) )
-					.BorderBackgroundColor( FFactsDebuggerStyle::Get().GetColor( "Colors.FactsPreset" ) )
+					.BorderBackgroundColor( FFactDebuggerStyle::Get().GetColor( "Colors.FactPreset" ) )
 					.Padding( 0.f, 2.f, 0.f, 0.f )
 				]
 				
@@ -139,7 +139,7 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 				[
 					SNew( STextBlock )
 					.Text( FText::FromName( AssetData->AssetName ) )
-					.Font( FFactsDebuggerStyle::Get().GetFontStyle( "NameFont" ) )
+					.Font( FFactDebuggerStyle::Get().GetFontStyle( "NameFont" ) )
 					.HighlightText( SearchBox.Get(), &SSearchBox::GetText )
 				]
 				
@@ -149,13 +149,13 @@ TSharedRef< ITableRow > SFactsPresetPicker::HandleGeneratePresetWidget( TSharedP
 				[
 					SNew( STextBlock )
 					.Text( FText::FromName( AssetData->PackagePath ) )
-					.Font( FFactsDebuggerStyle::Get().GetFontStyle( "PathFont" ) )
+					.Font( FFactDebuggerStyle::Get().GetFontStyle( "PathFont" ) )
 				]
 			]
 		];
 }
 
-void SFactsPresetPicker::HandleSelectionChanged( TSharedPtr< FAssetData > AssetData, ESelectInfo::Type Type )
+void SFactPresetPicker::HandleSelectionChanged( TSharedPtr< FAssetData > AssetData, ESelectInfo::Type Type )
 {
 	if ( Type == ESelectInfo::Type::Direct || Type == ESelectInfo::Type::OnNavigation )
 	{
@@ -164,11 +164,11 @@ void SFactsPresetPicker::HandleSelectionChanged( TSharedPtr< FAssetData > AssetD
 
 	if ( OnPresetSelected.IsBound() )
 	{
-		OnPresetSelected.Execute( Cast< UFactsPreset >( AssetData->GetAsset() ) );
+		OnPresetSelected.Execute( Cast< UFactPreset >( AssetData->GetAsset() ) );
 	}
 }
 
-void SFactsPresetPicker::HandleSortListView( EColumnSortPriority::Type SortPriority, const FName& ColumnName, EColumnSortMode::Type SortMode )
+void SFactPresetPicker::HandleSortListView( EColumnSortPriority::Type SortPriority, const FName& ColumnName, EColumnSortMode::Type SortMode )
 {
 	CurrentSortMode = SortMode;
 	
@@ -190,12 +190,12 @@ void SFactsPresetPicker::HandleSortListView( EColumnSortPriority::Type SortPrior
 	PresetsListView->RequestListRefresh();
 }
 
-EColumnSortMode::Type SFactsPresetPicker::GetColumnSortMode() const
+EColumnSortMode::Type SFactPresetPicker::GetColumnSortMode() const
 {
 	return CurrentSortMode;
 }
 
-void SFactsPresetPicker::HandleSearchTextChanged( const FText& Text )
+void SFactPresetPicker::HandleSearchTextChanged( const FText& Text )
 {
 	ON_SCOPE_EXIT{ PresetsListView->RequestListRefresh(); };
 
@@ -218,7 +218,7 @@ void SFactsPresetPicker::HandleSearchTextChanged( const FText& Text )
 	}
 }
 
-void SFactsPresetPicker::HandleSearchTextCommitted( const FText& Text, ETextCommit::Type Type )
+void SFactPresetPicker::HandleSearchTextCommitted( const FText& Text, ETextCommit::Type Type )
 {
 	HandleSearchTextChanged( Text );
 
@@ -233,12 +233,12 @@ void SFactsPresetPicker::HandleSearchTextCommitted( const FText& Text, ETextComm
 		
 		if ( OnPresetSelected.IsBound() )
 		{
-			OnPresetSelected.Execute( Cast< UFactsPreset >( SelectionSet[ 0 ]->GetAsset() ) );
+			OnPresetSelected.Execute( Cast< UFactPreset >( SelectionSet[ 0 ]->GetAsset() ) );
 		}
 	}
 }
 
-FReply SFactsPresetPicker::HandleKeyDownFromSearchBox( const FGeometry& Geometry, const FKeyEvent& KeyEvent )
+FReply SFactPresetPicker::HandleKeyDownFromSearchBox( const FGeometry& Geometry, const FKeyEvent& KeyEvent )
 {
 	int32 SelectionDelta = 0;
 
@@ -261,7 +261,7 @@ FReply SFactsPresetPicker::HandleKeyDownFromSearchBox( const FGeometry& Geometry
 	return FReply::Unhandled();
 }
 
-void SFactsPresetPicker::AdjustActiveSelection(int32 SelectionDelta)
+void SFactPresetPicker::AdjustActiveSelection(int32 SelectionDelta)
 {
 	TArray< TSharedPtr< FAssetData > > SelectionSet = PresetsListView->GetSelectedItems();
 	int32 SelectedSuggestion = INDEX_NONE;
@@ -271,7 +271,7 @@ void SFactsPresetPicker::AdjustActiveSelection(int32 SelectionDelta)
 		if ( FilteredPresetAssets.Find( SelectionSet[ 0 ], /*out*/ SelectedSuggestion ) == false )
 		{
 			// Should never happen
-			ensureMsgf( false, TEXT( "SFactsPresetPicker has a selected item that wasn't in the filtered list" ) );
+			ensureMsgf( false, TEXT( "SFactPresetPicker has a selected item that wasn't in the filtered list" ) );
 			return;
 		}
 	}

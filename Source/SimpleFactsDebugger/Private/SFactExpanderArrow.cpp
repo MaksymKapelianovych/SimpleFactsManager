@@ -1,12 +1,12 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "SFactsExpanderArrow.h"
+#include "SFactExpanderArrow.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/Images/SImage.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Views/STableRow.h"
 
-void SFactsExpanderArrow::Construct( const FArguments& InArgs, const TSharedPtr<class ITableRow>& TableRow  )
+void SFactExpanderArrow::Construct( const FArguments& InArgs, const TSharedPtr<class ITableRow>& TableRow  )
 {
 	OwnerRowPtr = TableRow;
 	StyleSet = InArgs._StyleSet;
@@ -14,28 +14,28 @@ void SFactsExpanderArrow::Construct( const FArguments& InArgs, const TSharedPtr<
 	BaseIndentLevel = InArgs._BaseIndentLevel;
 
 	this->ChildSlot
-	.Padding( TAttribute< FMargin >( this, &SFactsExpanderArrow::GetExpanderPadding ) )
+	.Padding( TAttribute< FMargin >( this, &SFactExpanderArrow::GetExpanderPadding ) )
 	[
 		SAssignNew( ExpanderArrow, SButton )
 		.ButtonStyle( FCoreStyle::Get(), "NoBorder" )
 		.VAlign( VAlign_Center )
 		.HAlign( HAlign_Center )
-		.Visibility( this, &SFactsExpanderArrow::GetExpanderVisibility )
+		.Visibility( this, &SFactExpanderArrow::GetExpanderVisibility )
 		.ClickMethod( EButtonClickMethod::MouseDown )
-		.OnClicked( this, &SFactsExpanderArrow::OnArrowClicked )
+		.OnClicked( this, &SFactExpanderArrow::OnArrowClicked )
 		.ContentPadding( 0.f )
 		.ForegroundColor( FSlateColor::UseForeground() )
 		.IsFocusable( false )
 		[
 			SNew( SImage )
-			.Image( this, &SFactsExpanderArrow::GetExpanderImage )
+			.Image( this, &SFactExpanderArrow::GetExpanderImage )
 			.ColorAndOpacity( FSlateColor::UseSubduedForeground() )
 		]
 	];
 }
 
 
-int32 SFactsExpanderArrow::OnPaint( const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled ) const
+int32 SFactExpanderArrow::OnPaint( const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled ) const
 {
 
 	static const float WireThickness = 2.0f;
@@ -138,7 +138,7 @@ int32 SFactsExpanderArrow::OnPaint( const FPaintArgs& Args, const FGeometry& All
 }
 
 /** Invoked when the expanded button is clicked (toggle item expansion) */
-FReply SFactsExpanderArrow::OnArrowClicked()
+FReply SFactExpanderArrow::OnArrowClicked()
 {
 	// Recurse the expansion if "shift" is being pressed
 	const FModifierKeysState ModKeyState = FSlateApplication::Get().GetModifierKeys();
@@ -155,13 +155,13 @@ FReply SFactsExpanderArrow::OnArrowClicked()
 }
 
 /** @return Visible when has children; invisible otherwise */
-EVisibility SFactsExpanderArrow::GetExpanderVisibility() const
+EVisibility SFactExpanderArrow::GetExpanderVisibility() const
 {
 	return OwnerRowPtr.Pin()->DoesItemHaveChildren() ? EVisibility::Visible : EVisibility::Hidden;
 }
 
 /** @return the margin corresponding to how far this item is indented */
-FMargin SFactsExpanderArrow::GetExpanderPadding() const
+FMargin SFactExpanderArrow::GetExpanderPadding() const
 {
 	const int32 NestingDepth = FMath::Max( 0, OwnerRowPtr.Pin()->GetIndentLevel() - BaseIndentLevel.Get() );
 	const float Indent = IndentAmount.Get( 10.f );
@@ -169,7 +169,7 @@ FMargin SFactsExpanderArrow::GetExpanderPadding() const
 }
 
 /** @return the name of an image that should be shown as the expander arrow */
-const FSlateBrush* SFactsExpanderArrow::GetExpanderImage() const
+const FSlateBrush* SFactExpanderArrow::GetExpanderImage() const
 {
 	const bool bIsItemExpanded = OwnerRowPtr.Pin()->IsItemExpanded();
 

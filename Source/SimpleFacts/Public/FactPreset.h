@@ -5,11 +5,11 @@
 #include "CoreMinimal.h"
 #include "FactTypes.h"
 #include "Engine/DataAsset.h"
-#include "FactsPreset.generated.h"
+#include "FactPreset.generated.h"
 
 
 UCLASS()
-class SIMPLEFACTS_API UFactsPreset final : public UPrimaryDataAsset
+class SIMPLEFACTS_API UFactPreset final : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 

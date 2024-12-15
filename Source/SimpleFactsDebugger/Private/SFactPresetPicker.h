@@ -5,14 +5,14 @@
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
 
-class UFactsPreset;
+class UFactPreset;
 
-class SFactsPresetPicker : public SCompoundWidget
+class SFactPresetPicker : public SCompoundWidget
 {
 public:
-	DECLARE_DELEGATE_OneParam( FOnSelectionChanged, const UFactsPreset* )
+	DECLARE_DELEGATE_OneParam( FOnSelectionChanged, const UFactPreset* )
 	
-	SLATE_BEGIN_ARGS( SFactsPresetPicker ) {}
+	SLATE_BEGIN_ARGS( SFactPresetPicker ) {}
 
 		SLATE_EVENT( FOnSelectionChanged, OnPresetSelected )
 	SLATE_END_ARGS()

@@ -1,41 +1,41 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "FactsDebuggerStyle.h"
+#include "FactDebuggerStyle.h"
 
 #include "Interfaces/IPluginManager.h"
 #include "Styling/SlateStyleMacros.h"
 #include "Styling/SlateStyleRegistry.h"
 
-TSharedPtr< FFactsDebuggerStyle > FFactsDebuggerStyle::StyleInstance;
+TSharedPtr< FFactDebuggerStyle > FFactDebuggerStyle::StyleInstance;
 
-void FFactsDebuggerStyle::Register()
+void FFactDebuggerStyle::Register()
 {
 	check( StyleInstance.IsValid() == false );
-	StyleInstance = MakeShared< FFactsDebuggerStyle >();
+	StyleInstance = MakeShared< FFactDebuggerStyle >();
 	FSlateStyleRegistry::RegisterSlateStyle( *StyleInstance );
 }
 
-void FFactsDebuggerStyle::Unregister()
+void FFactDebuggerStyle::Unregister()
 {
 	check( StyleInstance.IsValid() );
 	FSlateStyleRegistry::UnRegisterSlateStyle( *StyleInstance );
 	StyleInstance.Reset();
 }
 
-FFactsDebuggerStyle& FFactsDebuggerStyle::Get()
+FFactDebuggerStyle& FFactDebuggerStyle::Get()
 {
 	check( StyleInstance.IsValid() );
 	return *StyleInstance;
 }
 
-FName FFactsDebuggerStyle::GetStyleSetName()
+FName FFactDebuggerStyle::GetStyleSetName()
 {
-	static FName FactsDebuggerStyleName( TEXT( "FactsDebuggerStyle" ) );
-	return FactsDebuggerStyleName;
+	static FName FactDebuggerStyleName( TEXT( "FactDebuggerStyle" ) );
+	return FactDebuggerStyleName;
 }
 
-FFactsDebuggerStyle::FFactsDebuggerStyle() : FSlateStyleSet( GetStyleSetName() )
+FFactDebuggerStyle::FFactDebuggerStyle() : FSlateStyleSet( GetStyleSetName() )
 {
 	SetParentStyleName( FAppStyle::GetAppStyleSetName() );
 	FAppStyle::SetAppStyleSetName( GetStyleSetName() );
@@ -53,8 +53,8 @@ FFactsDebuggerStyle::FFactsDebuggerStyle() : FSlateStyleSet( GetStyleSetName() )
 	
 	FSlateStyleSet::SetContentRoot( IPluginManager::Get().FindPlugin( TEXT( "SimpleFactsManager" ) )->GetBaseDir() / TEXT( "Resources" ) );
 	
-	Set( "ClassIcon.FactsPreset", new IMAGE_BRUSH_SVG( TEXT( "FactPreset" ), CoreStyleConstants::Icon16x16 ) );
-	Set( "ClassThumbnail.FactsPreset", new IMAGE_BRUSH_SVG( TEXT( "FactPreset" ), CoreStyleConstants::Icon64x64 ) );
+	Set( "ClassIcon.FactPreset", new IMAGE_BRUSH_SVG( TEXT( "FactPreset" ), CoreStyleConstants::Icon16x16 ) );
+	Set( "ClassThumbnail.FactPreset", new IMAGE_BRUSH_SVG( TEXT( "FactPreset" ), CoreStyleConstants::Icon64x64 ) );
 	Set( "Icons.LeafFacts", new IMAGE_BRUSH_SVG( "LeafFacts", CoreStyleConstants::Icon16x16 ) );
 	Set( "Icons.DefinedFacts", new IMAGE_BRUSH_SVG( "DefinedFacts", CoreStyleConstants::Icon16x16 ) );
 	Set( "Icons.Star.Outline", new IMAGE_BRUSH_SVG( "StarOutline", CoreStyleConstants::Icon16x16 ) );
@@ -66,7 +66,7 @@ FFactsDebuggerStyle::FFactsDebuggerStyle() : FSlateStyleSet( GetStyleSetName() )
 		);
 
 	Set( "Colors.FactChanged", FLinearColor{ 0.1f, 0.5f, 0.1f, 0.2f } );
-	Set( "Colors.FactsPreset", FColor( 243, 113, 42 ) );
+	Set( "Colors.FactPreset", FColor( 243, 113, 42 ) );
 
 	Set( "NameFont", DEFAULT_FONT( "Regular", 9 ) );
 	Set( "PathFont", DEFAULT_FONT( "Light", 10 ) );

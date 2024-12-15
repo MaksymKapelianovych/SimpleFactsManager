@@ -53,10 +53,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Facts, meta = (WorldContext = "WorldContextObject"))
 	static bool IsFactDefined(const UObject* WorldContextObject, const FFactTag Tag);
 
-	// Todo: maybe make it not DevelopmentOnly
-	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject", DevelopmentOnly), Category = "Facts")
-	static void LoadFactsPreset( const UObject* WorldContextObject, const UFactsPreset* Preset );
+	UFUNCTION(BlueprintCallable, Category = Facts, meta = (WorldContext = "WorldContextObject"))
+	static void LoadFactPreset( const UObject* WorldContextObject, const UFactPreset* Preset );
 
-	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject", DevelopmentOnly), Category = "Facts")
-	static void LoadFactsPresets( const UObject* WorldContextObject, const TArray< UFactsPreset* >& Presets );
+	UFUNCTION(BlueprintCallable, Category = Facts, meta = (WorldContext = "WorldContextObject"))
+	static void LoadFactPresets( const UObject* WorldContextObject, const TArray< UFactPreset* >& Presets );
 };

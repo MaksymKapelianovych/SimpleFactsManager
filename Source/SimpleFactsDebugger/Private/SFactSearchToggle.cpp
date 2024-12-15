@@ -1,16 +1,16 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SFactsSearchToggle.h"
+#include "SFactSearchToggle.h"
 
 #include "Styling/StyleColors.h"
 #include "SlateOptMacros.h"
 
-#define LOCTEXT_NAMESPACE "FactsDebugger"
+#define LOCTEXT_NAMESPACE "FactDebugger"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-void SFactsSearchToggle::Construct( const FArguments& InArgs, const FText& InButtonText )
+void SFactSearchToggle::Construct( const FArguments& InArgs, const FText& InButtonText )
 {
 	OnAltClicked = InArgs._OnAltClicked;
 	OnRightButtonClicked = InArgs._OnRightButtonClicked;
@@ -30,7 +30,7 @@ void SFactsSearchToggle::Construct( const FArguments& InArgs, const FText& InBut
 			SAssignNew( ToggleButtonPtr, SCheckBox )
 			.Style( FAppStyle::Get(), "FilterBar.FilterButton" )
 			.ToolTipText( LOCTEXT( "SearchToggleTooltip", "Toggle this search" ) )
-			.IsChecked( this, &SFactsSearchToggle::GetCheckedState )
+			.IsChecked( this, &SFactSearchToggle::GetCheckedState )
 			.OnCheckStateChanged_Lambda( [ this ]( ECheckBoxState NewCheckBoxState )
 			{
 				SetIsButtonChecked( !GetIsToggleChecked() );
@@ -79,7 +79,7 @@ void SFactsSearchToggle::Construct( const FArguments& InArgs, const FText& InBut
 
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-SFactsSearchToggle::~SFactsSearchToggle()
+SFactSearchToggle::~SFactSearchToggle()
 {
 	OnAltClicked.Unbind();
 	OnRightButtonClicked.Unbind();
@@ -88,12 +88,12 @@ SFactsSearchToggle::~SFactsSearchToggle()
 	ToggleButtonPtr.Reset();
 }
 
-FReply SFactsSearchToggle::OnMouseButtonDown( const FGeometry& MyGeometry, const FPointerEvent& MouseEvent )
+FReply SFactSearchToggle::OnMouseButtonDown( const FGeometry& MyGeometry, const FPointerEvent& MouseEvent )
 {
 	return FReply::Handled();
 }
 
-FReply SFactsSearchToggle::OnMouseButtonUp( const FGeometry& InMyGeometry, const FPointerEvent& InMouseEvent )
+FReply SFactSearchToggle::OnMouseButtonUp( const FGeometry& InMyGeometry, const FPointerEvent& InMouseEvent )
 {
 	if ( InMouseEvent.GetEffectingButton() == EKeys::RightMouseButton && OnRightButtonClicked.IsBound() )
 	{

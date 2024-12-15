@@ -3,8 +3,8 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-class SFactsDebugger;
-class UFactsPreset;
+class SFactDebugger;
+class UFactPreset;
 class UFactSubsystem;
 
 class SIMPLEFACTSDEBUGGER_API FSimpleFactsDebuggerModule : public IModuleInterface
@@ -21,8 +21,8 @@ public:
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;
 
-    void LoadFactPreset( const UFactsPreset* InPreset );
-    void LoadFactPresets( const TArray< UFactsPreset*>& InPresets );
+    void LoadFactPreset( const UFactPreset* InPreset );
+    void LoadFactPresets( const TArray< UFactPreset*>& InPresets );
     
     bool IsGameInstanceStarted() const;
     
@@ -37,11 +37,11 @@ private:
     void HandleGameInstanceEnded();
 
 private:
-    TSharedRef< SDockTab > SpawnFactsDebuggerTab( const FSpawnTabArgs& SpawnTabArgs );
-    TSharedPtr< SWidget > SummonFactsDebuggerUI();
+    TSharedRef< SDockTab > SpawnFactDebuggerTab( const FSpawnTabArgs& SpawnTabArgs );
+    TSharedPtr< SWidget > SummonFactDebuggerUI();
     
-    TWeakPtr< SDockTab > FactsDebuggerTab;
-    TWeakPtr< SFactsDebugger > FactsDebugger;
+    TWeakPtr< SDockTab > FactDebuggerTab;
+    TWeakPtr< SFactDebugger > FactDebugger;
 
     TWeakObjectPtr< UGameInstance > WeakGameInstance;
 };

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-struct SIMPLEFACTSDEBUGGER_API FFactsDebuggerStyle final : public FSlateStyleSet
+struct SIMPLEFACTSDEBUGGER_API FFactDebuggerStyle final : public FSlateStyleSet
 {
 	/** Register style set */
 	static void Register();
@@ -12,13 +12,13 @@ struct SIMPLEFACTSDEBUGGER_API FFactsDebuggerStyle final : public FSlateStyleSet
 	static void Unregister();
 
 	/** Access the singleton instance for this style set */
-	static FFactsDebuggerStyle& Get();
+	static FFactDebuggerStyle& Get();
 	static FName GetStyleSetName();
 
-	FFactsDebuggerStyle();
-	virtual ~FFactsDebuggerStyle() override = default;
+	FFactDebuggerStyle();
+	virtual ~FFactDebuggerStyle() override = default;
 
 private:
 
-	static TSharedPtr< FFactsDebuggerStyle > StyleInstance;
+	static TSharedPtr< FFactDebuggerStyle > StyleInstance;
 };

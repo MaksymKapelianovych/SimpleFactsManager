@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "AssetDefinition_FactsPreset.h"
+#include "AssetDefinition_FactPreset.h"
 
 #include "ContentBrowserMenuContexts.h"
-#include "FactsDebuggerStyle.h"
-#include "FactsPreset.h"
+#include "FactDebuggerStyle.h"
+#include "FactPreset.h"
 #include "SimpleFactsDebugger.h"
 
 #define LOCTEXT_NAMESPACE "AssetTypeActions"
@@ -17,7 +17,7 @@ namespace MenuExtentions_FactsPreset
 		UToolMenus::RegisterStartupCallback( FSimpleMulticastDelegate::FDelegate::CreateLambda( []
 		{
 			FToolMenuOwnerScoped OwnerScoped( UE_MODULE_NAME );
-			UToolMenu* Menu = UE::ContentBrowser::ExtendToolMenu_AssetContextMenu( UFactsPreset::StaticClass() );
+			UToolMenu* Menu = UE::ContentBrowser::ExtendToolMenu_AssetContextMenu( UFactPreset::StaticClass() );
 
 			FToolMenuSection& Section = Menu->FindOrAddSection( "GetAssetActions" );
 
@@ -27,7 +27,7 @@ namespace MenuExtentions_FactsPreset
 				{
 					if ( const UContentBrowserAssetContextMenuContext* Context = UContentBrowserAssetContextMenuContext::FindContextWithAssets( MenuContext ) )
 					{
-						TArray< UFactsPreset* > Presets = Context->LoadSelectedObjects< UFactsPreset >();
+						TArray< UFactPreset* > Presets = Context->LoadSelectedObjects< UFactPreset >();
 						FSimpleFactsDebuggerModule::Get().LoadFactPresets( Presets );
 					}
 				} );
@@ -37,10 +37,10 @@ namespace MenuExtentions_FactsPreset
 				} );
 			
 				Section.AddMenuEntry(
-					"FactsPreset_Load",
-					LOCTEXT( "FactsPreset_Load", "Load preset(s)" ),
-					LOCTEXT( "FactsPreset_LoadTooltip", "Load all facts from preset(s) (only in PIE)" ),
-					FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "ClassIcon.FactsPreset" ),
+					"FactPreset_Load",
+					LOCTEXT( "FactPreset_Load", "Load preset(s)" ),
+					LOCTEXT( "FactPreset_LoadTooltip", "Load all facts from preset(s) (only in PIE)" ),
+					FSlateIcon( FFactDebuggerStyle::GetStyleSetName(), "ClassIcon.FactPreset" ),
 					UIAction
 				);
 			}
@@ -49,19 +49,19 @@ namespace MenuExtentions_FactsPreset
 	});
 }
 
-FText UAssetDefinition_FactsPreset::GetAssetDisplayName() const
+FText UAssetDefinition_FactPreset::GetAssetDisplayName() const
 {
-	return LOCTEXT( "FactsPreset", "Facts Preset" );
+	return LOCTEXT( "FactPreset", "Fact Preset" );
 }
 
-FLinearColor UAssetDefinition_FactsPreset::GetAssetColor() const
+FLinearColor UAssetDefinition_FactPreset::GetAssetColor() const
 {
-	return FFactsDebuggerStyle::Get().GetColor( "Colors.FactsPreset" );
+	return FFactDebuggerStyle::Get().GetColor( "Colors.FactPreset" );
 }
 
-TSoftClassPtr<UObject> UAssetDefinition_FactsPreset::GetAssetClass() const
+TSoftClassPtr<UObject> UAssetDefinition_FactPreset::GetAssetClass() const
 {
-	return UFactsPreset::StaticClass();
+	return UFactPreset::StaticClass();
 }
 
 #undef LOCTEXT_NAMESPACE

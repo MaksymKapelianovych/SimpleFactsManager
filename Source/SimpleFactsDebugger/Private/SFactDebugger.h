@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FactsDebuggerSettingsLocal.h"
+#include "FactDebuggerSettingsLocal.h"
 #include "FactTypes.h"
 #include "Widgets/SCompoundWidget.h"
 
-class UFactsPreset;
-class SFactsSearchToggle;
+class UFactPreset;
+class SFactSearchToggle;
 class SWrapBox;
 class SFactSearchBox;
 
@@ -39,18 +39,18 @@ struct FFactTreeItem : public TSharedFromThis< FFactTreeItem >
 };
 
 
-class SFactsDebugger : public SCompoundWidget
+class SFactDebugger : public SCompoundWidget
 {
 	using SFactsTreeView = STreeView< TSharedPtr< FFactTreeItem > >;
 	
 public:
-	SLATE_BEGIN_ARGS( SFactsDebugger ) {}
+	SLATE_BEGIN_ARGS( SFactDebugger ) {}
 		SLATE_ARGUMENT( bool, bIsGameStarted )
 	SLATE_END_ARGS()
 
 
 	virtual void Construct( const FArguments& InArgs );
-	virtual ~SFactsDebugger() override;
+	virtual ~SFactDebugger() override;
 
 	// Todo: maybe move to utils
 	static int32 CountAllFilteredItems( FFactTreeItemPtr ParentNode );
@@ -108,7 +108,7 @@ private:
 
 	// Search toggles
 	void CreateDefaultSearchToggles( TArray< FSearchToggleState > SearchToggleStates );
-	TSharedRef< SFactsSearchToggle > ConstructSearchToggle( const FText& InSearchText, bool bInChecked = false );
+	TSharedRef< SFactSearchToggle > ConstructSearchToggle( const FText& InSearchText, bool bInChecked = false );
 	
 	FReply HandleRemoveSearchToggle();
 	void CleanupSearchesMarkedForDelete();
@@ -148,7 +148,7 @@ private:
 
 	TSharedPtr< SHorizontalBox > SearchesHBox;
 	TSharedPtr< SWrapBox > SearchesContainer;
-	TArray< TSharedRef< SFactsSearchToggle > > CurrentSearchToggles;
+	TArray< TSharedRef< SFactSearchToggle > > CurrentSearchToggles;
 	FText CurrentSearchText;
 
 	// Save expansion state for tag item. The expansion state does not persist between editor sessions. 

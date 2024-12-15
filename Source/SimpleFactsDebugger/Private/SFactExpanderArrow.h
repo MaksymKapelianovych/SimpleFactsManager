@@ -11,11 +11,11 @@ class ITableRow;
  * Copy of SStateTreeExpanderArrow (it is smaller that default SExpanderArrow and looks the same).
  * This class exists only because default expander arrow draws vertical line for top-level items (seems like a bug), and I don't like it
  */
-class SFactsExpanderArrow : public SCompoundWidget
+class SFactExpanderArrow : public SCompoundWidget
 {
 public:
 
-	SLATE_BEGIN_ARGS( SFactsExpanderArrow )
+	SLATE_BEGIN_ARGS( SFactExpanderArrow )
 		: _StyleSet( &FCoreStyle::Get() )
 		, _IndentAmount( 10 )
 		, _BaseIndentLevel( 0 )

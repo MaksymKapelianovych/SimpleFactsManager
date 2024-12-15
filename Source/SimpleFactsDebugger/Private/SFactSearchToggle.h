@@ -8,10 +8,10 @@
 /**
  * 
  */
-class SFactsSearchToggle : public SCompoundWidget
+class SFactSearchToggle : public SCompoundWidget
 {
 public:
-	SLATE_BEGIN_ARGS( SFactsSearchToggle )
+	SLATE_BEGIN_ARGS( SFactSearchToggle )
 		: _IsToggleChecked( false )
 		{}
 		SLATE_EVENT( FOnClicked, OnAltClicked )
@@ -23,7 +23,7 @@ public:
 	
 	void Construct( const FArguments& InArgs, const FText& InButtonText );
 
-	virtual ~SFactsSearchToggle() override;
+	virtual ~SFactSearchToggle() override;
 	
 	virtual FReply OnMouseButtonDown( const FGeometry& MyGeometry, const FPointerEvent& MouseEvent ) override;
 	virtual FReply OnMouseButtonUp( const FGeometry& InMyGeometry, const FPointerEvent& InMouseEvent ) override;
@@ -43,7 +43,7 @@ private:
 	FOnClicked OnRightButtonClicked;
 	FOnClicked OnClickedOnce;
 
-	TSharedPtr<SCheckBox> ToggleButtonPtr;
+	TSharedPtr< SCheckBox > ToggleButtonPtr;
 	bool bIsToggleChecked = true;
 
 	/** When clicked in a special manner, this search button will be marked for deletion
@@ -56,5 +56,5 @@ private:
 	FText SearchText;
 };
 
-using SFactsSearchToggleRef = TSharedRef< SFactsSearchToggle >;
-using SFactsSearchTogglePtr = TSharedPtr< SFactsSearchToggle >;
+using SFactSearchToggleRef = TSharedRef< SFactSearchToggle >;
+using SFactSearchTogglePtr = TSharedPtr< SFactSearchToggle >;
