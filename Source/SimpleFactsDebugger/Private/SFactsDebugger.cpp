@@ -120,7 +120,7 @@ namespace Utils
 	{
 		TArray< FString > SearchToggleStrings;
 		TArray< FString > SearchBarStrings;
-		
+		bool bIsPlaying;
 	};
 
 	void FilterFavoritesFactItemChildren( TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
@@ -171,7 +171,7 @@ namespace Utils
 		{
 			bool bNeedsFilteringByText = false;
 
-			if ( Settings->bShowOnlyDefinedFacts )
+			if ( Settings->bShowOnlyDefinedFacts && Options.bIsPlaying )
 			{
 				if ( SourceItem->Children.Num() > 0 )
 				{
@@ -223,7 +223,7 @@ namespace Utils
 		{
 			bool bNeedsFilteringByText = false;
 
-			if ( Settings->bShowOnlyDefinedFacts )
+			if ( Settings->bShowOnlyDefinedFacts && Options.bIsPlaying )
 			{
 				if ( SourceItem->Children.Num() > 0 ) // even if this item has value - children can be without value and therefore shoundn't be visible
 				{
@@ -243,7 +243,7 @@ namespace Utils
 				bNeedsFilteringByText = true;
 				break;
 			case ETagMatchType::Parent:
-				if ( Settings->bRemoveFavoritesFromMainTree == false ){	bNeedsFilteringByText = true; }
+				if ( Settings->bShowFavoritesInMainTree ){	bNeedsFilteringByText = true; }
 				else { continue; }
 				break;
 			case ETagMatchType::Child:
@@ -252,7 +252,7 @@ namespace Utils
 				}
 				break;
 			case ETagMatchType::Full:
-				if ( Settings->bRemoveFavoritesFromMainTree == false ){	bNeedsFilteringByText = true; }
+				if ( Settings->bShowFavoritesInMainTree ){	bNeedsFilteringByText = true; }
 				else { continue; }
 				break;
 			}
@@ -688,7 +688,7 @@ int32 SFactsDebugger::CountAllFilteredItems( FFactTreeItemPtr ParentNode )
 	const UFactsDebuggerSettingsLocal* Settings = GetDefault< UFactsDebuggerSettingsLocal >();
 	int32 Result = 0;
 	
-	if ( Settings->bRemoveFavoritesFromMainTree && SFactsDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
+	if ( Settings->bShowFavoritesInMainTree == false && SFactsDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
 	{
 		return Result;
 	}
@@ -755,6 +755,10 @@ int32 SFactsDebugger::CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool b
 void SFactsDebugger::HandleGameInstanceStarted()
 {
 	bIsPlaying = true;
+	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts )
+	{
+		FilterItems();
+	}
 	InitItem( RootItem );
 	InitItem( FilteredRootItem );
 	InitItem( FavoritesRootItem );
@@ -763,6 +767,11 @@ void SFactsDebugger::HandleGameInstanceStarted()
 void SFactsDebugger::HandleGameInstanceEnded()
 {
 	bIsPlaying = false;
+	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts )
+	{
+		FilterItems();
+	}
+
 	ResetItem( RootItem );
 	ResetItem( FilteredRootItem );
 	ResetItem( FavoritesRootItem );
@@ -788,7 +797,7 @@ void SFactsDebugger::ResetItem( FFactTreeItemPtr Item )
 
 TSharedRef< SWidget > SFactsDebugger::CreateLeftToolBar()
 {
-	FSlimHorizontalToolBarBuilder Toolbar(nullptr, FMultiBoxCustomization::None, nullptr, true);
+	FSlimHorizontalToolBarBuilder Toolbar( nullptr, FMultiBoxCustomization::None );
 	Toolbar.BeginSection( "Options" );
 	{
 		Toolbar.AddToolBarButton(
@@ -796,7 +805,7 @@ TSharedRef< SWidget > SFactsDebugger::CreateLeftToolBar()
 		FExecuteAction::CreateLambda( [ this ]()
 			{
 				UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
-					Settings->bShowOnlyLeafFacts = !Settings->bShowOnlyLeafFacts;
+				Settings->bShowOnlyLeafFacts = !Settings->bShowOnlyLeafFacts;
 				Settings->SaveConfig();
 
 				BuildFactTreeItems();
@@ -807,20 +816,20 @@ TSharedRef< SWidget > SFactsDebugger::CreateLeftToolBar()
 			),
 			NAME_None,
 			TAttribute< FText >(),
-			LOCTEXT( "Options_ShowLeafs_ToolTip", "Show only leaf Facts in each tree.\nNote: if some of defined Facts have child tags, they will not be shown in the trees." ),
+			LOCTEXT( "Options_ShowLeafs_ToolTip", "Show only leaf Facts in each tree as a list.\nNote: if some of defined Facts have child tags, they will not be shown in the trees.\n" ),
 			FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "Icons.LeafFacts" ),
 			EUserInterfaceActionType::ToggleButton
 		);
 
 		Toolbar.AddToolBarButton(
 		FUIAction(
-		FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bRemoveFavoritesFromMainTree ) ),
+		FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bShowFavoritesInMainTree ) ),
 			FCanExecuteAction(),
-			FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree; })
+			FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShowFavoritesInMainTree; })
 			),
 			NAME_None,
 			TAttribute< FText >(),
-			LOCTEXT( "Options_RemoveFavorites_ToolTip", "Remove Favorites from Main Tree" ),
+			LOCTEXT( "Options_ShowFavorites_ToolTip", "Show Favorites in Main Tree also" ),
 			FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "Icons.Star.OutlineFilled" ),
 			EUserInterfaceActionType::ToggleButton
 		);
@@ -833,7 +842,7 @@ TSharedRef< SWidget > SFactsDebugger::CreateLeftToolBar()
 			),
 			NAME_None,
 			TAttribute< FText >(),
-			LOCTEXT( "Options_ShowDefined_ToolTip", "Show only Facts that have values" ),
+			LOCTEXT( "Options_ShowDefined_ToolTip", "Show only defined Facts with values" ),
 			FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "Icons.DefinedFacts" ),
 			EUserInterfaceActionType::ToggleButton,
 			NAME_None,
@@ -924,9 +933,9 @@ TSharedRef< SHeaderRow > SFactsDebugger::CreateHeaderRow( bool bIsFavoritesTree 
 			{
 				return bIsFavoritesTree
 					? FAppStyle::GetBrush( "Icons.Star" )
-					: GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree
-						? FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.Outline" )
-						: FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.OutlineFilled" );
+					: GetDefault< UFactsDebuggerSettingsLocal >()->bShowFavoritesInMainTree
+						? FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.OutlineFilled" )
+						: FFactsDebuggerStyle::Get().GetBrush( "Icons.Star.Outline" );
 			} )
 		]
 		
@@ -1223,7 +1232,7 @@ FText SFactsDebugger::GetFilterStatusText( bool bIsFavoritesTree ) const
 	int32 CurrentFactCount = bIsFavoritesTree ? Utils::CurrentFavoriteFactsCount : Utils::CurrentFilteredFactsCount;
 	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
 
-	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts == false )
+	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && ( GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts == false || bIsPlaying == false ) )
 	{
 		return FText::Format( LOCTEXT( "ShowingAllFacts", "{0} facts" ), FText::AsNumber( AllFactsCount ) );
 	}
@@ -1241,7 +1250,7 @@ FSlateColor SFactsDebugger::GetFilterStatusTextColor( bool bIsFavoritesTree ) co
 {
 	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
 
-	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts == false )
+	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && ( GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts == false || bIsPlaying == false ) )
 	{
 		return FSlateColor::UseForeground();
 	}
@@ -1374,13 +1383,13 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 		);
 
 		MenuBuilder.AddMenuEntry(
-			LOCTEXT( "Options_RemoveFavorites", "Remove Favorites from Main Tree" ),
-			LOCTEXT( "Options_RemoveFavorites_ToolTip", "Remove Favorites from Main Tree" ),
+			LOCTEXT( "Options_ShowFavorites", "Show Favorites in Main Tree" ),
+			LOCTEXT( "Options_ShowFavorites_ToolTip", "Show Favorites in Main Tree also" ),
 			FSlateIcon(),
 			FUIAction(
-				FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bRemoveFavoritesFromMainTree ) ),
+				FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bShowFavoritesInMainTree ) ),
 				FCanExecuteAction(),
-				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bRemoveFavoritesFromMainTree; })
+				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShowFavoritesInMainTree; })
 				),
 		   NAME_None,
 		   EUserInterfaceActionType::ToggleButton
@@ -1388,13 +1397,13 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "Options_ShowLeafs", "Show Only Leaf Facts" ),
-			LOCTEXT( "Options_ShowLeafs_ToolTip", "Show only leaf Facts in each tree.\nNote: if some of defined Facts have child tags, they will not be shown in the trees." ),
+			LOCTEXT( "Options_ShowLeafs_ToolTip", "Show only leaf Facts in each tree as a list.\nNote: if some of defined Facts have child tags, they will not be shown in the trees.\n" ),
 			FSlateIcon(),
 			FUIAction(
 			FExecuteAction::CreateLambda( [ this ]()
 				{
 					UFactsDebuggerSettingsLocal* Settings = GetMutableDefault< UFactsDebuggerSettingsLocal >();
-						Settings->bShowOnlyLeafFacts = !Settings->bShowOnlyLeafFacts;
+					Settings->bShowOnlyLeafFacts = !Settings->bShowOnlyLeafFacts;
 					Settings->SaveConfig();
 
 					BuildFactTreeItems();
@@ -1409,11 +1418,11 @@ TSharedRef< SWidget > SFactsDebugger::HandleGenerateOptionsMenu()
 
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "Options_ShowDefined", "Show only Defined Facts" ),
-			LOCTEXT( "Options_ShowDefined_ToolTip", "Show only Facts that have values" ),
+			LOCTEXT( "Options_ShowDefined_ToolTip", "Show only defined Facts with values" ),
 			FSlateIcon(),
 			FUIAction(
 				FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bShowOnlyDefinedFacts ) ),
-				FCanExecuteAction(),
+				FCanExecuteAction::CreateLambda( [ this ]()	{ return bIsPlaying; } ),
 				FIsActionChecked::CreateLambda( [](){ return GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts; })
 				),
 		   NAME_None,
@@ -1646,7 +1655,7 @@ void SFactsDebugger::FilterItems()
 	FavoritesRootItem = MakeShared< FFactTreeItem >();
 
 	// Filtering
-	Utils::FFilterOptions Options{ ActiveTogglesText, Tokens };
+	Utils::FFilterOptions Options{ ActiveTogglesText, Tokens, bIsPlaying };
 	Utils::FilterMainFactItemChildren( RootItem->Children, FilteredRootItem->Children, Options );
 	Utils::FilterFavoritesFactItemChildren( RootItem->Children, FavoritesRootItem->Children,Options );
 
@@ -1656,7 +1665,7 @@ void SFactsDebugger::FilterItems()
 	FactsTreeView->SetTreeItemsSource( &FilteredRootItem->Children );
 	FavoriteFactsTreeView->SetTreeItemsSource( &FavoritesRootItem->Children );
 
-	if ( GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts || ActiveTogglesText.Num() || Tokens.Num() )
+	if ( ( GetDefault< UFactsDebuggerSettingsLocal >()->bShowOnlyDefinedFacts && bIsPlaying ) || ActiveTogglesText.Num() || Tokens.Num() )
 	{
 		SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, true, false );
 		SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, true, false );
@@ -1920,6 +1929,8 @@ void SFactsDebugger::RebuildFactTreeItems()
 
 void SFactsDebugger::HandleFactValueChanged( FFactTag FactTag, int32 NewValue )
 {
+	check( bIsPlaying );
+	
 	const UFactsDebuggerSettingsLocal* Settings = GetDefault< UFactsDebuggerSettingsLocal >();
 	// only do this if trees are displaying only defined facts, otherwise changed items already somewhere in trees (or explicitly filtered out)
 	if ( Settings->bShowOnlyDefinedFacts == false ) 

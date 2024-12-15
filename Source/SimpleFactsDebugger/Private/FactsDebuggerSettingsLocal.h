@@ -35,7 +35,7 @@ public:
 	bool bShouldStackHierarchyHeaders = true;
 
 	UPROPERTY(Config, EditAnywhere)
-	bool bRemoveFavoritesFromMainTree = true;
+	bool bShowFavoritesInMainTree = true;
 
 	UPROPERTY(Config, EditAnywhere)
 	bool bShowOnlyLeafFacts = false;
