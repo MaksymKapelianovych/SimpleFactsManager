@@ -1,7 +1,10 @@
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M1 3.5L3 5.5L6.5 2" stroke="white" stroke-width="2"/>
-<path d="M1 13.5L6 8.5" stroke="white" stroke-width="2"/>
-<path d="M1 8.5L6 13.5" stroke="white" stroke-width="2"/>
-<path d="M8 11H15" stroke="white" stroke-width="2"/>
-<path d="M8 5H15" stroke="white" stroke-width="2"/>
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 3H10V5H19V3Z" fill="white"/>
+<path d="M19 9H10V11H19V9Z" fill="white"/>
+<path d="M19 15H10V17H19V15Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M5.99999 7.5L3.26666 10.2333L2.13333 9.09999L1 10.2333L3.26666 12.5L7.13332 8.63333L5.99999 7.5Z" fill="white"/>
+<path d="M2 6L6 2" stroke="white" stroke-width="1.5"/>
+<path d="M2 2L6 6" stroke="white" stroke-width="1.5"/>
+<path d="M2 18L6 14" stroke="white" stroke-width="1.5"/>
+<path d="M2 14L6 18" stroke="white" stroke-width="1.5"/>
 </svg>

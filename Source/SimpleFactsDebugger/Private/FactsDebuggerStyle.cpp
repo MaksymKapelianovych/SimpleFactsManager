@@ -37,16 +37,17 @@ FName FFactsDebuggerStyle::GetStyleSetName()
 
 FFactsDebuggerStyle::FFactsDebuggerStyle() : FSlateStyleSet( GetStyleSetName() )
 {
+	SetParentStyleName( FAppStyle::GetAppStyleSetName() );
+	FAppStyle::SetAppStyleSetName( GetStyleSetName() );
+
+	FSlateStyleSet::SetContentRoot( FPaths::EngineContentDir() / TEXT( "Editor/Slate" ) );
+	Set("Icons.Reset", new IMAGE_BRUSH_SVG( "Starship/Common/Reset", CoreStyleConstants::Icon16x16 ) );
+	
 	// This block exists purely because of this brush "ListView.PinnedItemShadow".
 	// This brush is used in SListRow::SListViewPinnedRowWidget::Construct as a shadow to indicate parent/child relationship.
 	// The problem is, that this brush is set in FStarshipEditorStyle, which is obviously only initialized in Editor.
 	// Code below was added to make mentioned brush work in Non-editor builds also
 #if WITH_EDITOR == 0
-	SetParentStyleName( FAppStyle::GetAppStyleSetName() );
-	FAppStyle::SetAppStyleSetName( GetStyleSetName() );
-
-	FSlateStyleSet::SetContentRoot( FPaths::EngineContentDir() / TEXT("Editor/Slate") );
-	
 	Set("ListView.PinnedItemShadow", new IMAGE_BRUSH("Starship/ListView/PinnedItemShadow", FVector2D(16.f, 8.f)));
 #endif
 	
@@ -54,8 +55,8 @@ FFactsDebuggerStyle::FFactsDebuggerStyle() : FSlateStyleSet( GetStyleSetName() )
 	
 	Set( "ClassIcon.FactsPreset", new IMAGE_BRUSH_SVG( TEXT( "FactPreset" ), CoreStyleConstants::Icon16x16 ) );
 	Set( "ClassThumbnail.FactsPreset", new IMAGE_BRUSH_SVG( TEXT( "FactPreset" ), CoreStyleConstants::Icon64x64 ) );
-	Set("Icons.LeafFacts", new IMAGE_BRUSH_SVG("LeafFacts", CoreStyleConstants::Icon16x16));
-	Set("Icons.DefinedFacts", new IMAGE_BRUSH_SVG("DefinedFacts", CoreStyleConstants::Icon16x16));
+	Set( "Icons.LeafFacts", new IMAGE_BRUSH_SVG( "LeafFacts", CoreStyleConstants::Icon16x16 ) );
+	Set( "Icons.DefinedFacts", new IMAGE_BRUSH_SVG( "DefinedFacts", CoreStyleConstants::Icon16x16 ) );
 	Set( "Icons.Star.Outline", new IMAGE_BRUSH_SVG( "StarOutline", CoreStyleConstants::Icon16x16 ) );
 	Set( "Icons.Star.OutlineFilled", new IMAGE_BRUSH_SVG( "StarOutlineFilled", CoreStyleConstants::Icon16x16 ) );
 	
@@ -67,7 +68,7 @@ FFactsDebuggerStyle::FFactsDebuggerStyle() : FSlateStyleSet( GetStyleSetName() )
 	Set( "Colors.FactChanged", FLinearColor{ 0.1f, 0.5f, 0.1f, 0.2f } );
 	Set( "Colors.FactsPreset", FColor( 243, 113, 42 ) );
 
-	Set("NameFont", DEFAULT_FONT("Regular", 9));
-	Set("PathFont", DEFAULT_FONT("Light", 10));
+	Set( "NameFont", DEFAULT_FONT( "Regular", 9 ) );
+	Set( "PathFont", DEFAULT_FONT( "Light", 10 ) );
 	
 }

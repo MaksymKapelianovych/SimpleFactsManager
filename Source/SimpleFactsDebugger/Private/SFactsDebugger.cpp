@@ -16,9 +16,7 @@
 #include "SimpleFactsDebugger.h"
 #include "SlateOptMacros.h"
 #include "Algo/AllOf.h"
-#include "Algo/AnyOf.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "Engine/AssetManager.h"
 #include "Widgets/Input/SNumericEntryBox.h"
 #include "Widgets/Input/SSearchBox.h"
 #include "Widgets/Layout/SWidgetSwitcher.h"
@@ -359,8 +357,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 		SNew( SVerticalBox )
 
 		// -------------------------------------------------------------------------------------------------------------
-		// Presets menu
-
+		// ToolBar
 		+ SVerticalBox::Slot()
 		.HAlign( HAlign_Fill )
 		.AutoHeight()
@@ -391,7 +388,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 		
 		// -------------------------------------------------------------------------------------------------------------
 		// SearchBar
-		
 		+ SVerticalBox::Slot()
 		.Padding( 2.f, 0.f )
 		.AutoHeight()
@@ -400,7 +396,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 			// ---------------------------------------------------------------------------------------------------------
 			// Search box
-			
 			+ SHorizontalBox::Slot()
 			.HAlign( HAlign_Fill )
 			.VAlign( VAlign_Center )
@@ -416,7 +411,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 			// ---------------------------------------------------------------------------------------------------------
 			// Options
-			
 			+ SHorizontalBox::Slot()
 			.HAlign( HAlign_Right )
 			.VAlign( VAlign_Center )
@@ -439,7 +433,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 		
 		// -------------------------------------------------------------------------------------------------------------
 		// Search toggles
-
 		+ SVerticalBox::Slot()
 		.Padding( 8.f, 4.f, 8.f, 4.f )
 		.AutoHeight()
@@ -452,7 +445,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 			// ---------------------------------------------------------------------------------------------------------
 			// Search toggles
-
 			+ SHorizontalBox::Slot()
 			.HAlign( HAlign_Fill )
 			[
@@ -463,7 +455,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 			// ---------------------------------------------------------------------------------------------------------
 			// Clear selected toggles button
-			
 			+ SHorizontalBox::Slot()
 			.HAlign( HAlign_Right )
 			.VAlign( VAlign_Center )
@@ -471,21 +462,20 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			.Padding( 8.f, 1.f, 2.f, 1.f )
 			[
 				SNew( SButton )
-				.ToolTipText( LOCTEXT( "ClearSearchesButtonToolTip", "Clear all selected searches") )
+				.ToolTipText( LOCTEXT( "ClearSearchesButtonToolTip", "Reset all selected toggles") )
 				.Visibility_Lambda( [ this ]()
 				{
 					return IsAnySearchToggleActive() ? EVisibility::Visible : EVisibility::Collapsed;
 				} )
 				.OnClicked( this, &SFactsDebugger::HandleClearTogglesClicked )
 				[
-					SNew( STextBlock )
-					.Text( LOCTEXT( "ClearSearchesButtonText", "Clear selected" ) )
+					SNew( SImage )
+					.Image( FFactsDebuggerStyle::Get().GetBrush( "Icons.Reset" ) )
 				]
 			]
 
 			// ---------------------------------------------------------------------------------------------------------
 			// Remove toggles button
-			
 			+ SHorizontalBox::Slot()
 			.HAlign( HAlign_Right )
 			.VAlign( VAlign_Center )
@@ -493,7 +483,7 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			.Padding( 8.f, 1.f, 2.f, 1.f )
 			[
 				SNew( SButton )
-				.ToolTipText( LOCTEXT( "RemoveSearchesButtonToolTip", "Remove all searches from the facts Debugger") )
+				.ToolTipText( LOCTEXT( "RemoveSearchesButtonToolTip", "Remove all toggles") )
 				.OnClicked_Lambda( [ this ]()
 				{
 					SearchesContainer->ClearChildren();
@@ -509,10 +499,8 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 			]
 		]
 		
-
 		// -------------------------------------------------------------------------------------------------------------
 		// Facts trees
-
 		+ SVerticalBox::Slot()
 		.FillHeight( 1.f )
 		[
@@ -524,14 +512,12 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 				// -----------------------------------------------------------------------------------------------------
 				// Favorites tree half
-				
 				+ SSplitter::Slot()
 				[
 					SNew( SVerticalBox )
 
 					// -------------------------------------------------------------------------------------------------
 					// Tree label
-					
 					+ SVerticalBox::Slot()
 					.AutoHeight()
 					[
@@ -540,7 +526,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 					
 					// -------------------------------------------------------------------------------------------------
 					// Tree panel
-					
 					+ SVerticalBox::Slot()
 					.FillHeight( 1.f )
 					[
@@ -552,7 +537,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 						// ---------------------------------------------------------------------------------------------
 						// Favorites tree
-
 						+ SWidgetSwitcher::Slot()
 						.HAlign( HAlign_Fill )
 						[
@@ -561,7 +545,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 						// ---------------------------------------------------------------------------------------------
 						// When no rows exist in view
-						
 						+ SWidgetSwitcher::Slot()
 						.HAlign( HAlign_Fill )
 						.Padding( 0.0f, 24.0f, 0.0f, 2.0f )
@@ -585,7 +568,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 					// -------------------------------------------------------------------------------------------------
 					// Tree filter status
-					
 					+ SVerticalBox::Slot()
 					.AutoHeight()
 					[
@@ -595,14 +577,12 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 				// -----------------------------------------------------------------------------------------------------
 				// Main tree half
-				
 				+ SSplitter::Slot()
 				[
 					SNew( SVerticalBox )
 
 					// -------------------------------------------------------------------------------------------------
 					// Tree label
-					
 					+ SVerticalBox::Slot()
 					.AutoHeight()
 					[
@@ -611,7 +591,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 					// -------------------------------------------------------------------------------------------------
 					// Tree panel
-					
 					+ SVerticalBox::Slot()
 					.FillHeight( 1.f )
 					[
@@ -623,7 +602,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 						// ---------------------------------------------------------------------------------------------
 						// Main tree
-						
 						+ SWidgetSwitcher::Slot()
 						.HAlign( HAlign_Fill )
 						[
@@ -632,7 +610,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 						// ---------------------------------------------------------------------------------------------
 						// When no rows exist in view
-						
 						+ SWidgetSwitcher::Slot()
 						.HAlign( HAlign_Fill )
 						.Padding( 0.0f, 24.0f, 0.0f, 2.0f )
@@ -654,7 +631,6 @@ void SFactsDebugger::Construct( const FArguments& InArgs )
 
 					// -------------------------------------------------------------------------------------------------
 					// Tree filter status
-					
 					+ SVerticalBox::Slot()
 					.AutoHeight()
 					[
@@ -808,6 +784,19 @@ TSharedRef< SWidget > SFactsDebugger::CreateLeftToolBar()
 	{
 		Toolbar.AddToolBarButton(
 		FUIAction(
+		FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bShowFavoritesInMainTree ) ),
+			FCanExecuteAction(),
+			FIsActionChecked::CreateLambda( [](){ return Settings::bShowFavoritesInMainTree; })
+			),
+			NAME_None,
+			TAttribute< FText >(),
+			LOCTEXT( "Options_ShowFavorites_ToolTip", "Show Favorites in Main Tree also" ),
+			FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "Icons.Star.OutlineFilled" ),
+			EUserInterfaceActionType::ToggleButton
+		);
+		
+		Toolbar.AddToolBarButton(
+		FUIAction(
 		FExecuteAction::CreateLambda( [ this ]()
 			{
 				Settings::bShowOnlyLeafFacts = !Settings::bShowOnlyLeafFacts;
@@ -821,21 +810,8 @@ TSharedRef< SWidget > SFactsDebugger::CreateLeftToolBar()
 			),
 			NAME_None,
 			TAttribute< FText >(),
-			LOCTEXT( "Options_ShowLeafs_ToolTip", "Show only leaf Facts in each tree as a list.\nNote: if some of defined Facts have child tags, they will not be shown in the trees.\n" ),
+			LOCTEXT( "Options_ShowLeafs_ToolTip", "Show only leaf Facts in each tree as a list.\nNote: Facts with child tags will not be show in the trees, even if they have defined values.\n" ),
 			FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "Icons.LeafFacts" ),
-			EUserInterfaceActionType::ToggleButton
-		);
-
-		Toolbar.AddToolBarButton(
-		FUIAction(
-		FExecuteAction::CreateLambda( TOGGLE_FACT_SETTING( bShowFavoritesInMainTree ) ),
-			FCanExecuteAction(),
-			FIsActionChecked::CreateLambda( [](){ return Settings::bShowFavoritesInMainTree; })
-			),
-			NAME_None,
-			TAttribute< FText >(),
-			LOCTEXT( "Options_ShowFavorites_ToolTip", "Show Favorites in Main Tree also" ),
-			FSlateIcon( FFactsDebuggerStyle::GetStyleSetName(), "Icons.Star.OutlineFilled" ),
 			EUserInterfaceActionType::ToggleButton
 		);
 
@@ -1273,27 +1249,6 @@ FSlateColor SFactsDebugger::GetFilterStatusTextColor( bool bIsFavoritesTree ) co
 TSharedRef<SWidget> SFactsDebugger::HandleGeneratePresetsMenu()
 {
 	FMenuBuilder MenuBuilder{ true, nullptr };
-
-	FUIAction PresetNameAction = FUIAction();
-	PresetNameAction.CanExecuteAction = FCanExecuteAction::CreateLambda( []() { return false; } );
-
-	MenuBuilder.AddMenuEntry(
-		LOCTEXT( "CurrentPreset", "Current preset:"),
-		LOCTEXT( "CurrentPreset_ToolTip", "Current"),
-		FSlateIcon(),
-		PresetNameAction,
-		NAME_None,
-		EUserInterfaceActionType::None
-	);
-
-	MenuBuilder.AddSeparator();
-
-	MenuBuilder.AddMenuEntry(
-		LOCTEXT( "SavePreset", "Save preset" ),
-		LOCTEXT( "SavePreset_ToolTip", "Save the current preset" ),
-		FSlateIcon(FAppStyle::Get().GetStyleSetName(), "AssetEditor.SaveAsset" ),
-		FUIAction(FExecuteAction::CreateLambda( [ this ]() { } ) )
-	);
 
 	MenuBuilder.BeginSection( NAME_None, LOCTEXT( "LoadPreset_MenuSection", "Load preset" ));
 	{

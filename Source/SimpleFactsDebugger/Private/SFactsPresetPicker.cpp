@@ -5,7 +5,6 @@
 #include "FactsDebuggerStyle.h"
 #include "FactsPreset.h"
 #include "SlateOptMacros.h"
-#include "Logging/StructuredLog.h"
 #include "Widgets/Input/SSearchBox.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
@@ -22,7 +21,6 @@ void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAss
 
 		// -------------------------------------------------------------------------------------------------------------
 		// Search box
-		
 		+ SVerticalBox::Slot()
 		.HAlign( HAlign_Fill )
 		.VAlign( VAlign_Top )
@@ -37,7 +35,6 @@ void SFactsPresetPicker::Construct( const FArguments& InArgs, const TArray< FAss
 
 		// -------------------------------------------------------------------------------------------------------------
 		// Presets list
-
 		+ SVerticalBox::Slot()
 		[
 			SNew( SBorder )
