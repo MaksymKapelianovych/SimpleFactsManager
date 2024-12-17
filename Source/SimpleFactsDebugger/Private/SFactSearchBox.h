@@ -5,8 +5,6 @@
 #include "CoreMinimal.h"
 #include "Widgets/Input/SSearchBox.h"
 
-#define LOCTEXT_NAMESPACE "FactSearchBox"
-
 /**
  * Subclass of SSearchBox, to allow adding the save search button to the Horizontal Box internal to SEditableTextBox
  */
@@ -16,13 +14,9 @@ public:
 	DECLARE_DELEGATE_OneParam( FOnSaveSearchClicked, const FText& )
 
 	SLATE_BEGIN_ARGS( SFactSearchBox )
-		: _HintText( LOCTEXT( "SearchHint", "Search" ) )
-		, _InitialText()
+		: _InitialText()
 		, _OnTextChanged()
 	{ }
-
-		/** The text displayed in the SearchBox when no text has been entered */
-		SLATE_ATTRIBUTE( FText, HintText )
 
 		/** The text displayed in the SearchBox when it's created */
 		SLATE_ATTRIBUTE( FText, InitialText )

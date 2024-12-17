@@ -11,7 +11,6 @@ void SFactSearchBox::Construct( const FArguments& InArgs )
 {
 	SSearchBox::Construct( SSearchBox::FArguments()
 		.InitialText( InArgs._InitialText )
-		.HintText( InArgs._HintText )
 		.OnTextChanged( InArgs._OnTextChanged )
 		.SelectAllTextWhenFocused( true )
 	);
