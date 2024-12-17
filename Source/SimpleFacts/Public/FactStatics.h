@@ -7,6 +7,8 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "FactStatics.generated.h"
 
+class UFactPreset;
+
 /**
  * 
  */

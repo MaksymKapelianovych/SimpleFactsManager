@@ -67,8 +67,7 @@ void FSimpleFactsDebuggerModule::ShutdownModule()
 	}
 }
 
-// todo: change implementation to allow loading presets from C++/BP
-void FSimpleFactsDebuggerModule::LoadFactPreset( const UFactPreset* InPreset )
+void FSimpleFactsDebuggerModule::LoadFactPreset( const UFactPreset* InPreset ) const
 {
 	if ( WeakGameInstance.IsValid() )
 	{
@@ -76,7 +75,7 @@ void FSimpleFactsDebuggerModule::LoadFactPreset( const UFactPreset* InPreset )
 	}
 }
 
-void FSimpleFactsDebuggerModule::LoadFactPresets( const TArray< UFactPreset* >& InPresets )
+void FSimpleFactsDebuggerModule::LoadFactPresets( const TArray< UFactPreset* >& InPresets ) const
 {
 	if ( WeakGameInstance.IsValid() )
 	{

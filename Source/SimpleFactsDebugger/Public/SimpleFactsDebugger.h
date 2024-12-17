@@ -21,8 +21,8 @@ public:
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;
 
-    void LoadFactPreset( const UFactPreset* InPreset );
-    void LoadFactPresets( const TArray< UFactPreset*>& InPresets );
+    void LoadFactPreset( const UFactPreset* InPreset ) const;
+    void LoadFactPresets( const TArray< UFactPreset*>& InPresets ) const;
     
     bool IsGameInstanceStarted() const;
     
