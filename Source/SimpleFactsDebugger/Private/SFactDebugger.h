@@ -31,7 +31,7 @@ struct FFactTreeItem : public TSharedFromThis< FFactTreeItem >
 	void InitItem();
 	
 	void HandleValueChanged( int32 NewValue );
-	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type );
+	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type ) const;
 
 	DECLARE_MULTICAST_DELEGATE_TwoParams( FOnFactItemValueChanged, FFactTag, int32 )
 	FOnFactItemValueChanged OnFactItemValueChanged;
@@ -53,15 +53,15 @@ public:
 	virtual ~SFactDebugger() override;
 
 	// Todo: maybe move to utils
-	static int32 CountAllFilteredItems( FFactTreeItemPtr ParentNode );
-	static int32 CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool bIsParentFavorite );
+	static int32 CountAllFilteredItems( const FFactTreeItemPtr& ParentNode );
+	static int32 CountAllFavoriteItems( const FFactTreeItemPtr& ParentNode, bool bIsParentFavorite );
 	
 private:
 	// Play started
 	void HandleGameInstanceStarted();
 	void HandleGameInstanceEnded();
-	void InitItem( FFactTreeItemPtr Item );
-	void ResetItem( FFactTreeItemPtr Item );
+	void InitItem( const FFactTreeItemPtr& Item );
+	void ResetItem( const FFactTreeItemPtr& Item );
 
 	TSharedRef< SWidget > CreateLeftToolBar();
 	TSharedRef< SWidget > CreateRightToolBar();
@@ -86,8 +86,8 @@ private:
 	TSharedPtr< SWidget > HandleGenerateMainContextMenu();
 	TSharedPtr< SWidget > HandleGenerateFavoritesContextMenu();
 	
-	void ClearFavoritesRecursive( FFactTreeItemPtr Item );
-	bool HasFavoritesRecursive( FFactTreeItemPtr Item );
+	void ClearFavoritesRecursive( const FFactTreeItemPtr& Item ) const;
+	bool HasFavoritesRecursive( const FFactTreeItemPtr& Item ) const;
 	void PostFavoritesChanged();
 
 	// Searching and filtering
@@ -96,13 +96,13 @@ private:
 	void FilterItems();
 
 	// Options menu
-	void HandleExpandAllClicked();
-	void HandleCollapseAllClicked();
+	void HandleExpandAllClicked( bool bExpandMain, bool bExpandFavorites );
+	void HandleCollapseAllClicked( bool bCollapseMain, bool bCollapseFavorites );
 
 	// Items expansion
-	void SetItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, TArray< FFactTreeItemPtr > FactItems, bool bShouldExpand, bool bPersistExpansion );
+	void SetItemsExpansion( const TSharedPtr< SFactsTreeView >& TreeView, const TArray< FFactTreeItemPtr >& FactItems, bool bShouldExpand, bool bPersistExpansion );
 	void RestoreExpansionState();
-	void SetDefaultItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, const TArray< FFactTreeItemPtr >& FactItems, const TSet< FFactTag >& ExpandedFacts );
+	void SetDefaultItemsExpansion( const TSharedPtr< SFactsTreeView >& TreeView, const TArray< FFactTreeItemPtr >& FactItems, const TSet< FFactTag >& ExpandedFacts );
 
 	static bool FindItemByTagRecursive( const FFactTreeItemPtr& Item, const FFactTag Tag, TArray< FFactTreeItemPtr >& OutPath );
 
@@ -116,20 +116,20 @@ private:
 	FReply HandleClearTogglesClicked();
 	FReply HandleSearchToggleClicked();
 	
-	TArray< FSearchToggleState > GetSearchToggleStates();
+	TArray< FSearchToggleState > GetSearchToggleStates() const;
 	bool IsAnySearchToggleActive() const;
 
 	// Build items
 	void BuildFactTreeItems();
-	FFactTreeItemPtr BuildFactItem( FFactTreeItemPtr ParentNode, TSharedPtr< FGameplayTagNode > ThisNode );
+	FFactTreeItemPtr BuildFactItem( const FFactTreeItemPtr& ParentNode, const TSharedPtr< FGameplayTagNode >& ThisNode );
 	void RebuildFactTreeItems();
 	void HandleFactValueChanged( FFactTag FactTag, int32 NewValue );
 	
 	// Settings
 	void LoadSettings();
-	void SaveSettings();
+	void SaveSettings() const;
 	
-	void HandleOrientationChanged( EOrientation Orientation );
+	void HandleOrientationChanged( EOrientation Orientation ) const;
 
 public:
 	static TArray< FFactTag > FavoriteFacts;

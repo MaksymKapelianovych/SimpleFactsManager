@@ -109,6 +109,7 @@ namespace Utils
 		Child,
 		Full
 	};
+	
 	ETagMatchType MatchFavorites( FFactTag CheckedTag )
 	{
 		bool bParentMatch = false;
@@ -135,17 +136,17 @@ namespace Utils
 		bool bIsPlaying;
 	};
 
-	void FilterFavoritesFactItemChildren( TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
-	void FilterMainFactItemChildren( TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
+	void FilterFavoritesFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
+	void FilterMainFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
 
-	void CopyItem( FFactTreeItemPtr SourceItem, TArray< FFactTreeItemPtr >& OutDestArray )
+	void CopyItem( const FFactTreeItemPtr& SourceItem, TArray< FFactTreeItemPtr >& OutDestArray )
 	{
 		FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
 		*NewItem = *SourceItem;
 		NewItem->InitItem();
 	}
 
-	void CopyItemIfMainChildrenMatch( FFactTreeItemPtr SourceItem, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
+	void CopyItemIfMainChildrenMatch( const FFactTreeItemPtr& SourceItem, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
 	{
 		TArray< FFactTreeItemPtr > FilteredChildren;
 		FilterMainFactItemChildren( SourceItem->Children, FilteredChildren, Options );
@@ -158,7 +159,7 @@ namespace Utils
 		}
 	}
 
-	void CopyItemIfFavoritesChildrenMatch( FFactTreeItemPtr SourceItem, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
+	void CopyItemIfFavoritesChildrenMatch( const FFactTreeItemPtr& SourceItem, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
 	{
 		TArray< FFactTreeItemPtr > FilteredChildren;
 		FilterFavoritesFactItemChildren( SourceItem->Children, FilteredChildren, Options );
@@ -171,7 +172,7 @@ namespace Utils
 		}
 	}
 	
-	void FilterFavoritesFactItemChildren( TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
+	void FilterFavoritesFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
 	{
 		auto MatchText = [ &Options ]( const FString& TagString )
 		{
@@ -195,8 +196,7 @@ namespace Utils
 				}
 			}
 
-			ETagMatchType Result = MatchFavorites( SourceItem->Tag );
-			switch ( Result ) {
+			switch ( MatchFavorites( SourceItem->Tag ) ) {
 			case ETagMatchType::None: // early return
 				continue;
 			case ETagMatchType::Parent: // we only get here if option "Show only Defined Facts" is checked
@@ -222,7 +222,7 @@ namespace Utils
 		}
 	}
 
-	void FilterMainFactItemChildren( TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
+	void FilterMainFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
 	{
 		auto MatchText = [ &Options ]( const FString& TagString )
 		{
@@ -246,8 +246,7 @@ namespace Utils
 				}
 			}
 
-			ETagMatchType Result = MatchFavorites( SourceItem->Tag );
-			switch ( Result )
+			switch ( MatchFavorites( SourceItem->Tag ) )
 			{
 			case ETagMatchType::None:
 				bNeedsFilteringByText = true;
@@ -282,7 +281,7 @@ namespace Utils
 	}
 
 
-	void GetLeafTags( TSharedPtr< FGameplayTagNode > Node, TArray< TSharedPtr< FGameplayTagNode > >& OutLeafTagNodes )
+	void GetLeafTags( const TSharedPtr< FGameplayTagNode >& Node, TArray< TSharedPtr< FGameplayTagNode > >& OutLeafTagNodes )
 	{
 		if ( Node->GetChildTagNodes().IsEmpty() )
 		{
@@ -339,7 +338,7 @@ void FFactTreeItem::HandleValueChanged( int32 NewValue )
 	(void)OnFactItemValueChanged.Broadcast( Tag, NewValue );
 }
 
-void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type )
+void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type ) const
 {
 	if ( Type == ETextCommit::Default || Type == ETextCommit::OnCleared )
 	{
@@ -671,7 +670,7 @@ SFactDebugger::~SFactDebugger()
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceEnded.Unbind();
 }
 
-int32 SFactDebugger::CountAllFilteredItems( FFactTreeItemPtr ParentNode )
+int32 SFactDebugger::CountAllFilteredItems( const FFactTreeItemPtr& ParentNode )
 {
 	int32 Result = 0;
 	
@@ -701,7 +700,7 @@ int32 SFactDebugger::CountAllFilteredItems( FFactTreeItemPtr ParentNode )
 	return Result;
 }
 
-int32 SFactDebugger::CountAllFavoriteItems( FFactTreeItemPtr ParentNode, bool bIsParentFavorite )
+int32 SFactDebugger::CountAllFavoriteItems( const FFactTreeItemPtr& ParentNode, bool bIsParentFavorite )
 {
 	if ( SFactDebugger::FavoriteFacts.IsEmpty() )
 	{
@@ -764,7 +763,7 @@ void SFactDebugger::HandleGameInstanceEnded()
 	ResetItem( FavoritesRootItem );
 }
 
-void SFactDebugger::InitItem( FFactTreeItemPtr Item )
+void SFactDebugger::InitItem( const FFactTreeItemPtr& Item )
 {
 	Item->StartPlay();
 	for ( FFactTreeItemPtr& ChildItem : Item->Children )
@@ -773,7 +772,7 @@ void SFactDebugger::InitItem( FFactTreeItemPtr Item )
 	}
 }
 
-void SFactDebugger::ResetItem( FFactTreeItemPtr Item )
+void SFactDebugger::ResetItem( const FFactTreeItemPtr& Item )
 {
 	Item->EndPlay();
 	for ( FFactTreeItemPtr& ChildItem : Item->Children )
@@ -966,7 +965,7 @@ TSharedRef< ITableRow > SFactDebugger::OnGenerateWidgetForFactsTreeView( FFactTr
 			, AnimationColor( FFactDebuggerStyle::Get().GetColor( "Colors.FactChanged" ) )
 		{ }
 
-		void Construct( const FArguments& InArgs, const TSharedRef< STableViewBase > InOwnerTable, TSharedPtr< SFactDebugger > InFactDebugger, FFactTreeItemPtr InItem )
+		void Construct( const FArguments& InArgs, const TSharedRef< STableViewBase >& InOwnerTable, const TSharedPtr< SFactDebugger >& InFactDebugger, const FFactTreeItemPtr& InItem )
 		{
 			Item = InItem;
 			FactDebugger = InFactDebugger;
@@ -1016,7 +1015,7 @@ TSharedRef< ITableRow > SFactDebugger::OnGenerateWidgetForFactsTreeView( FFactTr
 						{
 							return FText::FromString( Settings::bShowFullFactNames ? Item->Tag.ToString() : Item->SimpleTagName.ToString() );
 						} )
-						.HighlightText_Lambda( [ this ](){ return FactDebugger->CurrentSearchText; } )
+						.HighlightText_Lambda( [ this ](){ return FactDebugger.Pin()->CurrentSearchText; } )
 					];
 			}
 			else if ( InColumnName == "Value" )
@@ -1026,9 +1025,9 @@ TSharedRef< ITableRow > SFactDebugger::OnGenerateWidgetForFactsTreeView( FFactTr
 					[
 						SNew( SNumericEntryBox< int32 > )
 						.Value( TAttribute< TOptional< int32 > >::CreateSP( this, &SFactTreeItem::GetItemValue ) )
-						.OnValueCommitted( FOnInt32ValueCommitted::CreateRaw( Item.Get(), &FFactTreeItem::HandleNewValueCommited ) )
+						.OnValueCommitted( FOnInt32ValueCommitted::CreateSP( Item.ToSharedRef(), &FFactTreeItem::HandleNewValueCommited ) )
 						.UndeterminedString( LOCTEXT( "FactUndefinedValue", "undefined" ) )
-						.IsEnabled_Lambda( [ this ]() { return FactDebugger->bIsPlaying; } )
+						.IsEnabled_Lambda( [ this ]() { return FactDebugger.Pin()->bIsPlaying; } )
 					];
 			}
 			else
@@ -1037,7 +1036,7 @@ TSharedRef< ITableRow > SFactDebugger::OnGenerateWidgetForFactsTreeView( FFactTr
 			}
 		}
 		
-		FReply HandleFavoriteClicked()
+		FReply HandleFavoriteClicked() const
 		{
 			check( Item.IsValid() );
 			if ( SFactDebugger::FavoriteFacts.Contains( Item->Tag ) )
@@ -1049,8 +1048,8 @@ TSharedRef< ITableRow > SFactDebugger::OnGenerateWidgetForFactsTreeView( FFactTr
 				SFactDebugger::FavoriteFacts.Add( Item->Tag );
 			}
 			
-			FactDebugger->SaveSettings();
-			FactDebugger->PostFavoritesChanged();
+			FactDebugger.Pin()->SaveSettings();
+			FactDebugger.Pin()->PostFavoritesChanged();
 			return FReply::Handled();
 		}
 
@@ -1095,7 +1094,7 @@ TSharedRef< ITableRow > SFactDebugger::OnGenerateWidgetForFactsTreeView( FFactTr
 		FSlateColor GetItemColor() const
 		{
 			check( Item.IsValid() );
-			const bool bIsSelected = FactDebugger->FactsTreeView->IsItemSelected( Item.ToSharedRef() );
+			const bool bIsSelected = FactDebugger.Pin()->FactsTreeView->IsItemSelected( Item.ToSharedRef() );
 		
 			if ( IsFavorite() == false )
 			{
@@ -1132,7 +1131,7 @@ TSharedRef< ITableRow > SFactDebugger::OnGenerateWidgetForFactsTreeView( FFactTr
 	private:
 
 		FFactTreeItemPtr Item;
-		TSharedPtr< SFactDebugger > FactDebugger;
+		TWeakPtr< SFactDebugger > FactDebugger;
 		FDelegateHandle Handle;
 
 		const FSlateBrush* FavoriteBrush = nullptr;
@@ -1297,14 +1296,14 @@ TSharedRef< SWidget > SFactDebugger::HandleGenerateOptionsMenu()
 			LOCTEXT( "Options_ExpandAll", "Expand All" ),
 			FText::GetEmpty(),
 			FSlateIcon(),
-			FUIAction( FExecuteAction::CreateRaw( this, &SFactDebugger::HandleExpandAllClicked ) )
+			FUIAction( FExecuteAction::CreateRaw( this, &SFactDebugger::HandleExpandAllClicked, true, true ) )
 		);
 	
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "Options_CollapseAll", "Collapse All" ),
 			FText::GetEmpty(),
 			FSlateIcon(),
-			FUIAction( FExecuteAction::CreateRaw( this, &SFactDebugger::HandleCollapseAllClicked ) )
+			FUIAction( FExecuteAction::CreateRaw( this, &SFactDebugger::HandleCollapseAllClicked, true, true ) )
 		);
 
 		MenuBuilder.AddMenuEntry(
@@ -1438,23 +1437,20 @@ TSharedRef< SWidget > SFactDebugger::HandleGenerateOptionsMenu()
 
 void SFactDebugger::GenerateCommonContextMenu( FMenuBuilder& MenuBuilder, bool bIsFavoritesTree )
 {
-	TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
-	TArray< FFactTreeItemPtr >& FactItems = bIsFavoritesTree ? FavoritesRootItem->Children : FilteredRootItem->Children;
-	
 	MenuBuilder.BeginSection( "", LOCTEXT( "ContextMenu_TreeSection", "Hierarchy" ) );
 	{
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "ContextMenu_ExpandTree", "Expand Tree" ),
 			FText::GetEmpty(),
 			FSlateIcon(),
-			FUIAction( FExecuteAction::CreateRaw( this, &SFactDebugger::SetItemsExpansion, TreeView, FactItems, true, true ) )
+			FUIAction( FExecuteAction::CreateRaw( this, &SFactDebugger::HandleExpandAllClicked, bIsFavoritesTree == false, bIsFavoritesTree ) )
 		);
 	
 		MenuBuilder.AddMenuEntry(
 			LOCTEXT( "ContextMenu_CollapseTree", "Collapse Tree" ),
 			FText::GetEmpty(),
 			FSlateIcon(),
-			FUIAction( FExecuteAction::CreateRaw( this, &SFactDebugger::SetItemsExpansion, TreeView, FactItems, false, true ) )
+			FUIAction( FExecuteAction::CreateRaw( this, &SFactDebugger::HandleCollapseAllClicked, bIsFavoritesTree == false, bIsFavoritesTree ) )
 		);
 	}
 	MenuBuilder.EndSection();
@@ -1519,7 +1515,7 @@ TSharedPtr<SWidget> SFactDebugger::HandleGenerateFavoritesContextMenu()
 	return MenuBuilder.MakeWidget();
 }
 
-void SFactDebugger::ClearFavoritesRecursive( FFactTreeItemPtr Item )
+void SFactDebugger::ClearFavoritesRecursive( const FFactTreeItemPtr& Item ) const
 {
 	if ( SFactDebugger::FavoriteFacts.Contains( Item->Tag ) )
 	{
@@ -1532,7 +1528,7 @@ void SFactDebugger::ClearFavoritesRecursive( FFactTreeItemPtr Item )
 	}
 }
 
-bool SFactDebugger::HasFavoritesRecursive( FFactTreeItemPtr Item )
+bool SFactDebugger::HasFavoritesRecursive( const FFactTreeItemPtr& Item ) const
 {
 	if ( SFactDebugger::FavoriteFacts.Contains( Item->Tag ) )
 	{
@@ -1650,21 +1646,37 @@ void SFactDebugger::FilterItems()
 	FavoriteFactsTreeView->RequestTreeRefresh();
 }
 
-void SFactDebugger::HandleExpandAllClicked()
+void SFactDebugger::HandleExpandAllClicked( bool bExpandMain, bool bExpandFavorites )
 {
-	SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, true, true );
-	SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, true, true );
+	if ( bExpandMain )
+	{
+		SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, true, true );
+	}
+
+	if ( bExpandFavorites )
+	{
+		SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, true, true );
+	}
+	
 	OptionsButton->SetIsOpen( false );
 }
 
-void SFactDebugger::HandleCollapseAllClicked()
+void SFactDebugger::HandleCollapseAllClicked( bool bCollapseMain, bool bCollapseFavorites )
 {
-	SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, false, true );
-	SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, false, true );
+	if ( bCollapseMain )
+	{
+		SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, false, true );
+	}
+
+	if ( bCollapseFavorites )
+	{
+		SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, false, true );
+	}
+	
 	OptionsButton->SetIsOpen( false );
 }
 
-void SFactDebugger::SetItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, TArray<FFactTreeItemPtr> FactItems, bool bShouldExpand, bool bPersistExpansion )
+void SFactDebugger::SetItemsExpansion( const TSharedPtr< SFactsTreeView >& TreeView, const TArray< FFactTreeItemPtr >& FactItems, bool bShouldExpand, bool bPersistExpansion )
 {
 	TGuardValue< bool > PersistExpansionChangeGuard( bPersistExpansionChange, bPersistExpansion );
 
@@ -1701,7 +1713,7 @@ void SFactDebugger::RestoreExpansionState()
 	}
 }
 
-void SFactDebugger::SetDefaultItemsExpansion( TSharedPtr< SFactsTreeView > TreeView, const TArray< FFactTreeItemPtr >& FactItems, const TSet< FFactTag >& ExpandedFacts )
+void SFactDebugger::SetDefaultItemsExpansion( const TSharedPtr< SFactsTreeView >& TreeView, const TArray< FFactTreeItemPtr >& FactItems, const TSet< FFactTag >& ExpandedFacts )
 {
 	TGuardValue< bool > PersistExpansionChangeGuard( bPersistExpansionChange, false );
 
@@ -1810,7 +1822,7 @@ FReply SFactDebugger::HandleSearchToggleClicked()
 	return FReply::Handled();
 }
 
-TArray<FSearchToggleState> SFactDebugger::GetSearchToggleStates()
+TArray< FSearchToggleState > SFactDebugger::GetSearchToggleStates() const
 {
 	TArray< FSearchToggleState > SearchToggleStates;
 	for ( const SFactSearchToggleRef SearchToggle : CurrentSearchToggles )
@@ -1872,7 +1884,7 @@ void SFactDebugger::BuildFactTreeItems()
 	}
 }
 
-FFactTreeItemPtr SFactDebugger::BuildFactItem( FFactTreeItemPtr ParentNode, TSharedPtr< FGameplayTagNode > ThisNode )
+FFactTreeItemPtr SFactDebugger::BuildFactItem( const FFactTreeItemPtr& ParentNode, const TSharedPtr< FGameplayTagNode >& ThisNode )
 {
 	FFactTreeItemPtr ThisItem = MakeShared< FFactTreeItem >(  );
 	ThisItem->Tag = FFactTag::ConvertChecked( ThisNode->GetCompleteTag() );
@@ -1937,7 +1949,7 @@ void SFactDebugger::LoadSettings()
 	SFactDebugger::FavoriteFacts = SettingsLocal->FavoriteFacts;
 }
 
-void SFactDebugger::SaveSettings()
+void SFactDebugger::SaveSettings() const
 {
 	UFactDebuggerSettingsLocal* SettingsLocal = GetMutableDefault< UFactDebuggerSettingsLocal >();
 	SettingsLocal->bShowRootFactTag = Settings::bShowRootFactTag;
@@ -1953,7 +1965,7 @@ void SFactDebugger::SaveSettings()
 	SettingsLocal->SaveConfig();
 }
 
-void SFactDebugger::HandleOrientationChanged( EOrientation Orientation )
+void SFactDebugger::HandleOrientationChanged( EOrientation Orientation ) const
 {
 	UFactDebuggerSettingsLocal* Settings = GetMutableDefault< UFactDebuggerSettingsLocal >();
 	Settings->Orientation = Orientation;
