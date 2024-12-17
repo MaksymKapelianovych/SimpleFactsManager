@@ -22,7 +22,7 @@ public:
 	/**
 	 * @return the facts subsystem for the game instance associated with the world of the specified object
 	 */
-	static UFactSubsystem& Get(const UObject* WorldContextObject);
+	[[nodiscard]] static UFactSubsystem& Get(const UObject* WorldContextObject);
 
 	// Changes fact value depending on EFactValueChangeType.
 	// If fact is undefined, then modification is applied to default type's value (for int32 it is 0)
@@ -36,14 +36,14 @@ public:
 	/**
 	 * @return false if fact is undefined
 	 */
-	bool TryGetFactValue(const FFactTag Tag, int32& OutValue) const;
+	[[nodiscard]] bool TryGetFactValue(const FFactTag Tag, int32& OutValue) const;
 
 	/**
 	 * More specialized version of CheckFactValue, which only tell if fact is defined or not
 	 */ 
-	bool IsFactDefined(const FFactTag Tag) const;
-	bool CheckFactSimpleCondition(const FSimpleFactCondition& Condition) const;
-	bool CheckFactCondition(const FFactCondition& Condition) const;
+	[[nodiscard]] bool IsFactDefined(const FFactTag Tag) const;
+	[[nodiscard]] bool CheckFactSimpleCondition(const FSimpleFactCondition& Condition) const;
+	[[nodiscard]] bool CheckFactCondition(const FFactCondition& Condition) const;
 
 	FFactChanged& GetOnFactValueChangedDelegate(FFactTag Tag);
 	FFactChanged& GetOnFactBecameDefinedDelegate(FFactTag Tag);

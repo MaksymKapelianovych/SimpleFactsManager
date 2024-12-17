@@ -33,19 +33,19 @@ public:
 	 * @return false if fact is undefined or WorldContextObject is null
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Facts, meta = (WorldContext = "WorldContextObject", ReturnDisplayName = "Is Defined?"))
-	static bool TryGetFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32& OutValue);
+	[[nodiscard]] static bool TryGetFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32& OutValue);
 
 	/**
 	 * @return false if WorldContextObject is null
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Facts, meta = (WorldContext = "WorldContextObject"))
-	static bool CheckFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32 WantedValue, EFactCompareOperator Operator);
+	[[nodiscard]] static bool CheckFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32 WantedValue, EFactCompareOperator Operator);
 
 	/**
 	 * @return false if WorldContextObject is null
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Facts, meta = (WorldContext = "WorldContextObject"))
-	static bool CheckFactSimpleCondition(const UObject* WorldContextObject, FSimpleFactCondition Condition);
+	[[nodiscard]] static bool CheckFactSimpleCondition(const UObject* WorldContextObject, FSimpleFactCondition Condition);
 	
 	
 	/**
@@ -53,7 +53,7 @@ public:
 	 * More specialized version of CheckFactValue, which only tell if fact is defined or not
 	 */ 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Facts, meta = (WorldContext = "WorldContextObject"))
-	static bool IsFactDefined(const UObject* WorldContextObject, const FFactTag Tag);
+	[[nodiscard]] static bool IsFactDefined(const UObject* WorldContextObject, const FFactTag Tag);
 
 	UFUNCTION(BlueprintCallable, Category = Facts, meta = (WorldContext = "WorldContextObject"))
 	static void LoadFactPreset( const UObject* WorldContextObject, const UFactPreset* Preset );

@@ -16,7 +16,7 @@ void UFactStatics::ChangeFactValue(const UObject* WorldContextObject, const FFac
 		return;
 	}
 
-	UE_LOG( LogFact, Error, TEXT( "UFactStatics::ChangeFactValue: WorldContextObject is null" ) );
+	UE_LOG( LogFact, Error, TEXT( "%hs: WorldContextObject is null" ), __FUNCTION__ );
 }
 
 void UFactStatics::ResetFactValue(const UObject* WorldContextObject, const FFactTag Tag)
@@ -28,7 +28,7 @@ void UFactStatics::ResetFactValue(const UObject* WorldContextObject, const FFact
 		return;
 	}
 
-	UE_LOG( LogFact, Error, TEXT( "UFactStatics::ResetFactValue: WorldContextObject is null" ) );
+	UE_LOG( LogFact, Error, TEXT( "%hs: WorldContextObject is null" ), __FUNCTION__ );
 }
 
 bool UFactStatics::TryGetFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32& OutValue)
@@ -39,7 +39,7 @@ bool UFactStatics::TryGetFactValue(const UObject* WorldContextObject, const FFac
 		return FactSubsystem.TryGetFactValue( Tag, OutValue );
 	}
 
-	UE_LOG( LogFact, Error, TEXT( "UFactStatics::ResetFactValue: WorldContextObject is null" ) );
+	UE_LOG( LogFact, Error, TEXT( "%hs: WorldContextObject is null" ), __FUNCTION__ );
 	return false;
 }
 
@@ -51,7 +51,7 @@ bool UFactStatics::IsFactDefined(const UObject* WorldContextObject, const FFactT
 		return FactSubsystem.IsFactDefined( Tag );
 	}
 
-	UE_LOG( LogFact, Error, TEXT( "UFactStatics::IsFactDefined: WorldContextObject is null" ) );
+	UE_LOG( LogFact, Error, TEXT( "%hs: WorldContextObject is null" ), __FUNCTION__ );
 	return false;
 }
 
@@ -64,7 +64,7 @@ bool UFactStatics::CheckFactValue(const UObject* WorldContextObject, const FFact
 		return FactSubsystem.CheckFactSimpleCondition( FSimpleFactCondition( Tag, WantedValue, Operator ) );
 	}
 
-	UE_LOG( LogFact, Error, TEXT( "UFactStatics::CheckFactValue: WorldContextObject is null" ) );
+	UE_LOG( LogFact, Error, TEXT( "%hs: WorldContextObject is null" ), __FUNCTION__ );
 	return false;
 }
 
@@ -76,7 +76,7 @@ bool UFactStatics::CheckFactSimpleCondition(const UObject* WorldContextObject, F
 		return FactSubsystem.CheckFactSimpleCondition( Condition );
 	}
 
-	UE_LOG( LogFact, Error, TEXT( "UFactStatics::CheckFactValue: WorldContextObject is null" ) );
+	UE_LOG( LogFact, Error, TEXT( "%hs: WorldContextObject is null" ), __FUNCTION__ );
 	return false;
 }
 
@@ -85,13 +85,13 @@ void UFactStatics::LoadFactPreset( const UObject* WorldContextObject, const UFac
 #if !UE_BUILD_SHIPPING
 	if ( WorldContextObject == nullptr )
 	{
-		UE_LOG( LogFact, Error, TEXT( "UFactStatics::LoadFactPreset: WorldContextObject is null" ) );
+		UE_LOG( LogFact, Error, TEXT( "%hs: WorldContextObject is null" ), __FUNCTION__ );
 		return;
 	}
 
 	if ( Preset == nullptr )
 	{
-		UE_LOG( LogFact, Error, TEXT( "UFactStatics::LoadFactPreset: Preset is null" ) );
+		UE_LOG( LogFact, Error, TEXT( "%hs: Preset is null" ), __FUNCTION__ );
 		return;
 	}
 
@@ -110,7 +110,7 @@ void UFactStatics::LoadFactPresets( const UObject* WorldContextObject, const TAr
 	{
 		if ( Preset == nullptr )
 		{
-			UE_LOG( LogFact, Error, TEXT( "UFactStatics::LoadFactPresets: Null preset in TArray" ) );
+			UE_LOG( LogFact, Error, TEXT( "%hs: Null preset in TArray" ), __FUNCTION__ );
 			continue;
 		}
 		
