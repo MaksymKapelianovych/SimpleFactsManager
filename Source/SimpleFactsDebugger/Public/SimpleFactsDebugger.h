@@ -36,6 +36,11 @@ private:
     void HandleGameInstanceStarted( UGameInstance* GameInstance );
     void HandleGameInstanceEnded();
 
+#if WITH_EDITOR
+    void HandleAssetManagerCreated();
+    void AddDefaultGameDataRule();
+#endif
+    
 private:
     TSharedRef< SDockTab > SpawnFactDebuggerTab( const FSpawnTabArgs& SpawnTabArgs );
     TSharedPtr< SWidget > SummonFactDebuggerUI();
