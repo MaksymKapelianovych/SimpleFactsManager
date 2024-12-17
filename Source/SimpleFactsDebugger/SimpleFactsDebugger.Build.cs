@@ -36,6 +36,7 @@ public class SimpleFactsDebugger : ModuleRules
                 new string[]
                 {
                     "WorkspaceMenuStructure",
+                    "SharedSettingsWidgets",
                 }
             );
         }
