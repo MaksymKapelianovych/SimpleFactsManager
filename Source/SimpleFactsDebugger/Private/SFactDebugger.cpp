@@ -406,7 +406,6 @@ void SFactDebugger::Construct( const FArguments& InArgs )
 			.Padding( 0.f, 1.f, 0.f, 1.f )
 			[
 				SAssignNew( SearchBox, SFactSearchBox )
-				.HintText( LOCTEXT( "FactDebugger_SearchHintText", "Search..." ) )
 				.ToolTipText( LOCTEXT( "FactDebugger_ToolTipText", "Search facts by tag. You can search by string ('Quest2.Trigger') or by several strings, separated by spaces ('Quest Trigger')\n"
 													   "Press Enter to save this text as a toggle" ) )
 				.OnTextChanged( this, &SFactDebugger::HandleSearchTextChanged )
