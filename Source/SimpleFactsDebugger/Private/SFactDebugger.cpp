@@ -23,6 +23,10 @@
 #include "Widgets/Layout/SWrapBox.h"
 #include "Widgets/Text/SRichTextBlock.h"
 
+#include "HAL/LowLevelMemTracker.h"
+
+LLM_DEFINE_TAG( UI_Facts );
+
 #define LOCTEXT_NAMESPACE "FactDebugger"
 
 TSet< FFactTag > SFactDebugger::MainExpandedFacts;
@@ -317,7 +321,7 @@ void FFactTreeItem::InitItem()
 {
 	if ( UFactSubsystem* FactSubsystem = FSimpleFactsDebuggerModule::Get().TryGetFactSubsystem() )
 	{
-		Handle = FactSubsystem->GetOnFactValueChangedDelegate( Tag ).AddRaw( this, &FFactTreeItem::HandleValueChanged );
+		Handle = FactSubsystem->GetOnFactValueChangedDelegate( Tag ).AddSP( this, &FFactTreeItem::HandleValueChanged );
 		
 		int32 FactValue;
 		if ( FactSubsystem->TryGetFactValue( Tag, FactValue ) )
@@ -1595,6 +1599,8 @@ void SFactDebugger::HandleSaveSearchClicked( const FText& SearchText )
 
 void SFactDebugger::FilterItems()
 {
+	LLM_SCOPE_BYTAG( UI_Facts );
+
 	FilteredRootItem.Reset();
 	FavoritesRootItem.Reset();
 
@@ -1828,7 +1834,11 @@ bool SFactDebugger::IsAnySearchToggleActive() const
 
 void SFactDebugger::BuildFactTreeItems()
 {
+	LLM_SCOPE_BYTAG( UI_Facts );
+
 	RootItem = MakeShared< FFactTreeItem >();
+	FilteredRootItem = RootItem;
+	FavoritesRootItem = MakeShared< FFactTreeItem >();
 
 	UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
 	if ( Settings::bShowOnlyLeafFacts )
@@ -1858,9 +1868,6 @@ void SFactDebugger::BuildFactTreeItems()
 			}
 		}
 	}
-
-	FilteredRootItem = RootItem;
-	FavoritesRootItem = MakeShared< FFactTreeItem >();
 }
 
 FFactTreeItemPtr SFactDebugger::BuildFactItem( FFactTreeItemPtr ParentNode, TSharedPtr< FGameplayTagNode > ThisNode )
