@@ -23,56 +23,28 @@ void SFactSearchToggle::Construct( const FArguments& InArgs, const FText& InButt
 	
 	ChildSlot
 	[
-		SNew( SBorder )
-		.Padding( 1.0f )
-		.BorderImage( FAppStyle::GetBrush( "FilterBar.FilterBackground" ) )
-		[
-			SAssignNew( ToggleButtonPtr, SCheckBox )
-			.Style( FAppStyle::Get(), "FilterBar.FilterButton" )
-			.ToolTipText( LOCTEXT( "SearchToggleTooltip", "Toggle this search" ) )
-			.IsChecked( this, &SFactSearchToggle::GetCheckedState )
-			.OnCheckStateChanged_Lambda( [ this ]( ECheckBoxState NewCheckBoxState )
+		SAssignNew( ToggleButtonPtr, SCheckBox )
+		.Style( FAppStyle::Get(), "FilterBar.BasicFilterButton" )
+		.ToolTipText( LOCTEXT( "SearchToggleTooltip", "Toggle this search" ) )
+		.IsChecked( this, &SFactSearchToggle::GetCheckedState )
+		.OnCheckStateChanged_Lambda( [ this ]( ECheckBoxState NewCheckBoxState )
+		{
+			SetIsButtonChecked( !GetIsToggleChecked() );
+			
+			if ( FSlateApplication::Get().GetModifierKeys().IsAltDown() && OnAltClicked.IsBound() )
 			{
-				SetIsButtonChecked( !GetIsToggleChecked() );
-				
-				if ( FSlateApplication::Get().GetModifierKeys().IsAltDown() && OnAltClicked.IsBound() )
-				{
-					SetIsMarkedForDelete( true );
-					(void)OnAltClicked.Execute(  );
-				}
-				else if ( OnClickedOnce.IsBound() )
-				{
-					SetIsMarkedForDelete( false );
-					(void)OnClickedOnce.Execute(  );
-				}
-			} )
-			[
-				SNew( SHorizontalBox )
-
-				// -----------------------------------------------------------------------------------------------------
-				// Image that shows if this search is checked
-				+ SHorizontalBox::Slot()
-				.VAlign( VAlign_Center )
-				.AutoWidth()
-				[
-					SNew( SImage )
-					.Image( FAppStyle::Get().GetBrush( "FilterBar.FilterImage" ) )
-					.ColorAndOpacity_Lambda( [ this ]()
-					{
-						return GetIsToggleChecked() ? CheckedColor : UncheckedColor;
-					})
-				]
-
-				// -----------------------------------------------------------------------------------------------------
-				// Search text
-				+ SHorizontalBox::Slot()
-				.Padding( 2.f )
-				.VAlign( VAlign_Center )
-				[
-					SNew( STextBlock )
-					.Text( FText::Format( INVTEXT( "{0}" ), SearchText ) )
-				]
-			]
+				SetIsMarkedForDelete( true );
+				(void)OnAltClicked.Execute(  );
+			}
+			else if ( OnClickedOnce.IsBound() )
+			{
+				SetIsMarkedForDelete( false );
+				(void)OnClickedOnce.Execute(  );
+			}
+		} )
+		[
+			SNew( STextBlock )
+			.Text( FText::Format( INVTEXT( "{0}" ), SearchText ) )
 		]
 	];
 }
