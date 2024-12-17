@@ -334,7 +334,9 @@ void FFactTreeItem::InitItem()
 void FFactTreeItem::HandleValueChanged( int32 NewValue )
 {
 	Value = NewValue;
-	(void)OnFactItemValueChanged.ExecuteIfBound( Tag, NewValue );
+	ValueChangedTime = FSlateApplication::Get().GetCurrentTime();
+
+	(void)OnFactItemValueChanged.Broadcast( Tag, NewValue );
 }
 
 void FFactTreeItem::HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type )
@@ -972,13 +974,13 @@ TSharedRef< ITableRow > SFactDebugger::OnGenerateWidgetForFactsTreeView( FFactTr
 			SMultiColumnTableRow::Construct( FSuperRowType::FArguments()
 				.Style( FAppStyle::Get(), "TableView.AlternatingRow" ), InOwnerTable );
 
-			Item->OnFactItemValueChanged.BindRaw( this, &SFactTreeItem::HandleItemValueChanged );
+			Handle = Item->OnFactItemValueChanged.AddSP( this, &SFactTreeItem::HandleItemValueChanged );
 			TryPlayAnimation();
 		}
 
 		virtual void ResetRow() override
 		{
-			Item->OnFactItemValueChanged.Unbind();
+			Item->OnFactItemValueChanged.Remove( Handle );
 		}
 		
 		virtual TSharedRef< SWidget > GenerateWidgetForColumn( const FName& InColumnName ) override
@@ -1131,6 +1133,7 @@ TSharedRef< ITableRow > SFactDebugger::OnGenerateWidgetForFactsTreeView( FFactTr
 
 		FFactTreeItemPtr Item;
 		TSharedPtr< SFactDebugger > FactDebugger;
+		FDelegateHandle Handle;
 
 		const FSlateBrush* FavoriteBrush = nullptr;
 		const FSlateBrush* NormalBrush = nullptr;
@@ -1876,7 +1879,7 @@ FFactTreeItemPtr SFactDebugger::BuildFactItem( FFactTreeItemPtr ParentNode, TSha
 	ThisItem->SimpleTagName = ThisNode->GetSimpleTagName();
 	ThisItem->Children.Reserve( ThisNode->GetChildTagNodes().Num() );
 	ThisItem->InitItem();
-	ThisItem->OnFactItemValueChanged.BindSP( this, &SFactDebugger::HandleFactValueChanged );
+	ThisItem->OnFactItemValueChanged.AddSP( this, &SFactDebugger::HandleFactValueChanged );
 	
 	ParentNode->Children.Add( ThisItem );
 	
@@ -1914,10 +1917,6 @@ void SFactDebugger::HandleFactValueChanged( FFactTag FactTag, int32 NewValue )
 	{
 		return;
 	}
-
-	FindItemByTagRecursive( RootItem, FactTag, Path );
-	check( Path.Num() );
-	Path.Last()->ValueChangedTime = FSlateApplication::Get().GetCurrentTime();
 
 	// we need to filter items, in order for element to appear in trees (or not, if it will not pass filters)
 	FilterItems();

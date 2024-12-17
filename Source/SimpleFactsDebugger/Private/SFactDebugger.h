@@ -33,7 +33,7 @@ struct FFactTreeItem : public TSharedFromThis< FFactTreeItem >
 	void HandleValueChanged( int32 NewValue );
 	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type );
 
-	DECLARE_DELEGATE_TwoParams( FOnFactItemValueChanged, FFactTag, int32 )
+	DECLARE_MULTICAST_DELEGATE_TwoParams( FOnFactItemValueChanged, FFactTag, int32 )
 	FOnFactItemValueChanged OnFactItemValueChanged;
 	FDelegateHandle Handle;
 };
