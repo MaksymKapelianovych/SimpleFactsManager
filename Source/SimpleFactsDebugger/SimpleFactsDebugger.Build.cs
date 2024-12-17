@@ -4,7 +4,6 @@ public class SimpleFactsDebugger : ModuleRules
 {
     public SimpleFactsDebugger(ReadOnlyTargetRules Target) : base(Target)
     {
-        OptimizeCode = CodeOptimization.Never;
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicDependencyModuleNames.AddRange(
