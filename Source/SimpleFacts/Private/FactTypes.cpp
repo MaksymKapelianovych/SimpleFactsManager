@@ -5,7 +5,7 @@
 #include "FactSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
-bool FSimpleFactCondition::CheckValue(const UFactSubsystem& FactSubsystem) const
+bool FSimpleFactCondition::CheckValue( const UFactSubsystem& FactSubsystem ) const
 {
 	return FactSubsystem.CheckFactSimpleCondition( *this );
 }
@@ -17,7 +17,7 @@ bool FSimpleFactCondition::IsValid() const
 
 FString FSimpleFactCondition::ToString() const
 {
-	return FString::Format( TEXT( "{0} {1} {2}" ), {Tag.ToString()
+	return FString::Format( TEXT( "{0} {1} {2}" ), { Tag.ToString()
 			, UEnum::GetDisplayValueAsText( Operator ).ToString()
 			, FString::FromInt( WantedValue ) } );
 }
@@ -104,7 +104,7 @@ FString FFactCondition::ToString() const
 	return Builder.ToText().ToString();
 }
 
-bool FFactCondition::CheckAndDependencies(const UFactSubsystem& Subsystem) const
+bool FFactCondition::CheckAndDependencies( const UFactSubsystem& Subsystem ) const
 {
 	// no failure conditions => immediate success
 	if ( AndDependencies.Num() == 0 )
@@ -125,7 +125,7 @@ bool FFactCondition::CheckAndDependencies(const UFactSubsystem& Subsystem) const
 	return true;
 }
 
-bool FFactCondition::CheckOrDependencies(const UFactSubsystem& Subsystem) const
+bool FFactCondition::CheckOrDependencies( const UFactSubsystem& Subsystem ) const
 {
 	// no failure conditions => immediate success
 	if ( OrDependencies.Num() == 0 )

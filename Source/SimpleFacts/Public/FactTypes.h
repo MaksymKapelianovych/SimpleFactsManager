@@ -8,7 +8,7 @@ USTRUCT(BlueprintType, Blueprintable, meta = (GameplayTagFilter = "Fact", Presen
 struct SIMPLEFACTS_API FFactTag : public FGameplayTag
 {
 	GENERATED_BODY()
-	END_FILTERED_TAG_DECL(FFactTag, TEXT("Fact"))
+	END_FILTERED_TAG_DECL( FFactTag, TEXT( "Fact" ) )
 };
 
 UENUM(BlueprintType)
@@ -60,7 +60,7 @@ struct SIMPLEFACTS_API FSimpleFactCondition
 private:
 	friend struct FFactCondition;
 	
-	bool CheckValue(const UFactSubsystem& FactSubsystem) const;
+	bool CheckValue( const UFactSubsystem& FactSubsystem ) const;
 };
 
 /** Represents condition for facts, such as:
@@ -87,8 +87,8 @@ public:
 	FString ToString() const;
 
 protected:
-	bool CheckAndDependencies(const UFactSubsystem& Subsystem) const;
-	bool CheckOrDependencies(const UFactSubsystem& Subsystem) const;
+	bool CheckAndDependencies( const UFactSubsystem& Subsystem ) const;
+	bool CheckOrDependencies( const UFactSubsystem& Subsystem ) const;
 	
 public:
 	// And fact dependencies for this condition

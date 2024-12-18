@@ -16,5 +16,5 @@ public:
 	UFactSaveGame() {}
 
 	UPROPERTY()
-	TMap<FFactTag, int32> Facts;
+	TMap< FFactTag, int32 > Facts;
 };

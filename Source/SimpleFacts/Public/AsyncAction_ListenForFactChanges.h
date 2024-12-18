@@ -21,14 +21,14 @@ public:
 	 * @param FactTag			The Fact tag to listen for
 	 */
 	UFUNCTION(BlueprintCallable, Category = Messaging, meta = (WorldContext = "WorldContextObject", BlueprintInternalUseOnly = "true"))
-	static UAsyncAction_ListenForFactChanges* ListenForFactChanges(UObject* WorldContextObject, FFactTag Tag);
+	static UAsyncAction_ListenForFactChanges* ListenForFactChanges( UObject* WorldContextObject, FFactTag Tag );
 
 
 	virtual void Activate() override;
 	virtual void SetReadyToDestroy() override;
 
 public:
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAsyncFactDelegate, int32, CurrentValue);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam( FAsyncFactDelegate, int32, CurrentValue );
 
 	// Executes when value of the fact is changed. If a fact was undefined before changing value, OnFactBecameDefined will be executed first
 	UPROPERTY(BlueprintAssignable, meta = (DisplayName = "Value Changed"))
@@ -44,12 +44,12 @@ public:
 
 private:
 	UFUNCTION()
-	void HandleFactValueChanged(int32 CurrentValue);
+	void HandleFactValueChanged( int32 CurrentValue );
 
 	UFUNCTION()
-	void HandleFactBecameDefined(int32 CurrentValue);
+	void HandleFactBecameDefined( int32 CurrentValue );
 
 private:
-	TWeakObjectPtr<UWorld> WorldPtr;
+	TWeakObjectPtr< UWorld > WorldPtr;
 	FFactTag Tag;
 };

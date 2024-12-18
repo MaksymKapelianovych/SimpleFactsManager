@@ -5,8 +5,7 @@
 
 #include "FactSubsystem.h"
 
-UAsyncAction_ListenForFactChanges* UAsyncAction_ListenForFactChanges::ListenForFactChanges(UObject* WorldContextObject,
-                                                                                           FFactTag Tag)
+UAsyncAction_ListenForFactChanges* UAsyncAction_ListenForFactChanges::ListenForFactChanges( UObject* WorldContextObject, FFactTag Tag )
 {
 	UWorld* World = GEngine->GetWorldFromContextObject( WorldContextObject, EGetWorldErrorMode::LogAndReturnNull );
 	if ( World == nullptr )
@@ -47,7 +46,7 @@ void UAsyncAction_ListenForFactChanges::SetReadyToDestroy()
 	Super::SetReadyToDestroy();
 }
 
-void UAsyncAction_ListenForFactChanges::HandleFactValueChanged(int32 CurrentValue)
+void UAsyncAction_ListenForFactChanges::HandleFactValueChanged( int32 CurrentValue )
 {
 	if ( OnFactValueChanged.IsBound() == false && OnFactBecameDefined.IsBound() == false )
 	{
@@ -58,7 +57,7 @@ void UAsyncAction_ListenForFactChanges::HandleFactValueChanged(int32 CurrentValu
 	OnFactValueChanged.Broadcast( CurrentValue );
 }
 
-void UAsyncAction_ListenForFactChanges::HandleFactBecameDefined(int32 CurrentValue)
+void UAsyncAction_ListenForFactChanges::HandleFactBecameDefined( int32 CurrentValue )
 {
 	if ( OnFactValueChanged.IsBound() == false && OnFactBecameDefined.IsBound() == false )
 	{

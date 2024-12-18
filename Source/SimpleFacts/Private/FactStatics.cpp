@@ -7,7 +7,7 @@
 #include "FactPreset.h"
 #include "FactSubsystem.h"
 
-void UFactStatics::ChangeFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32 NewValue, EFactValueChangeType ChangeType)
+void UFactStatics::ChangeFactValue( const UObject* WorldContextObject, const FFactTag Tag, int32 NewValue, EFactValueChangeType ChangeType )
 {
 	if ( WorldContextObject )
 	{
@@ -19,7 +19,7 @@ void UFactStatics::ChangeFactValue(const UObject* WorldContextObject, const FFac
 	UE_LOG( LogFact, Error, TEXT( "%hs: WorldContextObject is null" ), __FUNCTION__ );
 }
 
-void UFactStatics::ResetFactValue(const UObject* WorldContextObject, const FFactTag Tag)
+void UFactStatics::ResetFactValue( const UObject* WorldContextObject, const FFactTag Tag )
 {
 	if ( WorldContextObject )
 	{
@@ -31,7 +31,7 @@ void UFactStatics::ResetFactValue(const UObject* WorldContextObject, const FFact
 	UE_LOG( LogFact, Error, TEXT( "%hs: WorldContextObject is null" ), __FUNCTION__ );
 }
 
-bool UFactStatics::TryGetFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32& OutValue)
+bool UFactStatics::TryGetFactValue( const UObject* WorldContextObject, const FFactTag Tag, int32& OutValue )
 {
 	return  GetFactValueIfDefined( WorldContextObject, Tag, OutValue );
 }
@@ -48,7 +48,7 @@ bool UFactStatics::GetFactValueIfDefined( const UObject* WorldContextObject, con
 	return false;
 }
 
-bool UFactStatics::IsFactDefined(const UObject* WorldContextObject, const FFactTag Tag)
+bool UFactStatics::IsFactDefined( const UObject* WorldContextObject, const FFactTag Tag )
 {
 	if ( WorldContextObject )
 	{
@@ -60,8 +60,7 @@ bool UFactStatics::IsFactDefined(const UObject* WorldContextObject, const FFactT
 	return false;
 }
 
-bool UFactStatics::CheckFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32 WantedValue,
-	EFactCompareOperator Operator)
+bool UFactStatics::CheckFactValue( const UObject* WorldContextObject, const FFactTag Tag, int32 WantedValue, EFactCompareOperator Operator )
 {
 	if ( WorldContextObject )
 	{
@@ -73,7 +72,7 @@ bool UFactStatics::CheckFactValue(const UObject* WorldContextObject, const FFact
 	return false;
 }
 
-bool UFactStatics::CheckFactSimpleCondition(const UObject* WorldContextObject, FSimpleFactCondition Condition)
+bool UFactStatics::CheckFactSimpleCondition( const UObject* WorldContextObject, FSimpleFactCondition Condition )
 {
 	if ( WorldContextObject )
 	{

@@ -12,7 +12,7 @@
 
 namespace MenuExtentions_FactsPreset
 {
-	static FDelayedAutoRegisterHelper DelayedAutoRegister(EDelayedRegisterRunPhase::EndOfEngineInit, []
+	static FDelayedAutoRegisterHelper DelayedAutoRegister( EDelayedRegisterRunPhase::EndOfEngineInit, []
 	{
 		UToolMenus::RegisterStartupCallback( FSimpleMulticastDelegate::FDelegate::CreateLambda( []
 		{
@@ -46,7 +46,7 @@ namespace MenuExtentions_FactsPreset
 			}
 			
 		} ) );
-	});
+	} );
 }
 
 FText UAssetDefinition_FactPreset::GetAssetDisplayName() const
