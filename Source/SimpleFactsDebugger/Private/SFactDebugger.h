@@ -91,7 +91,7 @@ private:
 	void HandleSaveSearchClicked( const FText& SearchText );
 	void FilterItems();
 
-	static int32 CountAllFilteredItems( const FFactTreeItemPtr& ParentNode );
+	static int32 CountAllMainItems( const FFactTreeItemPtr& ParentNode );
 	static int32 CountAllFavoriteItems( const FFactTreeItemPtr& ParentNode, bool bIsParentFavorite );
 
 	// Options menu
@@ -135,17 +135,17 @@ public:
 
 private:
 	TSharedPtr< SSplitter > Splitter;
-	TSharedPtr< SFactsTreeView > FactsTreeView;
-	TSharedPtr< SFactsTreeView > FavoriteFactsTreeView;
+	TSharedPtr< SFactsTreeView > MainTreeView;
+	TSharedPtr< SFactsTreeView > FavoriteTreeView;
 	
 	FFactTreeItemPtr RootItem;
-	FFactTreeItemPtr FilteredRootItem;
-	FFactTreeItemPtr FavoritesRootItem;
+	FFactTreeItemPtr MainTreeItem;
+	FFactTreeItemPtr FavoritesTreeItem;
 
-	int32 AllFilteredFactsCount = 0;
+	int32 AllMainFactsCount = 0;
 	int32 AllFavoriteFactsCount = 0;
 	
-	int32 CurrentFilteredFactsCount = 0;
+	int32 CurrentMainFactsCount = 0;
 	int32 CurrentFavoriteFactsCount = 0;
 	
 	TSharedPtr< SFactSearchBox > SearchBox; 
@@ -158,7 +158,7 @@ private:
 
 	// Save expansion state for tag item. The expansion state does not persist between editor sessions. 
 	static TSet< FFactTag > MainExpandedFacts;
-	static TSet< FFactTag > FavoritesExpandedFacts;
+	static TSet< FFactTag > FavoriteExpandedFacts;
 	bool bPersistExpansionChange = true;
 
 	bool bDisplayOnlyPinnedItems = false;

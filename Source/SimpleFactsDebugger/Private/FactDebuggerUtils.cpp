@@ -96,7 +96,7 @@ namespace Utils
 		NewItem->InitItem();
 	}
 
-	void FilterFavoritesFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
+	void FilterFavoriteFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
 	void FilterMainFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
 
 	void CopyItemIfMainChildrenMatch( const FFactTreeItemPtr& SourceItem, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
@@ -115,7 +115,7 @@ namespace Utils
 	void CopyItemIfFavoritesChildrenMatch( const FFactTreeItemPtr& SourceItem, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
 	{
 		TArray< FFactTreeItemPtr > FilteredChildren;
-		FilterFavoritesFactItemChildren( SourceItem->Children, FilteredChildren, Options );
+		FilterFavoriteFactItemChildren( SourceItem->Children, FilteredChildren, Options );
 		if ( FilteredChildren.Num() )
 		{
 			FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
@@ -125,7 +125,7 @@ namespace Utils
 		}
 	}
 	
-	void FilterFavoritesFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
+	void FilterFavoriteFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
 	{
 		auto MatchText = [ &Options ]( const FString& TagString )
 		{

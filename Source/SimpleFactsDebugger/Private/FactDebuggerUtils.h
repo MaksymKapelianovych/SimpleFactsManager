@@ -15,7 +15,7 @@ namespace Utils
 		bool bShowFavoritesInMainTree;
 	};
 
-	void FilterFavoritesFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
+	void FilterFavoriteFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
 	void FilterMainFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
 
 	void GetLeafTags( const TSharedPtr< FGameplayTagNode >& Node, TArray< TSharedPtr< FGameplayTagNode > >& OutLeafTagNodes );

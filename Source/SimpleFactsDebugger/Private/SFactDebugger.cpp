@@ -30,7 +30,7 @@ LLM_DEFINE_TAG( UI_Facts );
 #define LOCTEXT_NAMESPACE "FactDebugger"
 
 TSet< FFactTag > SFactDebugger::MainExpandedFacts;
-TSet< FFactTag > SFactDebugger::FavoritesExpandedFacts;
+TSet< FFactTag > SFactDebugger::FavoriteExpandedFacts;
 TArray< FFactTag > SFactDebugger::FavoriteFacts;
 
 // local duplicates for UFactDebuggerSettingsLocal
@@ -291,7 +291,7 @@ void SFactDebugger::Construct( const FArguments& InArgs )
 						SNew ( SWidgetSwitcher )
 						.WidgetIndex_Lambda( [ this ]()
 						{
-							return FavoritesRootItem->Children.Num() ? 0 : 1;
+							return FavoritesTreeItem->Children.Num() ? 0 : 1;
 						} )
 
 						// ---------------------------------------------------------------------------------------------
@@ -356,7 +356,7 @@ void SFactDebugger::Construct( const FArguments& InArgs )
 						SNew ( SWidgetSwitcher )
 						.WidgetIndex_Lambda( [ this ]()
 						{
-							return FilteredRootItem->Children.Num() ? 0 : 1;
+							return MainTreeItem->Children.Num() ? 0 : 1;
 						} )
 
 						// ---------------------------------------------------------------------------------------------
@@ -433,8 +433,8 @@ void SFactDebugger::HandleGameInstanceStarted()
 		FilterItems();
 	}
 	InitItem( RootItem );
-	InitItem( FilteredRootItem );
-	InitItem( FavoritesRootItem );
+	InitItem( MainTreeItem );
+	InitItem( FavoritesTreeItem );
 }
 
 void SFactDebugger::HandleGameInstanceEnded()
@@ -446,8 +446,8 @@ void SFactDebugger::HandleGameInstanceEnded()
 	}
 
 	ResetItem( RootItem );
-	ResetItem( FilteredRootItem );
-	ResetItem( FavoritesRootItem );
+	ResetItem( MainTreeItem );
+	ResetItem( FavoritesTreeItem );
 }
 
 void SFactDebugger::InitItem( const FFactTreeItemPtr& Item )
@@ -567,8 +567,8 @@ TSharedRef< SWidget > SFactDebugger::CreateTreeLabel( const FText& InLabel ) con
 
 TSharedRef< SWidget > SFactDebugger::CreateFactsTree( bool bIsFavoritesTree )
 {
-	TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
-	FFactTreeItemPtr& ItemsSource = bIsFavoritesTree ? FavoritesRootItem : FilteredRootItem;
+	TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteTreeView : MainTreeView;
+	FFactTreeItemPtr& ItemsSource = bIsFavoritesTree ? FavoritesTreeItem : MainTreeItem;
 	
 	return SAssignNew( TreeView, SFactsTreeView )
 		.TreeItemsSource( &ItemsSource->Children )
@@ -781,7 +781,7 @@ TSharedRef< ITableRow > SFactDebugger::OnGenerateWidgetForFactsTreeView( FFactTr
 		FSlateColor GetItemColor() const
 		{
 			check( Item.IsValid() );
-			const bool bIsSelected = FactDebugger.Pin()->FactsTreeView->IsItemSelected( Item.ToSharedRef() );
+			const bool bIsSelected = FactDebugger.Pin()->MainTreeView->IsItemSelected( Item.ToSharedRef() );
 		
 			if ( IsFavorite() == false )
 			{
@@ -874,7 +874,7 @@ void SFactDebugger::OnGetChildren( FFactTreeItemPtr FactTreeItem, TArray<FFactTr
 
 void SFactDebugger::HandleExpansionChanged( FFactTreeItemPtr FactTreeItem, bool bInExpanded, bool bRecursive, bool bIsFavoritesTree )
 {
-	TSet< FFactTag >& ExpandedFacts = bIsFavoritesTree ? FavoritesExpandedFacts : MainExpandedFacts;
+	TSet< FFactTag >& ExpandedFacts = bIsFavoritesTree ? FavoriteExpandedFacts : MainExpandedFacts;
 	
 	if ( bPersistExpansionChange && FactTreeItem->Children.Num() )
     {
@@ -890,7 +890,7 @@ void SFactDebugger::HandleExpansionChanged( FFactTreeItemPtr FactTreeItem, bool 
     	if ( bRecursive )
     	{
     		// if it is not recursive, then it is already expanded
-    		TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
+    		TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteTreeView : MainTreeView;
     		TreeView->SetItemExpansion( FactTreeItem, bInExpanded );
     		
     		for ( FFactTreeItemPtr Child : FactTreeItem->Children )
@@ -903,9 +903,9 @@ void SFactDebugger::HandleExpansionChanged( FFactTreeItemPtr FactTreeItem, bool 
 
 FText SFactDebugger::GetFilterStatusText( bool bIsFavoritesTree ) const
 {
-	int32 AllFactsCount = bIsFavoritesTree ? AllFavoriteFactsCount : AllFilteredFactsCount;
-	int32 CurrentFactCount = bIsFavoritesTree ? CurrentFavoriteFactsCount : CurrentFilteredFactsCount;
-	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
+	int32 AllFactsCount = bIsFavoritesTree ? AllFavoriteFactsCount : AllMainFactsCount;
+	int32 CurrentFactCount = bIsFavoritesTree ? CurrentFavoriteFactsCount : CurrentMainFactsCount;
+	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteTreeView : MainTreeView;
 
 	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && ( Settings::bShowOnlyDefinedFacts == false || bIsPlaying == false ) )
 	{
@@ -923,7 +923,7 @@ FText SFactDebugger::GetFilterStatusText( bool bIsFavoritesTree ) const
 
 FSlateColor SFactDebugger::GetFilterStatusTextColor( bool bIsFavoritesTree ) const
 {
-	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
+	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteTreeView : MainTreeView;
 
 	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && ( Settings::bShowOnlyDefinedFacts == false || bIsPlaying == false ) )
 	{
@@ -1173,7 +1173,7 @@ TSharedPtr<SWidget> SFactDebugger::HandleGenerateFavoritesContextMenu()
 			)
 		);
 
-		TArray< FFactTreeItemPtr > SelectedItems = FavoriteFactsTreeView->GetSelectedItems();
+		TArray< FFactTreeItemPtr > SelectedItems = FavoriteTreeView->GetSelectedItems();
 		if ( SelectedItems.Num() == 1 && HasFavoritesRecursive( SelectedItems[ 0 ] ) )
 		{
 			MenuBuilder.AddMenuEntry(
@@ -1183,7 +1183,7 @@ TSharedPtr<SWidget> SFactDebugger::HandleGenerateFavoritesContextMenu()
 				FUIAction(
 					FExecuteAction::CreateLambda( [ this ]()
 					{
-						TArray< FFactTreeItemPtr > SelectedItems = FavoriteFactsTreeView->GetSelectedItems();
+						TArray< FFactTreeItemPtr > SelectedItems = FavoriteTreeView->GetSelectedItems();
 						ClearFavoritesRecursive( SelectedItems[ 0 ] );
 						SaveSettings();
 						PostFavoritesChanged();
@@ -1230,7 +1230,7 @@ bool SFactDebugger::HasFavoritesRecursive( const FFactTreeItemPtr& Item ) const
 
 void SFactDebugger::PostFavoritesChanged()
 {
-	AllFilteredFactsCount = CountAllFilteredItems( RootItem );
+	AllMainFactsCount = CountAllMainItems( RootItem );
 	AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
 
 	FilterItems();
@@ -1281,8 +1281,8 @@ void SFactDebugger::FilterItems()
 {
 	LLM_SCOPE_BYTAG( UI_Facts );
 
-	FilteredRootItem.Reset();
-	FavoritesRootItem.Reset();
+	MainTreeItem.Reset();
+	FavoritesTreeItem.Reset();
 
 	// Parse filter strings
 	TArray< FString > ActiveTogglesText;
@@ -1298,8 +1298,8 @@ void SFactDebugger::FilterItems()
 	CurrentSearchText.ToString().ParseIntoArray( Tokens, TEXT(  " "  ) );
 
 	// Reset containers
-	FilteredRootItem = MakeShared< FFactTreeItem >();
-	FavoritesRootItem = MakeShared< FFactTreeItem >();
+	MainTreeItem = MakeShared< FFactTreeItem >();
+	FavoritesTreeItem = MakeShared< FFactTreeItem >();
 
 	// Filtering
 	Utils::FFilterOptions Options{
@@ -1309,32 +1309,32 @@ void SFactDebugger::FilterItems()
 		Settings::bShowOnlyDefinedFacts,
 		Settings::bShowFavoritesInMainTree
 	};
-	Utils::FilterMainFactItemChildren( RootItem->Children, FilteredRootItem->Children, Options );
-	Utils::FilterFavoritesFactItemChildren( RootItem->Children, FavoritesRootItem->Children,Options );
+	Utils::FilterMainFactItemChildren( RootItem->Children, MainTreeItem->Children, Options );
+	Utils::FilterFavoriteFactItemChildren( RootItem->Children, FavoritesTreeItem->Children,Options );
 
-	CurrentFilteredFactsCount = CountAllFilteredItems( FilteredRootItem );
-	CurrentFavoriteFactsCount = CountAllFavoriteItems( FavoritesRootItem, false );
+	CurrentMainFactsCount = CountAllMainItems( MainTreeItem );
+	CurrentFavoriteFactsCount = CountAllFavoriteItems( FavoritesTreeItem, false );
 	
-	FactsTreeView->SetTreeItemsSource( &FilteredRootItem->Children );
-	FavoriteFactsTreeView->SetTreeItemsSource( &FavoritesRootItem->Children );
+	MainTreeView->SetTreeItemsSource( &MainTreeItem->Children );
+	FavoriteTreeView->SetTreeItemsSource( &FavoritesTreeItem->Children );
 
 	if ( ( Settings::bShowOnlyDefinedFacts && bIsPlaying ) || ActiveTogglesText.Num() || Tokens.Num() )
 	{
-		SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, true, false );
-		SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, true, false );
+		SetItemsExpansion( MainTreeView, MainTreeItem->Children, true, false );
+		SetItemsExpansion( FavoriteTreeView, FavoritesTreeItem->Children, true, false );
 	}
 	else
 	{
 		// RestoreExpansionState();
-		SetDefaultItemsExpansion( FactsTreeView, FilteredRootItem->Children, SFactDebugger::MainExpandedFacts );
-		SetDefaultItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, SFactDebugger::FavoritesExpandedFacts );
+		SetDefaultItemsExpansion( MainTreeView, MainTreeItem->Children, SFactDebugger::MainExpandedFacts );
+		SetDefaultItemsExpansion( FavoriteTreeView, FavoritesTreeItem->Children, SFactDebugger::FavoriteExpandedFacts );
 	}
 
-	FactsTreeView->RequestTreeRefresh();
-	FavoriteFactsTreeView->RequestTreeRefresh();
+	MainTreeView->RequestTreeRefresh();
+	FavoriteTreeView->RequestTreeRefresh();
 }
 
-int32 SFactDebugger::CountAllFilteredItems( const FFactTreeItemPtr& ParentNode )
+int32 SFactDebugger::CountAllMainItems( const FFactTreeItemPtr& ParentNode )
 {
 	int32 Result = 0;
 	
@@ -1345,7 +1345,7 @@ int32 SFactDebugger::CountAllFilteredItems( const FFactTreeItemPtr& ParentNode )
 
 	for ( FFactTreeItemPtr Child : ParentNode->Children )
 	{
-		if ( int32 Temp = CountAllFilteredItems( Child ) )
+		if ( int32 Temp = CountAllMainItems( Child ) )
 		{
 			Result += Temp;
 		}
@@ -1406,12 +1406,12 @@ void SFactDebugger::HandleExpandAllClicked( bool bExpandMain, bool bExpandFavori
 {
 	if ( bExpandMain )
 	{
-		SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, true, true );
+		SetItemsExpansion( MainTreeView, MainTreeItem->Children, true, true );
 	}
 
 	if ( bExpandFavorites )
 	{
-		SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, true, true );
+		SetItemsExpansion( FavoriteTreeView, FavoritesTreeItem->Children, true, true );
 	}
 	
 	OptionsButton->SetIsOpen( false );
@@ -1421,12 +1421,12 @@ void SFactDebugger::HandleCollapseAllClicked( bool bCollapseMain, bool bCollapse
 {
 	if ( bCollapseMain )
 	{
-		SetItemsExpansion( FactsTreeView, FilteredRootItem->Children, false, true );
+		SetItemsExpansion( MainTreeView, MainTreeItem->Children, false, true );
 	}
 
 	if ( bCollapseFavorites )
 	{
-		SetItemsExpansion( FavoriteFactsTreeView, FavoritesRootItem->Children, false, true );
+		SetItemsExpansion( FavoriteTreeView, FavoritesTreeItem->Children, false, true );
 	}
 	
 	OptionsButton->SetIsOpen( false );
@@ -1453,18 +1453,18 @@ void SFactDebugger::RestoreExpansionState()
 	for ( const FFactTag& FactTag : MainExpandedFacts )
 	{
 		Path.Reset();
-		if ( FindItemByTagRecursive( FilteredRootItem, FactTag, Path) )
+		if ( FindItemByTagRecursive( MainTreeItem, FactTag, Path) )
 		{
-			FactsTreeView->SetItemExpansion( Path.Last(), true );
+			MainTreeView->SetItemExpansion( Path.Last(), true );
 		}
 	}
 
-	for ( const FFactTag& FactTag : FavoritesExpandedFacts )
+	for ( const FFactTag& FactTag : FavoriteExpandedFacts )
 	{
 		Path.Reset();
-		if ( FindItemByTagRecursive( FavoritesRootItem, FactTag, Path ) )
+		if ( FindItemByTagRecursive( FavoritesTreeItem, FactTag, Path ) )
 		{
-			FavoriteFactsTreeView->SetItemExpansion( Path.Last(), true );
+			FavoriteTreeView->SetItemExpansion( Path.Last(), true );
 		}
 	}
 }
@@ -1607,8 +1607,8 @@ void SFactDebugger::BuildFactTreeItems()
 	LLM_SCOPE_BYTAG( UI_Facts );
 
 	RootItem = MakeShared< FFactTreeItem >();
-	FilteredRootItem = RootItem;
-	FavoritesRootItem = MakeShared< FFactTreeItem >();
+	MainTreeItem = RootItem;
+	FavoritesTreeItem = MakeShared< FFactTreeItem >();
 
 	UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
 	if ( Settings::bShowOnlyLeafFacts )
@@ -1677,11 +1677,11 @@ void SFactDebugger::HandleFactValueChanged( FFactTag FactTag, int32 NewValue )
 
 	// if item is in some tree - skip
 	TArray< FFactTreeItemPtr > Path;
-	if ( FindItemByTagRecursive( FavoritesRootItem, FactTag, Path ) )
+	if ( FindItemByTagRecursive( FavoritesTreeItem, FactTag, Path ) )
 	{
 		return;
 	}
-	if ( FindItemByTagRecursive( FilteredRootItem, FactTag, Path ) )
+	if ( FindItemByTagRecursive( MainTreeItem, FactTag, Path ) )
 	{
 		return;
 	}
