@@ -30,11 +30,19 @@ public:
 	static void ResetFactValue(const UObject* WorldContextObject, const FFactTag Tag);
 
 	/**
+	 * If Fact is not defined, then OutValue is also undefined and should not be used! It is necessary to check if "Is Defined?" is true or false
 	 * @return false if fact is undefined or WorldContextObject is null
 	 */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Facts, meta = (WorldContext = "WorldContextObject", ReturnDisplayName = "Is Defined?"))
-	[[nodiscard]] static bool TryGetFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32& OutValue);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Facts, meta = (WorldContext = "WorldContextObject", ReturnDisplayName = "Is Defined?", DeprecatedFunction, DeprecationMessage = "Use GetFactValueIfDefined instead"))
+	[[nodiscard, deprecated("Use GetFactValueIfDefined instead")]] static bool TryGetFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32& OutValue);
 
+	/**
+	 * If Fact is not defined, then OutValue is also undefined and should not be used!
+	 * @return false if fact is undefined or WorldContextObject is null
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = Facts, meta = (WorldContext = "WorldContextObject", ExpandBoolAsExecs = "ReturnValue"))
+	[[nodiscard]] static bool GetFactValueIfDefined(const UObject* WorldContextObject, const FFactTag Tag, int32& OutValue);
+	
 	/**
 	 * @return false if WorldContextObject is null
 	 */

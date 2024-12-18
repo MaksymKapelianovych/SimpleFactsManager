@@ -34,17 +34,28 @@ public:
 	void ResetFactValue(const FFactTag Tag);
 
 	/**
+	 * If Fact is not defined, then OutValue is also undefined and should not be used!
 	 * @return false if fact is undefined
 	 */
-	[[nodiscard]] bool TryGetFactValue(const FFactTag Tag, int32& OutValue) const;
+	[[nodiscard]] bool GetFactValueIfDefined(const FFactTag Tag, int32& OutValue) const;
+	/**
+	 * If Fact is not defined, then OutValue is also undefined and should not be used! It is necessary to check if return value is true or false
+	 * @return false if fact is undefined
+	 */
+	[[nodiscard, deprecated("Use GetFactValueIfDefined instead")]] bool TryGetFactValue(const FFactTag Tag, int32& OutValue) const;
 
 	/**
-	 * More specialized version of CheckFactValue, which only tell if fact is defined or not
+	 * Returns true if Condition passes.
+	 * If condition explicitly checks for value, returns false if value is different or fact is undefined.
 	 */ 
-	[[nodiscard]] bool IsFactDefined(const FFactTag Tag) const;
 	[[nodiscard]] bool CheckFactSimpleCondition(const FSimpleFactCondition& Condition) const;
 	[[nodiscard]] bool CheckFactCondition(const FFactCondition& Condition) const;
 
+	/**
+	 * More specialized version of CheckFactSimpleCondition, which only tell if fact is defined or not.
+	 */ 
+	[[nodiscard]] bool IsFactDefined(const FFactTag Tag) const;
+	
 	FFactChanged& GetOnFactValueChangedDelegate(FFactTag Tag);
 	FFactChanged& GetOnFactBecameDefinedDelegate(FFactTag Tag);
 

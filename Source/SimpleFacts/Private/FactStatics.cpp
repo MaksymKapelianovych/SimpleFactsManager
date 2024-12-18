@@ -33,10 +33,15 @@ void UFactStatics::ResetFactValue(const UObject* WorldContextObject, const FFact
 
 bool UFactStatics::TryGetFactValue(const UObject* WorldContextObject, const FFactTag Tag, int32& OutValue)
 {
+	return  GetFactValueIfDefined( WorldContextObject, Tag, OutValue );
+}
+
+bool UFactStatics::GetFactValueIfDefined( const UObject* WorldContextObject, const FFactTag Tag, int32& OutValue )
+{
 	if ( WorldContextObject )
 	{
 		const UFactSubsystem& FactSubsystem = UFactSubsystem::Get( WorldContextObject );
-		return FactSubsystem.TryGetFactValue( Tag, OutValue );
+		return FactSubsystem.GetFactValueIfDefined( Tag, OutValue );
 	}
 
 	UE_LOG( LogFact, Error, TEXT( "%hs: WorldContextObject is null" ), __FUNCTION__ );

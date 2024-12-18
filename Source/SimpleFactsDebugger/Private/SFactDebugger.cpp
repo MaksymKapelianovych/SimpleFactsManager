@@ -323,7 +323,7 @@ void FFactTreeItem::InitItem()
 		Handle = FactSubsystem->GetOnFactValueChangedDelegate( Tag ).AddSP( this, &FFactTreeItem::HandleValueChanged );
 		
 		int32 FactValue;
-		if ( FactSubsystem->TryGetFactValue( Tag, FactValue ) )
+		if ( FactSubsystem->GetFactValueIfDefined( Tag, FactValue ) )
 		{
 			Value = FactValue;
 		}

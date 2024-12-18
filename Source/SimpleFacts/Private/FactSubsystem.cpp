@@ -70,7 +70,7 @@ void UFactSubsystem::ResetFactValue(const FFactTag Tag)
 	}
 }
 
-bool UFactSubsystem::TryGetFactValue(const FFactTag Tag, int32& OutValue) const
+bool UFactSubsystem::GetFactValueIfDefined( const FFactTag Tag, int32& OutValue ) const
 {
 	if ( Tag.IsValid() == false )
 	{
@@ -86,15 +86,9 @@ bool UFactSubsystem::TryGetFactValue(const FFactTag Tag, int32& OutValue) const
 	return false;
 }
 
-bool UFactSubsystem::IsFactDefined(const FFactTag Tag) const
+bool UFactSubsystem::TryGetFactValue(const FFactTag Tag, int32& OutValue) const
 {
-	if ( Tag.IsValid() == false )
-	{
-		UE_LOG( LogFact, Error, TEXT( "Passed fact tag %s is not valid" ), *Tag.ToString() );
-		return false;
-	}
-	
-	return DefinedFacts.Contains( Tag );
+	return GetFactValueIfDefined( Tag, OutValue );
 }
 
 bool UFactSubsystem::CheckFactSimpleCondition(const FSimpleFactCondition& Condition) const
@@ -134,6 +128,17 @@ bool UFactSubsystem::CheckFactSimpleCondition(const FSimpleFactCondition& Condit
 bool UFactSubsystem::CheckFactCondition(const FFactCondition& Condition) const
 {
 	return Condition.IsValid() && Condition.CheckCondition( *this );
+}
+
+bool UFactSubsystem::IsFactDefined(const FFactTag Tag) const
+{
+	if ( Tag.IsValid() == false )
+	{
+		UE_LOG( LogFact, Error, TEXT( "Passed fact tag %s is not valid" ), *Tag.ToString() );
+		return false;
+	}
+	
+	return DefinedFacts.Contains( Tag );
 }
 
 FFactChanged& UFactSubsystem::GetOnFactValueChangedDelegate(FFactTag Tag)
@@ -256,7 +261,7 @@ FAutoConsoleCommandWithWorldAndArgs UFactSubsystem::GetFactValueCommand
 			}
 
 			int32 FactValue = 0;
-			if ( FactSubsystem.TryGetFactValue( Tag, FactValue) )
+			if ( FactSubsystem.GetFactValueIfDefined( Tag, FactValue) )
 			{
 				UE_LOG( LogFact, Log, TEXT( "%s: %d" ), *Tag.ToString(), FactValue );
 				return;
