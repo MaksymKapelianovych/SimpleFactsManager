@@ -5,6 +5,7 @@
 
 #include "FactDebuggerSettingsLocal.h"
 #include "FactDebuggerStyle.h"
+#include "FactDebuggerUtils.h"
 #include "Styling/StyleColors.h"
 
 #include "FactPreset.h"
@@ -16,7 +17,6 @@
 #include "SFactPresetPicker.h"
 #include "SimpleFactsDebugger.h"
 #include "SlateOptMacros.h"
-#include "Algo/AllOf.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Widgets/Input/SNumericEntryBox.h"
 #include "Widgets/Layout/SWidgetSwitcher.h"
@@ -51,251 +51,6 @@ namespace Settings
 		 \
 		RebuildFactTreeItems(); \
 	}
-
-
-namespace Utils
-{
-	int32 AllFilteredFactsCount = 0;
-	int32 AllFavoriteFactsCount = 0;
-	
-	int32 CurrentFilteredFactsCount = 0;
-	int32 CurrentFavoriteFactsCount = 0;
-	
-	
-	bool MatchSearchToggle( const TArray< FString >& SearchStrings, const FString& TagString )
-	{
-		if ( SearchStrings.IsEmpty() )
-		{
-			return true;
-		}
-		
-		for ( const FString& SearchString : SearchStrings )
-		{
-			TArray< FString > Tokens;
-			SearchString.ParseIntoArray( Tokens, TEXT( " " ) );
-
-			auto Projection = [ TagString ]( const FString& Token ) { return TagString.Contains( Token ); };
-			if ( Algo::AllOf( Tokens, Projection ) )
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	bool MatchSearchBox( const TArray< FString >& SearchStrings, const FString& TagString )
-	{
-		if ( SearchStrings.IsEmpty() )
-		{
-			return true;
-		}
-		
-		for ( const FString& SearchString : SearchStrings )
-		{
-			if ( TagString.Contains( SearchString ) == false )
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	enum class ETagMatchType
-	{
-		None,
-		Parent,
-		Child,
-		Full
-	};
-	
-	ETagMatchType MatchFavorites( FFactTag CheckedTag )
-	{
-		bool bParentMatch = false;
-		bool bChildMatch = false;
-			
-		for ( FFactTag FavoriteFact : SFactDebugger::FavoriteFacts )
-		{
-			if ( CheckedTag == FavoriteFact ) {	return ETagMatchType::Full; }
-
-			if ( CheckedTag.MatchesTag( FavoriteFact ) ) { bParentMatch = true; }
-			else if ( FavoriteFact.MatchesTag( CheckedTag ) ) { bChildMatch = true; }
-		}
-
-		if ( bParentMatch ) { return ETagMatchType::Parent; }
-		else if ( bChildMatch ) { return ETagMatchType::Child; }
-
-		return ETagMatchType::None;
-	};
-
-	struct FFilterOptions
-	{
-		TArray< FString > SearchToggleStrings;
-		TArray< FString > SearchBarStrings;
-		bool bIsPlaying;
-	};
-
-	void FilterFavoritesFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
-	void FilterMainFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options );
-
-	void CopyItem( const FFactTreeItemPtr& SourceItem, TArray< FFactTreeItemPtr >& OutDestArray )
-	{
-		FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
-		*NewItem = *SourceItem;
-		NewItem->InitItem();
-	}
-
-	void CopyItemIfMainChildrenMatch( const FFactTreeItemPtr& SourceItem, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
-	{
-		TArray< FFactTreeItemPtr > FilteredChildren;
-		FilterMainFactItemChildren( SourceItem->Children, FilteredChildren, Options );
-		if ( FilteredChildren.Num() )
-		{
-			FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
-			*NewItem = *SourceItem;
-			NewItem->InitItem();
-			NewItem->Children = FilteredChildren;
-		}
-	}
-
-	void CopyItemIfFavoritesChildrenMatch( const FFactTreeItemPtr& SourceItem, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
-	{
-		TArray< FFactTreeItemPtr > FilteredChildren;
-		FilterFavoritesFactItemChildren( SourceItem->Children, FilteredChildren, Options );
-		if ( FilteredChildren.Num() )
-		{
-			FFactTreeItemPtr& NewItem = OutDestArray.Add_GetRef( MakeShared< FFactTreeItem >() );
-			*NewItem = *SourceItem;
-			NewItem->InitItem();
-			NewItem->Children = FilteredChildren;
-		}
-	}
-	
-	void FilterFavoritesFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
-	{
-		auto MatchText = [ &Options ]( const FString& TagString )
-		{
-			return MatchSearchBox( Options.SearchBarStrings, TagString ) && MatchSearchToggle( Options.SearchToggleStrings, TagString );
-		};
-
-		for ( const FFactTreeItemPtr& SourceItem : SourceArray )
-		{
-			bool bNeedsFilteringByText = false;
-
-			if ( Settings::bShowOnlyDefinedFacts && Options.bIsPlaying )
-			{
-				if ( SourceItem->Children.Num() > 0 )
-				{
-					CopyItemIfFavoritesChildrenMatch( SourceItem, OutDestArray, Options );
-					continue;
-				}
-				else if ( SourceItem->Value.IsSet() == false )
-				{
-					continue;
-				}
-			}
-
-			switch ( MatchFavorites( SourceItem->Tag ) ) {
-			case ETagMatchType::None: // early return
-				continue;
-			case ETagMatchType::Parent: // we only get here if option "Show only Defined Facts" is checked
-				bNeedsFilteringByText = true;
-				break;
-			case ETagMatchType::Child: // straight to filtering children, even if this item matched - it is not favorite by itself
-				{
-					CopyItemIfFavoritesChildrenMatch( SourceItem, OutDestArray, Options );
-				}
-				break;
-			case ETagMatchType::Full:
-				bNeedsFilteringByText = true;
-				break;
-			}
-
-			if ( bNeedsFilteringByText )
-			{
-				if ( MatchText( SourceItem->Tag.ToString() ) ) // full match by favorites and by search texts
-				{
-					CopyItem( SourceItem, OutDestArray );
-				}
-			}
-		}
-	}
-
-	void FilterMainFactItemChildren( const TArray< FFactTreeItemPtr >& SourceArray, TArray< FFactTreeItemPtr >& OutDestArray, const FFilterOptions& Options )
-	{
-		auto MatchText = [ &Options ]( const FString& TagString )
-		{
-			return MatchSearchBox( Options.SearchBarStrings, TagString ) && MatchSearchToggle( Options.SearchToggleStrings, TagString );
-		};
-			
-		for ( const FFactTreeItemPtr& SourceItem : SourceArray )
-		{
-			bool bNeedsFilteringByText = false;
-
-			if ( Settings::bShowOnlyDefinedFacts && Options.bIsPlaying )
-			{
-				if ( SourceItem->Children.Num() > 0 ) // even if this item has value - children can be without value and therefore shoundn't be visible
-				{
-					CopyItemIfMainChildrenMatch( SourceItem, OutDestArray, Options );
-					continue;
-				}
-				else if ( SourceItem->Value.IsSet() == false )
-				{
-					continue;
-				}
-			}
-
-			switch ( MatchFavorites( SourceItem->Tag ) )
-			{
-			case ETagMatchType::None:
-				bNeedsFilteringByText = true;
-				break;
-			case ETagMatchType::Parent:
-				if ( Settings::bShowFavoritesInMainTree ){	bNeedsFilteringByText = true; }
-				else { continue; }
-				break;
-			case ETagMatchType::Child:
-				{
-					CopyItemIfMainChildrenMatch( SourceItem, OutDestArray, Options );
-				}
-				break;
-			case ETagMatchType::Full:
-				if ( Settings::bShowFavoritesInMainTree ){	bNeedsFilteringByText = true; }
-				else { continue; }
-				break;
-			}
-
-			if ( bNeedsFilteringByText )
-			{
-				if ( MatchText( SourceItem->Tag.ToString() ) )
-				{
-					CopyItem( SourceItem, OutDestArray );
-				}
-				else
-				{
-					CopyItemIfMainChildrenMatch( SourceItem, OutDestArray, Options );
-				}
-			}
-		}
-	}
-
-
-	void GetLeafTags( const TSharedPtr< FGameplayTagNode >& Node, TArray< TSharedPtr< FGameplayTagNode > >& OutLeafTagNodes )
-	{
-		if ( Node->GetChildTagNodes().IsEmpty() )
-		{
-			OutLeafTagNodes.Add( Node );
-			return;
-		}
-
-		for ( TSharedPtr< FGameplayTagNode > Child : Node->GetChildTagNodes() )
-		{
-			GetLeafTags( Child, OutLeafTagNodes );
-		}
-	};
-}
-
 
 FFactTreeItem::~FFactTreeItem()
 {
@@ -668,74 +423,6 @@ SFactDebugger::~SFactDebugger()
 #endif
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceStarted.Unbind();
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceEnded.Unbind();
-}
-
-int32 SFactDebugger::CountAllFilteredItems( const FFactTreeItemPtr& ParentNode )
-{
-	int32 Result = 0;
-	
-	if ( Settings::bShowFavoritesInMainTree == false && SFactDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
-	{
-		return Result;
-	}
-
-	for ( FFactTreeItemPtr Child : ParentNode->Children )
-	{
-		if ( int32 Temp = CountAllFilteredItems( Child ) )
-		{
-			Result += Temp;
-		}
-	}
-
-	if ( Settings::bShowOnlyLeafFacts && ParentNode->Children.Num() > 0 )
-	{
-		return Result;
-	}
-
-	if ( ParentNode->Tag.IsValid() )
-	{
-		Result++;
-	}
-
-	return Result;
-}
-
-int32 SFactDebugger::CountAllFavoriteItems( const FFactTreeItemPtr& ParentNode, bool bIsParentFavorite )
-{
-	if ( SFactDebugger::FavoriteFacts.IsEmpty() )
-	{
-		return 0;
-	}
-
-	const UFactDebuggerSettingsLocal* Settings = GetDefault< UFactDebuggerSettingsLocal >();
-	int32 Result = 0;
-	
-	if ( bIsParentFavorite == false && SFactDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
-	{
-		bIsParentFavorite = true;
-	}
-
-	bool bHasFavoriteChild = false;
-	for ( FFactTreeItemPtr Child : ParentNode->Children )
-	{
-		if ( int32 Temp = CountAllFavoriteItems( Child, bIsParentFavorite ) )
-		{
-			bHasFavoriteChild = true;
-			Result += Temp;
-		}
-	}
-
-	if ( Settings::bShowOnlyLeafFacts && ParentNode->Children.Num() > 0 )
-	{
-		return Result;
-	}
-	
-	if ( ParentNode->Tag.IsValid() && ( bIsParentFavorite || bHasFavoriteChild ) )
-	{
-		Result++;
-	}
-
-	return Result;
 }
 
 void SFactDebugger::HandleGameInstanceStarted()
@@ -1216,8 +903,8 @@ void SFactDebugger::HandleExpansionChanged( FFactTreeItemPtr FactTreeItem, bool 
 
 FText SFactDebugger::GetFilterStatusText( bool bIsFavoritesTree ) const
 {
-	int32 AllFactsCount = bIsFavoritesTree ? Utils::AllFavoriteFactsCount : Utils::AllFilteredFactsCount;
-	int32 CurrentFactCount = bIsFavoritesTree ? Utils::CurrentFavoriteFactsCount : Utils::CurrentFilteredFactsCount;
+	int32 AllFactsCount = bIsFavoritesTree ? AllFavoriteFactsCount : AllFilteredFactsCount;
+	int32 CurrentFactCount = bIsFavoritesTree ? CurrentFavoriteFactsCount : CurrentFilteredFactsCount;
 	const TSharedPtr< SFactsTreeView >& TreeView = bIsFavoritesTree ? FavoriteFactsTreeView : FactsTreeView;
 
 	if ( CurrentSearchText.IsEmpty() && IsAnySearchToggleActive() == false && ( Settings::bShowOnlyDefinedFacts == false || bIsPlaying == false ) )
@@ -1481,7 +1168,7 @@ TSharedPtr<SWidget> SFactDebugger::HandleGenerateFavoritesContextMenu()
 				} ),
 				FCanExecuteAction::CreateLambda( [ this ]()
 				{
-					return Utils::AllFavoriteFactsCount > 0;
+					return AllFavoriteFactsCount > 0;
 				} )
 			)
 		);
@@ -1543,8 +1230,8 @@ bool SFactDebugger::HasFavoritesRecursive( const FFactTreeItemPtr& Item ) const
 
 void SFactDebugger::PostFavoritesChanged()
 {
-	Utils::AllFilteredFactsCount = CountAllFilteredItems( RootItem );
-	Utils::AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
+	AllFilteredFactsCount = CountAllFilteredItems( RootItem );
+	AllFavoriteFactsCount = CountAllFavoriteItems( RootItem, false );
 
 	FilterItems();
 }
@@ -1615,12 +1302,18 @@ void SFactDebugger::FilterItems()
 	FavoritesRootItem = MakeShared< FFactTreeItem >();
 
 	// Filtering
-	Utils::FFilterOptions Options{ ActiveTogglesText, Tokens, bIsPlaying };
+	Utils::FFilterOptions Options{
+		ActiveTogglesText,
+		Tokens,
+		bIsPlaying,
+		Settings::bShowOnlyDefinedFacts,
+		Settings::bShowFavoritesInMainTree
+	};
 	Utils::FilterMainFactItemChildren( RootItem->Children, FilteredRootItem->Children, Options );
 	Utils::FilterFavoritesFactItemChildren( RootItem->Children, FavoritesRootItem->Children,Options );
 
-	Utils::CurrentFilteredFactsCount = CountAllFilteredItems( FilteredRootItem );
-	Utils::CurrentFavoriteFactsCount = CountAllFavoriteItems( FavoritesRootItem, false );
+	CurrentFilteredFactsCount = CountAllFilteredItems( FilteredRootItem );
+	CurrentFavoriteFactsCount = CountAllFavoriteItems( FavoritesRootItem, false );
 	
 	FactsTreeView->SetTreeItemsSource( &FilteredRootItem->Children );
 	FavoriteFactsTreeView->SetTreeItemsSource( &FavoritesRootItem->Children );
@@ -1639,6 +1332,74 @@ void SFactDebugger::FilterItems()
 
 	FactsTreeView->RequestTreeRefresh();
 	FavoriteFactsTreeView->RequestTreeRefresh();
+}
+
+int32 SFactDebugger::CountAllFilteredItems( const FFactTreeItemPtr& ParentNode )
+{
+	int32 Result = 0;
+	
+	if ( Settings::bShowFavoritesInMainTree == false && SFactDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
+	{
+		return Result;
+	}
+
+	for ( FFactTreeItemPtr Child : ParentNode->Children )
+	{
+		if ( int32 Temp = CountAllFilteredItems( Child ) )
+		{
+			Result += Temp;
+		}
+	}
+
+	if ( Settings::bShowOnlyLeafFacts && ParentNode->Children.Num() > 0 )
+	{
+		return Result;
+	}
+
+	if ( ParentNode->Tag.IsValid() )
+	{
+		Result++;
+	}
+
+	return Result;
+}
+
+int32 SFactDebugger::CountAllFavoriteItems( const FFactTreeItemPtr& ParentNode, bool bIsParentFavorite )
+{
+	if ( SFactDebugger::FavoriteFacts.IsEmpty() )
+	{
+		return 0;
+	}
+
+	const UFactDebuggerSettingsLocal* Settings = GetDefault< UFactDebuggerSettingsLocal >();
+	int32 Result = 0;
+	
+	if ( bIsParentFavorite == false && SFactDebugger::FavoriteFacts.Contains( ParentNode->Tag ) )
+	{
+		bIsParentFavorite = true;
+	}
+
+	bool bHasFavoriteChild = false;
+	for ( FFactTreeItemPtr Child : ParentNode->Children )
+	{
+		if ( int32 Temp = CountAllFavoriteItems( Child, bIsParentFavorite ) )
+		{
+			bHasFavoriteChild = true;
+			Result += Temp;
+		}
+	}
+
+	if ( Settings::bShowOnlyLeafFacts && ParentNode->Children.Num() > 0 )
+	{
+		return Result;
+	}
+	
+	if ( ParentNode->Tag.IsValid() && ( bIsParentFavorite || bHasFavoriteChild ) )
+	{
+		Result++;
+	}
+
+	return Result;
 }
 
 void SFactDebugger::HandleExpandAllClicked( bool bExpandMain, bool bExpandFavorites )

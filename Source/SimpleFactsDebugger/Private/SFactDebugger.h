@@ -51,10 +51,6 @@ public:
 
 	virtual void Construct( const FArguments& InArgs );
 	virtual ~SFactDebugger() override;
-
-	// Todo: maybe move to utils
-	static int32 CountAllFilteredItems( const FFactTreeItemPtr& ParentNode );
-	static int32 CountAllFavoriteItems( const FFactTreeItemPtr& ParentNode, bool bIsParentFavorite );
 	
 private:
 	// Play started
@@ -94,6 +90,9 @@ private:
 	void HandleSearchTextChanged( const FText& SearchText );
 	void HandleSaveSearchClicked( const FText& SearchText );
 	void FilterItems();
+
+	static int32 CountAllFilteredItems( const FFactTreeItemPtr& ParentNode );
+	static int32 CountAllFavoriteItems( const FFactTreeItemPtr& ParentNode, bool bIsParentFavorite );
 
 	// Options menu
 	void HandleExpandAllClicked( bool bExpandMain, bool bExpandFavorites );
@@ -142,6 +141,12 @@ private:
 	FFactTreeItemPtr RootItem;
 	FFactTreeItemPtr FilteredRootItem;
 	FFactTreeItemPtr FavoritesRootItem;
+
+	int32 AllFilteredFactsCount = 0;
+	int32 AllFavoriteFactsCount = 0;
+	
+	int32 CurrentFilteredFactsCount = 0;
+	int32 CurrentFavoriteFactsCount = 0;
 	
 	TSharedPtr< SFactSearchBox > SearchBox; 
 	TSharedPtr< SComboButton > OptionsButton;
