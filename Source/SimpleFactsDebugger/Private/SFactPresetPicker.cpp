@@ -59,15 +59,11 @@ void SFactPresetPicker::Construct( const FArguments& InArgs, const TArray< FAsse
 		]
 	];
 
+	RegisterActiveTimer( 0.f, FWidgetActiveTimerDelegate::CreateSP( this, &SFactPresetPicker::SetFocusPostConstruct ) );
 	HandleSearchTextChanged( FText::GetEmpty() );
 }
 
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
-
-TSharedPtr<SWidget> SFactPresetPicker::GetWidgetToFocusOnOpen()
-{
-	return SearchBox;
-}
 
 void SFactPresetPicker::CachePresetsData( const TArray< FAssetData >& PresetsData )
 {
@@ -193,6 +189,20 @@ void SFactPresetPicker::HandleSortListView( EColumnSortPriority::Type SortPriori
 EColumnSortMode::Type SFactPresetPicker::GetColumnSortMode() const
 {
 	return CurrentSortMode;
+}
+
+EActiveTimerReturnType SFactPresetPicker::SetFocusPostConstruct( double InCurrentTime, float InDeltaTime ) const
+{
+	if ( SearchBox.IsValid() )
+	{
+		FWidgetPath WidgetToFocusPath;
+		FSlateApplication::Get().GeneratePathToWidgetUnchecked( SearchBox.ToSharedRef(), WidgetToFocusPath );
+		FSlateApplication::Get().SetKeyboardFocus( WidgetToFocusPath, EFocusCause::SetDirectly );
+		WidgetToFocusPath.GetWindow()->SetWidgetToFocusOnActivate( SearchBox );
+		return EActiveTimerReturnType::Stop;
+	}
+
+	return EActiveTimerReturnType::Continue;
 }
 
 void SFactPresetPicker::HandleSearchTextChanged( const FText& Text )

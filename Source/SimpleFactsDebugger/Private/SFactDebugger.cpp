@@ -1261,23 +1261,18 @@ TSharedRef<SWidget> SFactDebugger::HandleGeneratePresetsMenu()
 		TArray< FAssetData > AssetData;
 		IAssetRegistry::Get()->GetAssetsByClass( UFactPreset::StaticClass()->GetClassPathName(), AssetData );
 
-		TSharedPtr< SFactPresetPicker > PresetPicker;
 		TSharedRef< SWidget > MenuWidget = SNew( SBox )
 			.WidthOverride( 300.f )
 			.HeightOverride( 300.f )
 			.Padding( 2.f )
 			[
-				SAssignNew( PresetPicker, SFactPresetPicker, AssetData )
+				SNew( SFactPresetPicker, AssetData )
 				.OnPresetSelected_Lambda( [ this ]( const UFactPreset* Preset )
 				{
 					FSimpleFactsDebuggerModule::Get().LoadFactPreset( Preset );
 					FSlateApplication::Get().DismissAllMenus();
 				})
 			];
-
-		// Set focus to the search box on creation
-		FSlateApplication::Get().SetKeyboardFocus( PresetPicker->GetWidgetToFocusOnOpen() );
-		FSlateApplication::Get().SetUserFocus( 0, PresetPicker->GetWidgetToFocusOnOpen() );
 
 		MenuBuilder.AddWidget( MenuWidget, FText(), true, false );
 	}

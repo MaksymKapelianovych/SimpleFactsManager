@@ -20,8 +20,6 @@ public:
 
 	void Construct( const FArguments& InArgs, const TArray< FAssetData >& PresetsData );
 
-	TSharedPtr< SWidget > GetWidgetToFocusOnOpen();
-
 private:
 	void CachePresetsData(const TArray< FAssetData >& PresetsData);
 	
@@ -30,6 +28,9 @@ private:
 	void HandleSelectionChanged( TSharedPtr< FAssetData > AssetData, ESelectInfo::Type Type );
 	void HandleSortListView( EColumnSortPriority::Type SortPriority, const FName& ColumnName, EColumnSortMode::Type SortMode );
 	EColumnSortMode::Type GetColumnSortMode() const;
+
+	// Focus
+	EActiveTimerReturnType SetFocusPostConstruct( double InCurrentTime, float InDeltaTime ) const;
 
 	// Search
 	void HandleSearchTextChanged( const FText& Text );
