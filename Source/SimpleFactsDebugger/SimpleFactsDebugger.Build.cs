@@ -39,5 +39,7 @@ public class SimpleFactsDebugger : ModuleRules
                 }
             );
         }
+
+        RuntimeDependencies.Add( System.IO.Path.Combine( ModuleDirectory, "..", "..", "Resources", "Icons", "*") );
     }
 }
