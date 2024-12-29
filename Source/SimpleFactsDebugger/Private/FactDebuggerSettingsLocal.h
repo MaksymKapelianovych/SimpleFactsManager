@@ -29,7 +29,7 @@ public:
 	bool bShowRootFactTag = true;
 
 	UPROPERTY(Config, EditAnywhere)
-	bool bShowFullFactNames = false;
+	bool bShowFullFactNames = true;
 
 	UPROPERTY(Config, EditAnywhere)
 	bool bShouldStackHierarchyHeaders = true;
