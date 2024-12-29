@@ -23,8 +23,8 @@ static const FName FactDebuggerTabName( "FactDebugger" );
 
 static FAutoConsoleCommandWithWorld GShowFactDebugger
 (
-	TEXT( "FactDebugger" ),
-	TEXT( "Displays the Fact Debugger" ),
+	TEXT( "Facts.Debugger" ),
+	TEXT( "Opens Fact Debugger window" ),
 	FConsoleCommandWithWorldDelegate::CreateLambda( []( UWorld* World )
 	{
 		FGlobalTabmanager::Get()->TryInvokeTab( FactDebuggerTabName );
@@ -45,7 +45,7 @@ void FSimpleFactsDebuggerModule::StartupModule()
 		.SetIcon( FSlateIcon( FFactDebuggerStyle::GetStyleSetName(), "ClassIcon.FactPreset" ) );
 	
 #if WITH_EDITOR
-	Tab.SetGroup( WorkspaceMenu::GetMenuStructure().GetToolsCategory() );
+	Tab.SetGroup( WorkspaceMenu::GetMenuStructure().GetDeveloperToolsDebugCategory() );
 
 	// Register to get a warning on startup if settings aren't configured correctly
 	UAssetManager::CallOrRegister_OnAssetManagerCreated( FSimpleMulticastDelegate::FDelegate::CreateRaw( this, &FSimpleFactsDebuggerModule::HandleAssetManagerCreated ) );
