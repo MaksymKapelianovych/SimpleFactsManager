@@ -13,8 +13,9 @@ Interact becomes active only after dialogue is finished and it can be triggered 
 ## Overview
 Fact is just a FFactTag, stored inside TMap in UFactSubsystem. If TMap does not contain some FFactTag, it means that such Fact is not defined yet, but can be defined later. All subtags of "Fact" tag are counted as valid possible Facts.
 Value of Fact is int32. This should be enough for covering basic needs. For example, it can be used as boolean (0 is false, 1 is true), integer (obviously), float (range [0,1] with 2 digits precision can be represented as int range [0,100]).
-To make it easier to load Facts for debug or to set up preconditions for gameplay logic, there is a separate asset: `FactPreset`.
-It is just a TMap of Facts with predefined values, that can be loaded at runtime via `UFactStatics::LoadFactPreset`, by right-clicking on preset and picking `Load preset(s)` option or by selecting preset in `Preset` picker in Fact Debugger window.
+
+To make it easier to load predefined Facts values for debug or to set up preconditions for gameplay logic, there is a separate asset: `UFactPreset`. To create it right click in Content Browser, navigate to `Miscellaneous > Data Asset` and select `Fact Preset`.
+Presets can be loaded at runtime via `UFactStatics::LoadFactPreset(s)`, by right-clicking on presets and picking `Load preset(s)` option or by selecting presets in `Preset` picker in Fact Debugger window. 
 
 ### Nodes:
 ![image](https://github.com/user-attachments/assets/4263d2a6-eefc-4f0b-9954-6c926c18816f)
