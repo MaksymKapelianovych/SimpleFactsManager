@@ -71,7 +71,7 @@ void FFactTreeItem::EndPlay()
 	Value.Reset();
 }
 
-void FFactTreeItem::InitItem()
+void FFactTreeItem::InitItem( bool bPlayAnimation )
 {
 	if ( UFactSubsystem* FactSubsystem = FSimpleFactsDebuggerModule::Get().TryGetFactSubsystem() )
 	{
@@ -81,6 +81,11 @@ void FFactTreeItem::InitItem()
 		if ( FactSubsystem->GetFactValueIfDefined( Tag, FactValue ) )
 		{
 			Value = FactValue;
+			if ( bPlayAnimation )
+			{
+				ValueChangedTime = FSlateApplication::Get().GetCurrentTime();
+				(void)OnFactItemValueChanged.Broadcast( Tag, FactValue );
+			}
 		}
 	}
 }
@@ -401,7 +406,7 @@ void SFactDebugger::Construct( const FArguments& InArgs )
 	];
 
 #if WITH_EDITOR
-	TagChangedHandle = UGameplayTagsManager::OnEditorRefreshGameplayTagTree.AddSP( this, &SFactDebugger::RebuildFactTreeItems );
+	TagChangedHandle = UGameplayTagsManager::OnEditorRefreshGameplayTagTree.AddSP( this, &SFactDebugger::RebuildFactTreeItems, false );
 #endif
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceStarted.BindRaw( this, &SFactDebugger::HandleGameInstanceStarted );
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceEnded.BindRaw( this, &SFactDebugger::HandleGameInstanceEnded );
@@ -423,15 +428,34 @@ SFactDebugger::~SFactDebugger()
 #endif
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceStarted.Unbind();
 	FSimpleFactsDebuggerModule::Get().OnGameInstanceEnded.Unbind();
+
+	if ( bIsPlaying )
+	{
+		if ( UFactSubsystem* FactSubsystem = FSimpleFactsDebuggerModule::Get().TryGetFactSubsystem() )
+		{
+			FactSubsystem->OnFactsLoaded.Remove( FactsLoadedHandle );
+			FactsLoadedHandle.Reset();
+		}
+	}
 }
 
 void SFactDebugger::HandleGameInstanceStarted()
 {
 	bIsPlaying = true;
+	
+	if ( UFactSubsystem* FactSubsystem = FSimpleFactsDebuggerModule::Get().TryGetFactSubsystem() )
+	{
+		FactsLoadedHandle = FactSubsystem->OnFactsLoaded.AddLambda( [ this ]()
+		{
+			RebuildFactTreeItems( true );
+		} );
+	}
+	
 	if ( Settings::bShowOnlyDefinedFacts )
 	{
 		FilterItems();
 	}
+	
 	InitItem( RootItem );
 	InitItem( MainTreeItem );
 	InitItem( FavoritesTreeItem );
@@ -440,6 +464,7 @@ void SFactDebugger::HandleGameInstanceStarted()
 void SFactDebugger::HandleGameInstanceEnded()
 {
 	bIsPlaying = false;
+	
 	if ( Settings::bShowOnlyDefinedFacts )
 	{
 		FilterItems();
@@ -1624,7 +1649,7 @@ bool SFactDebugger::IsAnySearchToggleActive() const
 	return false;
 }
 
-void SFactDebugger::BuildFactTreeItems()
+void SFactDebugger::BuildFactTreeItems( bool bPlayAnimation )
 {
 	LLM_SCOPE_BYTAG( UI_Facts );
 
@@ -1641,7 +1666,7 @@ void SFactDebugger::BuildFactTreeItems()
 		
 		for ( TSharedPtr< FGameplayTagNode >& ChildNode : LeafTagNodes )
 		{
-			BuildFactItem( RootItem, ChildNode );
+			BuildFactItem( RootItem, ChildNode, bPlayAnimation );
 		}
 	}
 	else
@@ -1650,40 +1675,40 @@ void SFactDebugger::BuildFactTreeItems()
 
 		if ( Settings::bShowRootFactTag )
 		{
-			BuildFactItem( RootItem, Node );
+			BuildFactItem( RootItem, Node, bPlayAnimation );
 		}
 		else
 		{
 			for ( TSharedPtr< FGameplayTagNode >& ChildNode : Node->GetChildTagNodes() )
 			{
-				BuildFactItem( RootItem, ChildNode );
+				BuildFactItem( RootItem, ChildNode, bPlayAnimation );
 			}
 		}
 	}
 }
 
-FFactTreeItemPtr SFactDebugger::BuildFactItem( const FFactTreeItemPtr& ParentNode, const TSharedPtr< FGameplayTagNode >& ThisNode )
+FFactTreeItemPtr SFactDebugger::BuildFactItem( const FFactTreeItemPtr& ParentNode, const TSharedPtr< FGameplayTagNode >& ThisNode, bool bPlayAnimation )
 {
 	FFactTreeItemPtr ThisItem = MakeShared< FFactTreeItem >(  );
 	ThisItem->Tag = FFactTag::ConvertChecked( ThisNode->GetCompleteTag() );
 	ThisItem->SimpleTagName = ThisNode->GetSimpleTagName();
 	ThisItem->Children.Reserve( ThisNode->GetChildTagNodes().Num() );
-	ThisItem->InitItem();
+	ThisItem->InitItem( bPlayAnimation );
 	ThisItem->OnFactItemValueChanged.AddSP( this, &SFactDebugger::HandleFactValueChanged );
 	
 	ParentNode->Children.Add( ThisItem );
 	
 	for ( TSharedPtr< FGameplayTagNode > Node : ThisNode->GetChildTagNodes() )
 	{
-		BuildFactItem( ThisItem, Node );
+		BuildFactItem( ThisItem, Node, bPlayAnimation );
 	}
 
 	return ThisItem;
 }
 
-void SFactDebugger::RebuildFactTreeItems()
+void SFactDebugger::RebuildFactTreeItems( bool bPlayAnimation )
 {
-	BuildFactTreeItems();
+	BuildFactTreeItems( bPlayAnimation );
 	FilterItems();
 }
 

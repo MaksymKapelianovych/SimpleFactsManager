@@ -9,6 +9,7 @@
 
 class UFactSaveGame;
 DECLARE_MULTICAST_DELEGATE_OneParam( FFactChanged, int32 )
+DECLARE_MULTICAST_DELEGATE( FFactLoaded )
 
 /**
  * 
@@ -64,6 +65,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "FactSubsystem")
 	void OnGameLoaded( const UFactSaveGame* SaveGame );
+
+	FFactLoaded OnFactsLoaded;
 
 private:
 	void BroadcastValueDelegate( const FFactTag Tag, int32 Value );

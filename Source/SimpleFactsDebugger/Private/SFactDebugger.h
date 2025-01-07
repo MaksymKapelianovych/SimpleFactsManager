@@ -28,7 +28,7 @@ struct FFactTreeItem : public TSharedFromThis< FFactTreeItem >
 
 	void StartPlay();
 	void EndPlay();
-	void InitItem();
+	void InitItem( bool bPlayAnimation = false );
 	
 	void HandleValueChanged( int32 NewValue );
 	void HandleNewValueCommited( int32 NewValue, ETextCommit::Type Type ) const;
@@ -121,9 +121,9 @@ private:
 	bool IsAnySearchToggleActive() const;
 
 	// Build items
-	void BuildFactTreeItems();
-	FFactTreeItemPtr BuildFactItem( const FFactTreeItemPtr& ParentNode, const TSharedPtr< FGameplayTagNode >& ThisNode );
-	void RebuildFactTreeItems();
+	void BuildFactTreeItems( bool bPlayAnimation = false );
+	FFactTreeItemPtr BuildFactItem( const FFactTreeItemPtr& ParentNode, const TSharedPtr< FGameplayTagNode >& ThisNode, bool bPlayAnimation );
+	void RebuildFactTreeItems( bool bPlayAnimation = false );
 	void HandleFactValueChanged( FFactTag FactTag, int32 NewValue );
 	
 	// Settings
@@ -168,6 +168,7 @@ private:
 #if WITH_EDITOR
 	FDelegateHandle TagChangedHandle;
 #endif
+	FDelegateHandle FactsLoadedHandle;
 
 	bool bIsPlaying = false;
 };

@@ -169,6 +169,8 @@ void UFactSubsystem::OnGameSaved( UFactSaveGame* SaveGame ) const
 void UFactSubsystem::OnGameLoaded( const UFactSaveGame* SaveGame )
 {
 	DefinedFacts = SaveGame->Facts;
+
+	OnFactsLoaded.Broadcast();
 }
 
 void UFactSubsystem::BroadcastValueDelegate( const FFactTag Tag, int32 Value )
