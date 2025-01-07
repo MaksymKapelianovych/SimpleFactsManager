@@ -66,15 +66,11 @@ private:
 /** Represents condition for facts, such as:
  * 
  *  AndDependencies:
- *		"Fact.IsInteracted IsTrue"
+ *		"Fact.IsInteracted == 1" // or " > 0", can be interpreted as "true"
  *	OrDependencies
  *		"Fact.InteractionCount == 3"
  *
  *	Condition will evaluate to "true" if all of @see AndDependencies will evaluate to "true" and any oh the @see OrDependencies will evaluate to "true".
- *
- *	For now only used in UFlowNode_FactCondition.
- *	Todo: figure out how to use it in BP and if it is needed in BP,
- *	else remove and use AndDependencies/OrDependencies arrays directly in UFlowNode_FactCondition
  */
 USTRUCT(BlueprintType)
 struct SIMPLEFACTS_API FFactCondition
