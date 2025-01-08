@@ -18,7 +18,7 @@ To make it easier to load predefined Facts values for debug or to set up precond
 Presets can be loaded at runtime via `UFactStatics::LoadFactPreset(s)`, by right-clicking on presets and picking `Load preset(s)` option or by selecting presets in `Preset` picker in Fact Debugger window. 
 
 ### Nodes:
-![image](https://github.com/user-attachments/assets/4263d2a6-eefc-4f0b-9954-6c926c18816f)
+![image](https://github.com/user-attachments/assets/6faea440-c78b-4fee-ac88-a45ae74c0e61)
 
  - `ChangeFactValue`: allows to set Fact's value or add value to Fact's current value. If Fact was undefined before this operation, it will become defined.
  - `ResetFactValue`: resets Fact's value to default (0). Only defined Facts can be reset now.
