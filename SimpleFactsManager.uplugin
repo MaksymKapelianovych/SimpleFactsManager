@@ -3,31 +3,45 @@
 	"Version": 2,
 	"VersionName": "2.0",
 	"FriendlyName": "SimpleFactsManager",
-	"Description": "",
-	"Category": "Other",
-	"CreatedBy": "",
-	"CreatedByURL": "",
-	"DocsURL": "",
-	"MarketplaceURL": "",
+	"Description": "Plugin for handling state of in-game/narrative facts",
+	"Category": "Gameplay",
+	"CreatedBy": "Maksym Kapelianovych",
+	"CreatedByURL": "https://github.com/MaksymKapelianovych",
+	"DocsURL": "https://github.com/MaksymKapelianovych/SimpleFactsManager/blob/main/README.md",
+	"SupportURL": "https://github.com/MaksymKapelianovych/SimpleFactsManager/issues",
+	"FabURL": "",
 	"CanContainContent": false,
-	"IsBetaVersion": false,
-	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [
 		{
 			"Name": "SimpleFacts",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
 		},
 		{
 			"Name": "SimpleFactsDebugger",
 			"Type": "DeveloperTool",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
 		},
 		{
 			"Name": "SimpleFactsEditor",
 			"Type": "Editor",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
 		}
 	],
 	"Plugins": [
