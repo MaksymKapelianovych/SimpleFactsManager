@@ -48,6 +48,10 @@
 		{
 			"Name": "GameplayTagsEditor",
 			"Enabled": true
+		},
+		{
+			"Name": "FilteredGameplayTags",
+			"Enabled": true
 		}
 	]
 }
