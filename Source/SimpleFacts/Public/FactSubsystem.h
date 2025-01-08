@@ -49,11 +49,10 @@ public:
 	 * Returns true if Condition passes.
 	 * If condition explicitly checks for value, returns false if value is different or fact is undefined.
 	 */ 
-	[[nodiscard]] bool CheckFactSimpleCondition( const FSimpleFactCondition& Condition ) const;
 	[[nodiscard]] bool CheckFactCondition( const FFactCondition& Condition ) const;
 
 	/**
-	 * More specialized version of CheckFactSimpleCondition, which only tell if fact is defined or not.
+	 * More specialized version of CheckFactCondition, which only tell if fact is defined or not.
 	 */ 
 	[[nodiscard]] bool IsFactDefined( const FFactTag Tag ) const;
 	

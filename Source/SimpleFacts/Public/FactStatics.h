@@ -50,11 +50,11 @@ public:
 	[[nodiscard]] static bool CheckFactValue( const UObject* WorldContextObject, const FFactTag Tag, int32 WantedValue, EFactCompareOperator Operator );
 
 	/**
+	 * Same as @CheckFactValue, but allows to save condition as variable
 	 * @return false if WorldContextObject is null
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Facts, meta = (WorldContext = "WorldContextObject"))
-	[[nodiscard]] static bool CheckFactSimpleCondition( const UObject* WorldContextObject, FSimpleFactCondition Condition );
-	
+	[[nodiscard]] static bool CheckFactCondition( const UObject* WorldContextObject, FFactCondition Condition );
 	
 	/**
 	 * @return false if WorldContextObject is null

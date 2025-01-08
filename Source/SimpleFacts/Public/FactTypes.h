@@ -33,22 +33,22 @@ enum class EFactValueChangeType : uint8
 
 // Helper struct for checking single fact condition
 USTRUCT(BlueprintType)
-struct SIMPLEFACTS_API FSimpleFactCondition
+struct SIMPLEFACTS_API FFactCondition
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fact")
 	FFactTag Tag;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fact")
 	EFactCompareOperator Operator = EFactCompareOperator::Equals;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fact")
 	int32 WantedValue = 0;
 
-	FSimpleFactCondition() {}
+	FFactCondition() {}
 
-	FSimpleFactCondition( FFactTag InTag, int32 InValue, EFactCompareOperator InOperator)
+	FFactCondition( FFactTag InTag, int32 InValue, EFactCompareOperator InOperator)
 		: Tag( InTag )
 		, Operator( InOperator )
 		, WantedValue( InValue )
@@ -58,40 +58,6 @@ struct SIMPLEFACTS_API FSimpleFactCondition
 	FString ToString() const;
 	
 private:
-	friend struct FFactCondition;
 	
 	bool CheckValue( const UFactSubsystem& FactSubsystem ) const;
-};
-
-/** Represents condition for facts, such as:
- * 
- *  AndDependencies:
- *		"Fact.IsInteracted == 1" // or " > 0", can be interpreted as "true"
- *	OrDependencies
- *		"Fact.InteractionCount == 3"
- *
- *	Condition will evaluate to "true" if all of @see AndDependencies will evaluate to "true" and any oh the @see OrDependencies will evaluate to "true".
- */
-USTRUCT(BlueprintType)
-struct SIMPLEFACTS_API FFactCondition
-{
-	GENERATED_BODY()
-
-public:
-	bool CheckCondition( const UFactSubsystem& Subsystem ) const;
-	bool IsValid() const;
-	FString ToString() const;
-
-protected:
-	bool CheckAndDependencies( const UFactSubsystem& Subsystem ) const;
-	bool CheckOrDependencies( const UFactSubsystem& Subsystem ) const;
-	
-public:
-	// And fact dependencies for this condition
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray< FSimpleFactCondition > AndDependencies;
-
-	// Or fact dependencies for this condition
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray< FSimpleFactCondition > OrDependencies;
 };

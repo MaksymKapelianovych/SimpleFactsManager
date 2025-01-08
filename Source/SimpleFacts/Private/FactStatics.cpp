@@ -65,19 +65,19 @@ bool UFactStatics::CheckFactValue( const UObject* WorldContextObject, const FFac
 	if ( WorldContextObject )
 	{
 		UFactSubsystem& FactSubsystem = UFactSubsystem::Get( WorldContextObject );
-		return FactSubsystem.CheckFactSimpleCondition( FSimpleFactCondition( Tag, WantedValue, Operator ) );
+		return FactSubsystem.CheckFactCondition( FFactCondition( Tag, WantedValue, Operator ) );
 	}
 
 	UE_LOG( LogFact, Error, TEXT( "%hs: WorldContextObject is null" ), __FUNCTION__ );
 	return false;
 }
 
-bool UFactStatics::CheckFactSimpleCondition( const UObject* WorldContextObject, FSimpleFactCondition Condition )
+bool UFactStatics::CheckFactCondition( const UObject* WorldContextObject, FFactCondition Condition )
 {
 	if ( WorldContextObject )
 	{
 		UFactSubsystem& FactSubsystem = UFactSubsystem::Get( WorldContextObject );
-		return FactSubsystem.CheckFactSimpleCondition( Condition );
+		return FactSubsystem.CheckFactCondition( Condition );
 	}
 
 	UE_LOG( LogFact, Error, TEXT( "%hs: WorldContextObject is null" ), __FUNCTION__ );

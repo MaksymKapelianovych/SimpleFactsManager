@@ -91,7 +91,7 @@ bool UFactSubsystem::TryGetFactValue( const FFactTag Tag, int32& OutValue ) cons
 	return GetFactValueIfDefined( Tag, OutValue );
 }
 
-bool UFactSubsystem::CheckFactSimpleCondition( const FSimpleFactCondition& Condition ) const
+bool UFactSubsystem::CheckFactCondition( const FFactCondition& Condition ) const
 {
 	if ( Condition.Tag.IsValid() == false )
 	{
@@ -123,11 +123,6 @@ bool UFactSubsystem::CheckFactSimpleCondition( const FSimpleFactCondition& Condi
 	}
 
 	return false;
-}
-
-bool UFactSubsystem::CheckFactCondition( const FFactCondition& Condition ) const
-{
-	return Condition.IsValid() && Condition.CheckCondition( *this );
 }
 
 bool UFactSubsystem::IsFactDefined( const FFactTag Tag ) const
