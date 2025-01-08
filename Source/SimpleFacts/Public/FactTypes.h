@@ -1,3 +1,5 @@
+// Copyright 2024, Maksym Kapelianovych. Licensed under MIT license.
+
 #pragma once
 #include "FilteredGameplayTags.h"
 #include "FactTypes.generated.h"

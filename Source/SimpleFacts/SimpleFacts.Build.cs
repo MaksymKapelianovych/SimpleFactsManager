@@ -1,4 +1,4 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright 2024, Maksym Kapelianovych. Licensed under MIT license.
 
 using UnrealBuildTool;
 
@@ -26,7 +26,6 @@ public class SimpleFacts : ModuleRules
 			new string[]
 			{
 				"Core",
-				"FilteredGameplayTags",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

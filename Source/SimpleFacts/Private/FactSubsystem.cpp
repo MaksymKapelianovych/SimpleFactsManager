@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright 2024, Maksym Kapelianovych. Licensed under MIT license.
 
 #include "FactSubsystem.h"
 #include "FactLogChannels.h"

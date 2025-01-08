@@ -1,3 +1,5 @@
+// Copyright 2024, Maksym Kapelianovych. Licensed under MIT license.
+
 #include "SimpleFactsDebugger.h"
 
 #include "FactDebuggerStyle.h"
