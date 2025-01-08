@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Styling/SlateStyle.h"
 
 struct SIMPLEFACTSDEBUGGER_API FFactDebuggerStyle final : public FSlateStyleSet
 {

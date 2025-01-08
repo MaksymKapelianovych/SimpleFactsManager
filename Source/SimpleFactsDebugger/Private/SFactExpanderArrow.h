@@ -5,7 +5,15 @@
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
 
+#include "Misc/Attribute.h"
+#include "Input/Reply.h"
+#include "Layout/Visibility.h"
+#include "Layout/Margin.h"
+#include "Styling/CoreStyle.h"
+
 class ITableRow;
+class SButton;
+class SImage;
 
 /**
  * Copy of SStateTreeExpanderArrow (it is smaller that default SExpanderArrow and looks the same).

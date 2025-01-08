@@ -4,6 +4,7 @@
 #include "AsyncAction_ListenForFactChanges.h"
 
 #include "FactSubsystem.h"
+#include "Engine/Engine.h"
 
 UAsyncAction_ListenForFactChanges* UAsyncAction_ListenForFactChanges::ListenForFactChanges( UObject* WorldContextObject, FFactTag Tag )
 {

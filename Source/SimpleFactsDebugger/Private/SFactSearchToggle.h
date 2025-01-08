@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
+#include "Framework/SlateDelegates.h"
+
+class SCheckBox;
 
 /**
  * 
@@ -20,7 +23,8 @@ public:
 
 		SLATE_ARGUMENT( bool, IsToggleChecked )
 	SLATE_END_ARGS()
-	
+
+	SFactSearchToggle();
 	void Construct( const FArguments& InArgs, const FText& InButtonText );
 
 	virtual ~SFactSearchToggle() override;

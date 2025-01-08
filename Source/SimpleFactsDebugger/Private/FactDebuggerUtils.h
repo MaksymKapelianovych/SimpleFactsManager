@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CoreMinimal.h"
+
 using FFactTreeItemPtr = TSharedPtr< struct FFactTreeItem >;
 struct FGameplayTagNode;
 

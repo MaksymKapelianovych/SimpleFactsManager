@@ -3,10 +3,20 @@
 
 #include "SFactSearchToggle.h"
 
+#include "Styling/CoreStyle.h"
 #include "Styling/StyleColors.h"
+#include "Framework/Application/SlateApplication.h"
 #include "SlateOptMacros.h"
+#include "Widgets/Input/SCheckBox.h"
+#include "Widgets/Text/STextBlock.h"
 
 #define LOCTEXT_NAMESPACE "FactDebugger"
+
+SFactSearchToggle::SFactSearchToggle()
+	: CheckedColor()
+	, UncheckedColor()
+{
+}
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 

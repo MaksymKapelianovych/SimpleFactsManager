@@ -3,6 +3,9 @@
 #include "FactSubsystem.h"
 #include "FactLogChannels.h"
 #include "FactSave.h"
+#include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
+#include "Engine/World.h"
 
 UFactSubsystem& UFactSubsystem::Get( const UObject* WorldContextObject )
 {

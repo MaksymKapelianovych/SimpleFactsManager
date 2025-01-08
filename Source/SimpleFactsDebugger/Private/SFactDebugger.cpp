@@ -19,9 +19,14 @@
 #include "SlateOptMacros.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Widgets/Input/SNumericEntryBox.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Input/SComboButton.h"
 #include "Widgets/Layout/SWidgetSwitcher.h"
 #include "Widgets/Layout/SWrapBox.h"
+#include "Widgets/Layout/SSeparator.h"
 #include "Widgets/Text/SRichTextBlock.h"
+
+#include "Framework/MultiBox/MultiBoxBuilder.h"
 
 #include "HAL/LowLevelMemTracker.h"
 

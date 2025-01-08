@@ -6,6 +6,12 @@
 #include "FactStatics.h"
 #include "FactSubsystem.h"
 #include "SFactDebugger.h"
+#include "Engine/GameInstance.h"
+#include "Engine/World.h"
+
+#include "Framework/Application/SlateApplication.h"
+#include "Framework/Docking/TabManager.h"
+#include "Widgets/Docking/SDockTab.h"
 
 #if WITH_EDITOR
 #include "WorkspaceMenuStructure.h"

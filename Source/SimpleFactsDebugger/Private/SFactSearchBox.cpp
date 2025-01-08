@@ -4,6 +4,9 @@
 #include "SFactSearchBox.h"
 
 #include "SlateOptMacros.h"
+#include "Widgets/SBoxPanel.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Images/SImage.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 

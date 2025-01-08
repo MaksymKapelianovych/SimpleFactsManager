@@ -2,10 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
+#include "Engine/GameInstance.h"
 
 class SFactDebugger;
+class SDockTab;
+class FSpawnTabArgs;
+class SWidget;
 class UFactPreset;
 class UFactSubsystem;
+class UGameInstance;
 
 class SIMPLEFACTSDEBUGGER_API FSimpleFactsDebuggerModule : public IModuleInterface
 {

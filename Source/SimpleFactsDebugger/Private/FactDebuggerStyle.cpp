@@ -6,6 +6,8 @@
 #include "Interfaces/IPluginManager.h"
 #include "Styling/SlateStyleMacros.h"
 #include "Styling/SlateStyleRegistry.h"
+#include "Styling/CoreStyle.h"
+#include "Styling/SlateTypes.h"
 
 TSharedPtr< FFactDebuggerStyle > FFactDebuggerStyle::StyleInstance;
 

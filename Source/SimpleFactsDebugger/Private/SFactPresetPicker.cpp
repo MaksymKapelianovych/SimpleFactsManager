@@ -6,6 +6,15 @@
 #include "FactPreset.h"
 #include "SlateOptMacros.h"
 #include "Widgets/Input/SSearchBox.h"
+#include "Widgets/Layout/SHeader.h"
+#include "Widgets/SBoxPanel.h"
+#include "Layout/WidgetPath.h"
+#include "Framework/Application/SlateApplication.h"
+
+SFactPresetPicker::SFactPresetPicker()
+	: CurrentSortMode( EColumnSortMode::Ascending )
+{
+}
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 

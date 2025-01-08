@@ -6,11 +6,13 @@
 #include "FactDebuggerSettingsLocal.h"
 #include "FactTypes.h"
 #include "Widgets/SCompoundWidget.h"
+#include "Widgets/Views/STreeView.h"
 
 class UFactPreset;
 class SFactSearchToggle;
 class SWrapBox;
 class SFactSearchBox;
+class SComboButton;
 
 using FFactTreeItemRef = TSharedRef< struct FFactTreeItem >;
 using FFactTreeItemPtr = TSharedPtr< struct FFactTreeItem >;

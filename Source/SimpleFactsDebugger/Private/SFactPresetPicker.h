@@ -4,8 +4,20 @@
 
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
+#include "Widgets/Views/SListView.h"
 
 class UFactPreset;
+class SSearchBox;
+
+namespace EColumnSortMode
+{
+	enum Type;
+}
+
+namespace EColumnSortPriority
+{
+	enum Type;
+}
 
 class SFactPresetPicker : public SCompoundWidget
 {
@@ -17,7 +29,7 @@ public:
 		SLATE_EVENT( FOnSelectionChanged, OnPresetSelected )
 	SLATE_END_ARGS()
 
-
+	SFactPresetPicker();
 	void Construct( const FArguments& InArgs, const TArray< FAssetData >& PresetsData );
 
 private:
@@ -48,5 +60,5 @@ private:
 
 	FOnSelectionChanged OnPresetSelected;
 
-	EColumnSortMode::Type CurrentSortMode = EColumnSortMode::Ascending;
+	EColumnSortMode::Type CurrentSortMode;
 };

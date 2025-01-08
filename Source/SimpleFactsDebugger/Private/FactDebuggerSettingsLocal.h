@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "FactTypes.h"
 #include "Engine/DeveloperSettings.h"
+#include "Types/SlateEnums.h"
 #include "FactDebuggerSettingsLocal.generated.h"
 
 USTRUCT()
