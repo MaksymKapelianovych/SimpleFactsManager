@@ -14,6 +14,6 @@ class SIMPLEFACTS_API UFactPreset final : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditDefaultsOnly, meta = (ForceInlineRow))
+	UPROPERTY(EditDefaultsOnly, Category = "Fact", meta = (ForceInlineRow))
 	TMap< FFactTag, int32 > PresetValues;
 };

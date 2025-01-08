@@ -25,25 +25,25 @@ class UFactDebuggerSettingsLocal : public UObject
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(Config, EditAnywhere)
+	UPROPERTY(Config)
 	bool bShowRootFactTag = true;
 
-	UPROPERTY(Config, EditAnywhere)
+	UPROPERTY(Config)
 	bool bShowFullFactNames = true;
 
-	UPROPERTY(Config, EditAnywhere)
+	UPROPERTY(Config)
 	bool bShouldStackHierarchyHeaders = true;
 
-	UPROPERTY(Config, EditAnywhere)
+	UPROPERTY(Config)
 	bool bShowFavoritesInMainTree = false;
 
-	UPROPERTY(Config, EditAnywhere)
+	UPROPERTY(Config)
 	bool bShowOnlyLeafFacts = false;
 
-	UPROPERTY(Config, EditAnywhere)
+	UPROPERTY(Config)
 	bool bShowOnlyDefinedFacts = false;
 	
-	UPROPERTY(Config, EditAnywhere)
+	UPROPERTY(Config)
 	TEnumAsByte< EOrientation > Orientation = Orient_Horizontal;
 
 	UPROPERTY(Config)
