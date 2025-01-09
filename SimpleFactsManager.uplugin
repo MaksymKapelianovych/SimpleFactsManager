@@ -50,7 +50,7 @@
 			"Enabled": true
 		},
 		{
-			"Name": "FilteredGameplayTags",
+			"Name": "TypedGameplayTags",
 			"Enabled": true
 		}
 	]

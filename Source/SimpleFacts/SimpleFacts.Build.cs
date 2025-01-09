@@ -12,7 +12,7 @@ public class SimpleFacts : ModuleRules
 			new string[]
 			{
 				"Core",
-				"FilteredGameplayTags",
+				"TypedGameplayTags",
 			}
 			);
 			
